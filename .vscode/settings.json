@@ -1,3 +1,7 @@
+// ==========================================================
+// Sanando desde el Corazón — VS Code Workspace Settings
+// ==========================================================
+
 {
   "editor.formatOnSave": true,
   "editor.defaultFormatter": "esbenp.prettier-vscode",

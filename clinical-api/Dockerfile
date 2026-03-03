@@ -1,0 +1,55 @@
+# ============================================================
+# clinical-api — Dockerfile  (multi-stage, Python 3.12)
+# Build context: repositorio raíz (docker-compose)
+# ============================================================
+
+# --- Etapa 1: builder ---
+FROM python:3.12-slim AS builder
+
+WORKDIR /build
+
+# Dependencias del sistema para compilar psycopg y cryptography
+RUN apt-get update && apt-get install -y --no-install-recommends \
+        gcc \
+        libpq-dev \
+    && rm -rf /var/lib/apt/lists/*
+
+# Instalar dependencias Python en directorio local del usuario
+COPY requirements.txt .
+RUN pip install --no-cache-dir --user -r requirements.txt
+
+# --- Etapa 2: runtime ---
+FROM python:3.12-slim AS runtime
+
+# Librerías de runtime necesarias para psycopg
+RUN apt-get update && apt-get install -y --no-install-recommends \
+        libpq5 \
+        wget \
+    && rm -rf /var/lib/apt/lists/*
+
+# Usuario no-root
+RUN addgroup --system app && adduser --system --ingroup app --no-create-home app
+
+WORKDIR /app
+
+# Copiar paquetes instalados desde builder
+COPY --from=builder /root/.local /home/app/.local
+
+# Copiar código del servicio
+COPY --chown=app:app clinical-api/ .
+
+USER app
+
+ENV PATH=/home/app/.local/bin:$PATH \
+    PYTHONDONTWRITEBYTECODE=1 \
+    PYTHONUNBUFFERED=1 \
+    PYTHONPATH=/app
+
+EXPOSE 8001
+
+CMD ["uvicorn", "app.main:app", \
+     "--host", "0.0.0.0", \
+     "--port", "8001", \
+     "--workers", "4", \
+     "--loop", "uvloop", \
+     "--http", "httptools"]
