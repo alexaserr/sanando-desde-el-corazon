@@ -1,0 +1,49 @@
+{
+  "editor.formatOnSave": true,
+  "editor.defaultFormatter": "esbenp.prettier-vscode",
+  "editor.rulers": [88],
+  "editor.tabSize": 2,
+  "editor.insertSpaces": true,
+
+  "[python]": {
+    "editor.defaultFormatter": "charliermarsh.ruff",
+    "editor.formatOnSave": true,
+    "editor.codeActionsOnSave": {
+      "source.fixAll.ruff": "explicit",
+      "source.organizeImports.ruff": "explicit"
+    }
+  },
+
+  "[typescript]": {
+    "editor.defaultFormatter": "esbenp.prettier-vscode"
+  },
+  "[typescriptreact]": {
+    "editor.defaultFormatter": "esbenp.prettier-vscode"
+  },
+
+  "python.defaultInterpreterPath": "${workspaceFolder}/clinical-api/.venv/bin/python",
+  "python.terminal.activateEnvironment": true,
+
+  "docker.showStartPage": false,
+
+  "files.exclude": {
+    "**/__pycache__": true,
+    "**/.pytest_cache": true,
+    "**/node_modules": true,
+    "**/.next": true,
+    "**/*.pyc": true
+  },
+
+  "github.copilot.editor.enableAutoCompletions": true,
+  "github.copilot.chat.localeOverride": "es",
+
+  "rest-client.environmentVariables": {
+    "local": {
+      "base_url": "http://localhost",
+      "token": ""
+    }
+  },
+
+  "workbench.iconTheme": "material-icon-theme",
+  "errorLens.enabledDiagnosticLevels": ["error", "warning"]
+}

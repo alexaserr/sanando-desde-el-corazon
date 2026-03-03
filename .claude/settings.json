@@ -1,0 +1,6 @@
+{
+  "permissions": {
+    "allow": ["bash(npm run lint)", "bash(pytest)", "bash(docker compose *)"],
+    "deny": ["bash(rm -rf *)"]
+  }
+}

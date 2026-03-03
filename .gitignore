@@ -1,0 +1,45 @@
+# Entornos virtuales Python
+.venv/
+venv/
+__pycache__/
+*.pyc
+*.pyo
+.pytest_cache/
+.ruff_cache/
+*.egg-info/
+
+# Variables de entorno — NUNCA commitear
+.env
+.env.local
+.env.production
+.env.*.local
+
+# Node
+node_modules/
+.next/
+.nuxt/
+dist/
+build/
+
+# Docker
+docker-compose.override.yml
+
+# VS Code (solo mantener .vscode/settings.json y extensions.json)
+.vscode/*
+!.vscode/settings.json
+!.vscode/extensions.json
+
+# Logs
+*.log
+logs/
+
+# Certificados SSL (se generan en el servidor)
+nginx/certs/
+
+# Archivos de migración temporales
+migration/reports/*.json
+migration/data/
+
+# OS
+.DS_Store
+Thumbs.db
