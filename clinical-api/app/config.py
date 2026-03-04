@@ -7,6 +7,9 @@ from functools import lru_cache
 from pathlib import Path
 from typing import Self
 
+# Cache de contenido PEM — se llena una vez y no se vuelve a leer del disco por request.
+_pem_cache: dict[str, str] = {}
+
 from pydantic import Field, field_validator, model_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
@@ -96,13 +99,19 @@ class Settings(BaseSettings):
 
     @property
     def jwt_private_key(self) -> str:
-        """Lee el PEM privado. El singleton @lru_cache garantiza una sola instancia."""
-        return Path(self.JWT_PRIVATE_KEY_PATH).read_text(encoding="utf-8").strip()
+        """Retorna el PEM privado. Se lee del disco una sola vez y se cachea en _pem_cache."""
+        key = str(self.JWT_PRIVATE_KEY_PATH)
+        if key not in _pem_cache:
+            _pem_cache[key] = Path(self.JWT_PRIVATE_KEY_PATH).read_text(encoding="utf-8").strip()
+        return _pem_cache[key]
 
     @property
     def jwt_public_key(self) -> str:
-        """Lee el PEM público. El singleton @lru_cache garantiza una sola instancia."""
-        return Path(self.JWT_PUBLIC_KEY_PATH).read_text(encoding="utf-8").strip()
+        """Retorna el PEM público. Se lee del disco una sola vez y se cachea en _pem_cache."""
+        key = str(self.JWT_PUBLIC_KEY_PATH)
+        if key not in _pem_cache:
+            _pem_cache[key] = Path(self.JWT_PUBLIC_KEY_PATH).read_text(encoding="utf-8").strip()
+        return _pem_cache[key]
 
     @property
     def is_production(self) -> bool:

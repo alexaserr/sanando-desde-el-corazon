@@ -4,8 +4,9 @@ Podcast de Sanando desde el Corazón.
 """
 from functools import lru_cache
 from pathlib import Path
+from typing import Self
 
-from pydantic import Field, field_validator, model_validator
+from pydantic import Field, PrivateAttr, field_validator, model_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 
@@ -28,8 +29,8 @@ class Settings(BaseSettings):
     JWT_ACCESS_TOKEN_EXPIRE_MINUTES: int = Field(default=15)
     JWT_REFRESH_TOKEN_EXPIRE_DAYS: int = Field(default=30)
 
-    _jwt_private_key: str = ""
-    _jwt_public_key: str = ""
+    _jwt_private_key: str = PrivateAttr(default="")
+    _jwt_public_key: str = PrivateAttr(default="")
 
     # ── Base de datos ─────────────────────────────────────────
     PODCAST_DATABASE_URL: str = Field(...)
@@ -74,13 +75,13 @@ class Settings(BaseSettings):
         return v
 
     @model_validator(mode="after")
-    def load_jwt_keys(self) -> "Settings":
+    def load_jwt_keys(self) -> Self:
         try:
-            self._jwt_private_key = self.JWT_PRIVATE_KEY_PATH.read_text().strip()
+            self._jwt_private_key = self.JWT_PRIVATE_KEY_PATH.read_text(encoding="utf-8").strip()
         except FileNotFoundError as e:
             raise ValueError(f"No se encontró JWT_PRIVATE_KEY_PATH: {e}") from e
         try:
-            self._jwt_public_key = self.JWT_PUBLIC_KEY_PATH.read_text().strip()
+            self._jwt_public_key = self.JWT_PUBLIC_KEY_PATH.read_text(encoding="utf-8").strip()
         except FileNotFoundError as e:
             raise ValueError(f"No se encontró JWT_PUBLIC_KEY_PATH: {e}") from e
         return self
@@ -103,15 +104,15 @@ class Settings(BaseSettings):
 
     @property
     def docs_url(self) -> str | None:
-        return None if self.is_production else "/docs"
+        return "/docs" if self.PODCAST_DOCS_ENABLED else None
 
     @property
     def redoc_url(self) -> str | None:
-        return None if self.is_production else "/redoc"
+        return "/redoc" if self.PODCAST_DOCS_ENABLED else None
 
     @property
     def openapi_url(self) -> str | None:
-        return None if self.is_production else "/openapi.json"
+        return "/openapi.json" if self.PODCAST_DOCS_ENABLED else None
 
     @property
     def max_episode_size_bytes(self) -> int:
@@ -120,7 +121,7 @@ class Settings(BaseSettings):
 
 @lru_cache
 def get_settings() -> Settings:
-    return Settings()
+    return Settings()  # type: ignore[call-arg]
 
 
 settings: Settings = get_settings()

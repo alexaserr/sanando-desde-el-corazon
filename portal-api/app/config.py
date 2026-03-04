@@ -2,11 +2,12 @@
 Configuración de portal-api usando pydantic-settings.
 Portal de cursos de Sanando desde el Corazón.
 """
+
 from functools import lru_cache
 from pathlib import Path
-from typing import Annotated
+from typing import Self
 
-from pydantic import Field, field_validator, model_validator
+from pydantic import Field, PrivateAttr, field_validator, model_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 
@@ -29,8 +30,8 @@ class Settings(BaseSettings):
     JWT_ACCESS_TOKEN_EXPIRE_MINUTES: int = Field(default=15)
     JWT_REFRESH_TOKEN_EXPIRE_DAYS: int = Field(default=30)
 
-    _jwt_private_key: str = ""
-    _jwt_public_key: str = ""
+    _jwt_private_key: str = PrivateAttr(default="")
+    _jwt_public_key: str = PrivateAttr(default="")
 
     # ── Base de datos ─────────────────────────────────────────
     PORTAL_DATABASE_URL: str = Field(...)
@@ -50,8 +51,8 @@ class Settings(BaseSettings):
     MINIO_BUCKET_PORTAL: str = Field(default="portal-assets")
 
     # ── Stripe (pasarela de pago) ─────────────────────────────
-    STRIPE_SECRET_KEY: Annotated[str, Field(min_length=1)] = Field(...)
-    STRIPE_WEBHOOK_SECRET: Annotated[str, Field(min_length=1)] = Field(...)
+    STRIPE_SECRET_KEY: str = Field(..., min_length=1)
+    STRIPE_WEBHOOK_SECRET: str = Field(..., min_length=1)
     STRIPE_PRICE_ID_CURSO_BASE: str = Field(default="")
 
     # ── API ───────────────────────────────────────────────────
@@ -83,13 +84,15 @@ class Settings(BaseSettings):
         return v
 
     @model_validator(mode="after")
-    def load_jwt_keys(self) -> "Settings":
+    def load_jwt_keys(self) -> Self:
         try:
-            self._jwt_private_key = self.JWT_PRIVATE_KEY_PATH.read_text().strip()
+            private_key_path = Path(self.JWT_PRIVATE_KEY_PATH)
+            self._jwt_private_key = private_key_path.read_text(encoding="utf-8").strip()
         except FileNotFoundError as e:
             raise ValueError(f"No se encontró JWT_PRIVATE_KEY_PATH: {e}") from e
         try:
-            self._jwt_public_key = self.JWT_PUBLIC_KEY_PATH.read_text().strip()
+            public_key_path = Path(self.JWT_PUBLIC_KEY_PATH)
+            self._jwt_public_key = public_key_path.read_text(encoding="utf-8").strip()
         except FileNotFoundError as e:
             raise ValueError(f"No se encontró JWT_PUBLIC_KEY_PATH: {e}") from e
         return self
@@ -108,24 +111,29 @@ class Settings(BaseSettings):
 
     @property
     def cors_origins(self) -> list[str]:
-        return [o.strip() for o in self.PORTAL_CORS_ORIGINS.split(",") if o.strip()]
+        origins = (
+            self.PORTAL_CORS_ORIGINS
+            if isinstance(self.PORTAL_CORS_ORIGINS, str)
+            else ""
+        )
+        return [o.strip() for o in origins.split(",") if o.strip()]
 
     @property
     def docs_url(self) -> str | None:
-        return None if self.is_production else "/docs"
+        return "/docs" if self.PORTAL_DOCS_ENABLED else None
 
     @property
     def redoc_url(self) -> str | None:
-        return None if self.is_production else "/redoc"
+        return "/redoc" if self.PORTAL_DOCS_ENABLED else None
 
     @property
     def openapi_url(self) -> str | None:
-        return None if self.is_production else "/openapi.json"
+        return "/openapi.json" if self.PORTAL_DOCS_ENABLED else None
 
 
 @lru_cache
 def get_settings() -> Settings:
-    return Settings()
+    return Settings()  # type: ignore[call-arg]
 
 
 settings: Settings = get_settings()
