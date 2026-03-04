@@ -25,7 +25,7 @@
     "editor.defaultFormatter": "esbenp.prettier-vscode"
   },
 
-  "python.defaultInterpreterPath": "${workspaceFolder}/clinical-api/.venv/bin/python",
+  "python.defaultInterpreterPath": "/home/alexaserr/.venvs/sdc-clinical/bin/python",
   "python.terminal.activateEnvironment": true,
 
   "docker.showStartPage": false,

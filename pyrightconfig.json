@@ -1,0 +1,20 @@
+{
+  "venvPath": "/home/alexaserr/.venvs",
+  "venv": "sdc-clinical",
+  "pythonVersion": "3.12",
+  "typeCheckingMode": "standard",
+  "include": [
+    "clinical-api",
+    "portal-api",
+    "podcast-api",
+    "migration"
+  ],
+  "exclude": [
+    "**/node_modules",
+    "**/__pycache__",
+    "**/.venv",
+    "**/alembic/versions"
+  ],
+  "reportMissingImports": true,
+  "reportMissingTypeStubs": false
+}

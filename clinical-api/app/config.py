@@ -2,9 +2,10 @@
 Configuración de clinical-api usando pydantic-settings.
 Lee variables de entorno y archivos PEM para JWT RS256.
 """
+
 from functools import lru_cache
 from pathlib import Path
-from typing import Annotated
+from typing import Self
 
 from pydantic import Field, field_validator, model_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
@@ -29,17 +30,13 @@ class Settings(BaseSettings):
     JWT_ACCESS_TOKEN_EXPIRE_MINUTES: int = Field(default=15)
     JWT_REFRESH_TOKEN_EXPIRE_DAYS: int = Field(default=30)
 
-    # Contenido de las claves (se cargan en model_validator)
-    _jwt_private_key: str = ""
-    _jwt_public_key: str = ""
-
     # ── Base de datos ─────────────────────────────────────────
     CLINICAL_DATABASE_URL: str = Field(...)
     AUTH_DATABASE_URL: str = Field(...)
     AUDIT_DATABASE_URL: str = Field(...)
 
     # Clave de cifrado PII (pgcrypto) — mínimo 32 caracteres
-    CLINICAL_DB_PGCRYPTO_KEY: Annotated[str, Field(min_length=32)] = Field(...)
+    CLINICAL_DB_PGCRYPTO_KEY: str = Field(..., min_length=32)
 
     # ── Redis ─────────────────────────────────────────────────
     REDIS_URL: str = Field(...)
@@ -67,6 +64,8 @@ class Settings(BaseSettings):
     SMTP_FROM_NAME: str = Field(default="Sanando desde el Corazón")
     SMTP_TLS: bool = Field(default=True)
 
+    # ── Validadores ───────────────────────────────────────────
+
     @field_validator("JWT_ALGORITHM")
     @classmethod
     def validate_algorithm(cls, v: str) -> str:
@@ -83,29 +82,27 @@ class Settings(BaseSettings):
         return v
 
     @model_validator(mode="after")
-    def load_jwt_keys(self) -> "Settings":
-        """Carga los archivos PEM al inicializar la configuración."""
-        try:
-            self._jwt_private_key = self.JWT_PRIVATE_KEY_PATH.read_text().strip()
-        except FileNotFoundError as e:
-            raise ValueError(f"No se encontró JWT_PRIVATE_KEY_PATH: {e}") from e
-
-        try:
-            self._jwt_public_key = self.JWT_PUBLIC_KEY_PATH.read_text().strip()
-        except FileNotFoundError as e:
-            raise ValueError(f"No se encontró JWT_PUBLIC_KEY_PATH: {e}") from e
-
+    def validate_key_files_exist(self) -> Self:
+        """Verifica que los archivos PEM existen antes de usarlos."""
+        private_key_path = Path(self.JWT_PRIVATE_KEY_PATH)
+        public_key_path = Path(self.JWT_PUBLIC_KEY_PATH)
+        if not private_key_path.exists():
+            raise ValueError(f"JWT_PRIVATE_KEY_PATH no encontrado: {private_key_path}")
+        if not public_key_path.exists():
+            raise ValueError(f"JWT_PUBLIC_KEY_PATH no encontrado: {public_key_path}")
         return self
 
     # ── Propiedades de conveniencia ───────────────────────────
 
     @property
     def jwt_private_key(self) -> str:
-        return self._jwt_private_key
+        """Lee el PEM privado. El singleton @lru_cache garantiza una sola instancia."""
+        return Path(self.JWT_PRIVATE_KEY_PATH).read_text(encoding="utf-8").strip()
 
     @property
     def jwt_public_key(self) -> str:
-        return self._jwt_public_key
+        """Lee el PEM público. El singleton @lru_cache garantiza una sola instancia."""
+        return Path(self.JWT_PUBLIC_KEY_PATH).read_text(encoding="utf-8").strip()
 
     @property
     def is_production(self) -> bool:
@@ -113,26 +110,28 @@ class Settings(BaseSettings):
 
     @property
     def cors_origins(self) -> list[str]:
-        return [o.strip() for o in self.CLINICAL_CORS_ORIGINS.split(",") if o.strip()]
+        return [
+            o.strip() for o in str(self.CLINICAL_CORS_ORIGINS).split(",") if o.strip()
+        ]
 
     @property
     def docs_url(self) -> str | None:
         """Deshabilita Swagger UI en producción (NOM-004 / seguridad)."""
-        return None if self.is_production else "/docs"
+        return "/docs" if self.CLINICAL_DOCS_ENABLED else None
 
     @property
     def redoc_url(self) -> str | None:
-        return None if self.is_production else "/redoc"
+        return "/redoc" if self.CLINICAL_DOCS_ENABLED else None
 
     @property
     def openapi_url(self) -> str | None:
-        return None if self.is_production else "/openapi.json"
+        return "/openapi.json" if self.CLINICAL_DOCS_ENABLED else None
 
 
 @lru_cache
 def get_settings() -> Settings:
     """Singleton de configuración — usar como dependencia FastAPI."""
-    return Settings()
+    return Settings()  # type: ignore[call-arg]
 
 
 # Instancia global para uso directo fuera de DI

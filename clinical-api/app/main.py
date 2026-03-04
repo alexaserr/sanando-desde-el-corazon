@@ -5,8 +5,8 @@ Plataforma clínica de Sanando desde el Corazón.
 Cumple NOM-004-SSA3-2012 y LFPDPPP.
 """
 import logging
+from collections.abc import AsyncGenerator
 from contextlib import asynccontextmanager
-from typing import AsyncGenerator
 
 import structlog
 from fastapi import FastAPI, Request, status
@@ -18,12 +18,13 @@ from app.config import get_settings
 settings = get_settings()
 
 # ── Logging estructurado ──────────────────────────────────────
-logging.basicConfig(level=getattr(logging, settings.LOG_LEVEL, logging.INFO))
+# getattr tipado explícitamente como int para evitar errores de tipo
+_log_level: int = getattr(logging, settings.LOG_LEVEL, logging.INFO)
+
+logging.basicConfig(level=_log_level)
 
 structlog.configure(
-    wrapper_class=structlog.make_filtering_bound_logger(
-        getattr(logging, settings.LOG_LEVEL, logging.INFO)
-    ),
+    wrapper_class=structlog.make_filtering_bound_logger(_log_level),
 )
 
 logger = structlog.get_logger(__name__)
@@ -125,7 +126,6 @@ async def unhandled_exception_handler(request: Request, exc: Exception) -> JSONR
         method=request.method,
         url=str(request.url),
         error=str(exc),
-        exc_info=not settings.is_production,
     )
 
     body: dict[str, str] = {"detail": "Error interno del servidor"}
