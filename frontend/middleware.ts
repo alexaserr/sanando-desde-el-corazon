@@ -2,12 +2,32 @@ import { NextResponse } from "next/server";
 import type { NextRequest } from "next/server";
 
 // Rutas públicas: pasan sin verificación de sesión
-const PUBLIC_PATHS = ["/login"];
+const PUBLIC_PATHS = [
+  "/",
+  "/servicios",
+  "/cursos",
+  "/podcast",
+  "/agendar",
+  "/login",
+  "/registro",
+];
+
+// Roles permitidos por prefijo de ruta
+const ROUTE_ROLES: Record<string, string[]> = {
+  "/clinica": ["admin", "sanador"],
+  "/mis-cursos": ["miembro", "admin", "sanador"],
+};
+
+function isPublicPath(pathname: string): boolean {
+  return PUBLIC_PATHS.some(
+    (p) => pathname === p || pathname.startsWith(p + "/")
+  );
+}
 
 export function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl;
 
-  if (PUBLIC_PATHS.some((p) => pathname === p || pathname.startsWith(p + "/"))) {
+  if (isPublicPath(pathname)) {
     return NextResponse.next();
   }
 
@@ -17,8 +37,22 @@ export function middleware(request: NextRequest) {
 
   if (!hasRefreshToken) {
     const loginUrl = new URL("/login", request.url);
-    loginUrl.searchParams.set("next", pathname);
+    loginUrl.searchParams.set("returnUrl", pathname);
     return NextResponse.redirect(loginUrl);
+  }
+
+  // Verificación de rol para rutas protegidas
+  // El rol se almacena en una cookie no-HttpOnly "user_role" durante el login
+  const userRole = request.cookies.get("user_role")?.value ?? "";
+
+  for (const [prefix, allowedRoles] of Object.entries(ROUTE_ROLES)) {
+    if (pathname.startsWith(prefix)) {
+      if (!allowedRoles.includes(userRole)) {
+        const loginUrl = new URL("/login", request.url);
+        loginUrl.searchParams.set("returnUrl", pathname);
+        return NextResponse.redirect(loginUrl);
+      }
+    }
   }
 
   return NextResponse.next();
