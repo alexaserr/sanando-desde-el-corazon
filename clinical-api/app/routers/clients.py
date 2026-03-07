@@ -6,7 +6,6 @@ se descifra al leer mediante pgp_sym_encrypt / pgp_sym_decrypt.
 Nunca DELETE físico — soft delete con deleted_at (NOM-004-SSA3-2012).
 Audit log INSERT en cada operación CRUD.
 """
-from datetime import datetime, timezone
 from uuid import UUID
 
 from fastapi import APIRouter, Depends, HTTPException, Request, status

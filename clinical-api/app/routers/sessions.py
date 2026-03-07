@@ -16,18 +16,17 @@ Sub-endpoints (sin número de paso fijo):
 Cada paso hace autosave y retorna WizardStepResponse con el progreso.
 """
 from datetime import datetime, timezone
+from typing import Any
 from uuid import UUID
 
 from fastapi import APIRouter, Depends, HTTPException, Request, status
-from sqlalchemy import delete, func, insert, select, update
+from sqlalchemy import func, insert, select, update
 from sqlalchemy.dialects.postgresql import insert as pg_insert
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
 
 from app.db.models import (
     AuditAction,
-    ChakraPosition,
-    EnergyDimension,
     Session,
     SessionAffectation,
     SessionChakraReading,
@@ -44,10 +43,12 @@ from app.dependencies import require_role
 from app.schemas.sessions import (
     AffectationResponse,
     AffectationsUpdate,
+    ChakraReadingItem,
     ChakraReadingResponse,
     ChakraReadingsUpdate,
     CleaningEventResponse,
     CleaningEventsUpdate,
+    EnergyReadingItem,
     EnergyReadingResponse,
     EnergyReadingsUpdate,
     LNTResponse,
@@ -180,24 +181,23 @@ async def _get_wizard_state(session_id: UUID, db: AsyncSession) -> WizardStepRes
     has_cleaning_events = cleaning_count > 0
     has_affectations = affectation_count > 0
 
-    # Pasos del wizard completados (1 = sesión creada, pasos 2-7)
-    completed: list[int] = [1]  # paso 1 siempre completo si la sesión existe
-    if has_energy_initial:
-        completed.append(2)
-    if has_chakra_initial:
-        completed.append(3)
-    if has_topics:
-        completed.append(4)
-    if has_energy_final:
-        completed.append(5)
-    if has_chakra_final:
-        completed.append(6)
-
     is_closed = all([has_energy_initial, has_chakra_initial, has_topics, has_energy_final, has_chakra_final])
-    if is_closed:
-        completed.append(7)
 
-    current_step = max(completed) + 1 if max(completed) < 7 else 7
+    # Mapa ordenado paso → completado
+    _step_flags: list[tuple[int, bool]] = [
+        (1, True),                    # sesión creada — siempre True si llegamos aquí
+        (2, has_energy_initial),
+        (3, has_chakra_initial),
+        (4, has_topics),
+        (5, has_energy_final),
+        (6, has_chakra_final),
+        (7, is_closed),
+    ]
+
+    completed = [step for step, done in _step_flags if done]
+
+    # Primer paso incompleto = paso actual del wizard
+    current_step = next((step for step, done in _step_flags if not done), 7)
 
     return WizardStepResponse(
         session_id=session_id,
@@ -217,7 +217,7 @@ async def _get_wizard_state(session_id: UUID, db: AsyncSession) -> WizardStepRes
 
 async def _save_energy_readings(
     session_id: UUID,
-    readings: list,
+    readings: list[EnergyReadingItem],
     phase: str,
     db: AsyncSession,
 ) -> None:
@@ -249,7 +249,7 @@ async def _save_energy_readings(
 
 async def _save_chakra_readings(
     session_id: UUID,
-    readings: list,
+    readings: list[ChakraReadingItem],
     phase: str,
     db: AsyncSession,
 ) -> None:
@@ -279,9 +279,9 @@ async def _save_chakra_readings(
 
 
 async def _replace_soft_delete(
-    model,
+    model: type[Any],
     session_id: UUID,
-    new_rows: list,
+    new_rows: list[dict[str, Any]],
     db: AsyncSession,
 ) -> None:
     """
