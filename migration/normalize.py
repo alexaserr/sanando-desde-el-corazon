@@ -182,6 +182,7 @@ def parse_chakra_value(raw: str) -> float | None:
     "2.500"  → 2.5
     "0"      → 0.0
     ""       → None
+    "500"    → 0.5 (likely outlier, but parse as 500.0 for now and handle in validation)
     """
     raw = raw.strip()
     if not raw:

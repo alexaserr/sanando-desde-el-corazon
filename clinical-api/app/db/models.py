@@ -151,6 +151,8 @@ class User(Base, UUIDPrimaryKeyMixin, TimestampMixin, SoftDeleteMixin):
     )
     hashed_password: Mapped[str] = mapped_column(Text, nullable=False)
     is_active: Mapped[bool] = mapped_column(Boolean, nullable=False, default=True)
+    totp_secret: Mapped[str | None] = mapped_column(Text, nullable=True)
+    totp_enabled: Mapped[bool] = mapped_column(Boolean, nullable=False, default=False)
 
     sessions: Mapped[list["Session"]] = relationship(back_populates="therapist")
     audit_entries: Mapped[list["AuditLog"]] = relationship(back_populates="changed_by_user")

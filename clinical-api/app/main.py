@@ -12,8 +12,11 @@ import structlog
 from fastapi import FastAPI, Request, status
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
+from slowapi import _rate_limit_exceeded_handler
+from slowapi.errors import RateLimitExceeded
 
 from app.config import get_settings
+from app.rate_limit import limiter
 
 settings = get_settings()
 
@@ -35,23 +38,22 @@ logger = structlog.get_logger(__name__)
 async def lifespan(app: FastAPI) -> AsyncGenerator[None, None]:
     """
     Inicializa conexiones al arrancar y las cierra al detener.
-    Agregar aquí: pool de BD, cliente Redis, cliente MinIO.
     """
+    from app.db.session import engine
+
     logger.info(
         "clinical_api.startup",
         environment=settings.ENVIRONMENT,
         port=settings.CLINICAL_API_PORT,
     )
 
-    # TODO: inicializar AsyncEngine de SQLAlchemy
     # TODO: inicializar pool de Redis
     # TODO: inicializar cliente MinIO
 
     yield
 
+    await engine.dispose()
     logger.info("clinical_api.shutdown")
-
-    # TODO: cerrar pools de conexión
 
 
 # ── Factory de la aplicación ─────────────────────────────────
@@ -69,6 +71,10 @@ def create_app() -> FastAPI:
         lifespan=lifespan,
     )
 
+    # ── Rate limiting ─────────────────────────────────────────
+    app.state.limiter = limiter
+    app.add_exception_handler(RateLimitExceeded, _rate_limit_exceeded_handler)
+
     # ── CORS ──────────────────────────────────────────────────
     app.add_middleware(
         CORSMiddleware,
@@ -80,12 +86,15 @@ def create_app() -> FastAPI:
     )
 
     # ── Routers ───────────────────────────────────────────────
-    # TODO: registrar routers cuando se implementen
-    # from app.routers import pacientes, sesiones, citas, auth
-    # app.include_router(auth.router,      prefix="/auth",      tags=["auth"])
-    # app.include_router(pacientes.router, prefix="/pacientes", tags=["pacientes"])
-    # app.include_router(sesiones.router,  prefix="/sesiones",  tags=["sesiones"])
-    # app.include_router(citas.router,     prefix="/citas",     tags=["citas"])
+    from app.routers.auth import router as auth_router
+    from app.routers.clients import router as clients_router
+    from app.routers.sessions import router as sessions_router
+    from app.routers.catalogs import router as catalogs_router
+
+    app.include_router(auth_router)
+    app.include_router(clients_router)
+    app.include_router(sessions_router)
+    app.include_router(catalogs_router)
 
     return app
 
