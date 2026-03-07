@@ -39,7 +39,6 @@ x-api-common: &api-common
     - proxy
 
 services:
-
   # ──────────────────────────────────────────────────────────
   # 1. clinical-postgres  (expedientes clínicos — pgcrypto)
   # ──────────────────────────────────────────────────────────
@@ -204,6 +203,7 @@ services:
     volumes:
       - ./secrets/jwt_private.pem:/run/secrets/jwt_private.pem:ro
       - ./secrets/jwt_public.pem:/run/secrets/jwt_public.pem:ro
+      - ./migration:/app/migration:ro
     healthcheck:
       test: ["CMD", "wget", "-qO-", "http://localhost:8001/health"]
       interval: 30s
