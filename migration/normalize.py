@@ -124,11 +124,42 @@ MAX_CHAKRA_VALUE = 14.0
 MAX_DIMENSION_PERCENT = 100
 
 # Chakra auto-correction heuristics:
-# Pattern A — no decimal point, value ÷100 yields valid result:
-#   "500" → 5.0, "100" → 1.0, "1400" → 14.0
+# Pattern A — no decimal point, value ÷1000 yields valid result:
+#   "500" → 0.5, "1000" → 1.0, "14000" → 14.0
 # Pattern B — .000 suffix but value is 10× too high:
 #   "140.000" → 14.0, "130.000" → 13.0, "120.000" → 12.0, "30.000" → 3.0
 CHAKRA_AUTOCORRECT_THRESHOLD = MAX_CHAKRA_VALUE
+
+# Valores confirmados manualmente por Sanando (aplicar ANTES de la heurística).
+# Clave: (nombre_cliente, fecha_sesion_iso, campo_o_tipo, fase)
+# Para chakras: campo="chakras" aplica a TODOS los chakras de esa fase/sesión.
+# Para dimensiones: campo=nombre de columna inicial (sin " Final").
+MANUAL_OVERRIDES: dict[tuple[str, str, str, str], float] = {
+    # Tanya Sesión 01 (2025-05-07): todos los chakras iniciales = 14.0
+    ("Tanya Itzamara Negrete Pacheco", "2025-05-07", "chakras", "initial"): 14.0,
+    # Tanya (2026-01-13): Relación c/Dinero final = 100%
+    ("Tanya Itzamara Negrete Pacheco", "2026-01-13", "Relación c/Dinero", "final"): 100.0,
+    # María Fernanda (2026-01-29): Física final = 100%, Psíquica final = 100%
+    ("María Fernanda Trejo Aguilar", "2026-01-29", "Física", "final"): 100.0,
+    ("María Fernanda Trejo Aguilar", "2026-01-29", "Psíquica", "final"): 100.0,
+    # Mayte (2026-01-31): Relación c/Dinero inicial = 85%
+    ("Mayte Andrea Ruiz Zúñiga", "2026-01-31", "Relación c/Dinero", "initial"): 85.0,
+}
+
+# Clientes cuya fecha de nacimiento debe ser null (errores de captura confirmados).
+NULL_BIRTH_DATES: set[str] = {
+    "Adriana Quintero Iñiguez",
+    "Beatriz Pizarro Bernal",
+    "Dolores Bernal Martinez Del Campo",
+    "Elisa Margarita Vargaslugo Gaytán",
+    "Fernando Pizarro Bernal",
+    "Jimena Muciño Bermejo",
+    "Jose Eduardo Campos",
+    "Joshua Emanuel Vega cruz",
+    "José Gerardo López Mergold",
+    "María Eugenia Gricelda Zepeda López",
+    "Noe Lugo Sánchez",
+}
 
 # ---------------------------------------------------------------------------
 # Date parsing
@@ -247,10 +278,10 @@ def attempt_chakra_autocorrect(
     if parsed <= MAX_CHAKRA_VALUE:
         return (None, None)  # Already valid
 
-    # Pattern A: no dot in raw, value ÷100 is valid (e.g. "500" → 5.0)
-    if "." not in raw and parsed / 100 <= MAX_CHAKRA_VALUE:
-        corrected = parsed / 100
-        return (corrected, f"÷100 → {corrected} (raw '{raw}' has no decimal point)")
+    # Pattern A: no dot in raw, value ÷1000 is valid (e.g. "500" → 0.5)
+    if "." not in raw and parsed / 1000 <= MAX_CHAKRA_VALUE:
+        corrected = parsed / 1000
+        return (corrected, f"÷1000 → {corrected} (raw '{raw}' has no decimal point)")
 
     # Pattern B: .000 suffix, value ÷10 is valid (e.g. "140.000" → 14.0)
     if raw.endswith(".000") and parsed / 10 <= MAX_CHAKRA_VALUE:
@@ -654,6 +685,7 @@ def normalize_sessions(
             )
 
             measured_at_dt = parse_spanish_date(row.get("Fecha de Medición", ""))
+            session_date = measured_at_dt.date().isoformat() if measured_at_dt else ""
 
             session_desc = f"{client_name} - {row.get('Sesión', '?')} ({row.get('Fecha de Medición', '?')})"
 
@@ -686,31 +718,49 @@ def normalize_sessions(
                     continue
                 val = parse_chakra_value(raw)
                 if val is not None and val > MAX_CHAKRA_VALUE:
-                    corrected, explanation = attempt_chakra_autocorrect(raw, val)
-                    if corrected is not None:
+                    # Overrides manuales confirmados por Sanando tienen prioridad
+                    override = MANUAL_OVERRIDES.get(
+                        (client_name, session_date, "chakras", "initial")
+                    )
+                    if override is not None:
                         outliers.append(
                             OutlierRecord(
                                 source="session",
                                 record_identifier=session_desc,
                                 field_name=f"{col} (initial)",
                                 raw_value=raw,
-                                reason=f"Chakra value {val} exceeds max {MAX_CHAKRA_VALUE}. Auto-corrected: {explanation}",
-                                suggested_correction=corrected,
+                                reason=f"manual_override → {override} (confirmado por Sanando)",
+                                suggested_correction=override,
                                 auto_corrected=True,
                             )
                         )
-                        val = corrected  # Use the corrected value
+                        val = override
                     else:
-                        outliers.append(
-                            OutlierRecord(
-                                source="session",
-                                record_identifier=session_desc,
-                                field_name=f"{col} (initial)",
-                                raw_value=raw,
-                                reason=f"Chakra value {val} exceeds max {MAX_CHAKRA_VALUE} — no safe correction",
+                        corrected, explanation = attempt_chakra_autocorrect(raw, val)
+                        if corrected is not None:
+                            outliers.append(
+                                OutlierRecord(
+                                    source="session",
+                                    record_identifier=session_desc,
+                                    field_name=f"{col} (initial)",
+                                    raw_value=raw,
+                                    reason=f"Chakra value {val} exceeds max {MAX_CHAKRA_VALUE}. Auto-corrected: {explanation}",
+                                    suggested_correction=corrected,
+                                    auto_corrected=True,
+                                )
                             )
-                        )
-                        val = None  # Null out genuinely corrupt values
+                            val = corrected  # Use the corrected value
+                        else:
+                            outliers.append(
+                                OutlierRecord(
+                                    source="session",
+                                    record_identifier=session_desc,
+                                    field_name=f"{col} (initial)",
+                                    raw_value=raw,
+                                    reason=f"Chakra value {val} exceeds max {MAX_CHAKRA_VALUE} — no safe correction",
+                                )
+                            )
+                            val = None  # Null out genuinely corrupt values
                 if val is not None:
                     rec.chakra_readings.append(
                         {
@@ -727,31 +777,48 @@ def normalize_sessions(
                 base_col = col.replace(" - F", "")
                 val = parse_chakra_value(raw)
                 if val is not None and val > MAX_CHAKRA_VALUE:
-                    corrected, explanation = attempt_chakra_autocorrect(raw, val)
-                    if corrected is not None:
+                    override = MANUAL_OVERRIDES.get(
+                        (client_name, session_date, "chakras", "final")
+                    )
+                    if override is not None:
                         outliers.append(
                             OutlierRecord(
                                 source="session",
                                 record_identifier=session_desc,
                                 field_name=f"{base_col} (final)",
                                 raw_value=raw,
-                                reason=f"Chakra value {val} exceeds max {MAX_CHAKRA_VALUE}. Auto-corrected: {explanation}",
-                                suggested_correction=corrected,
+                                reason=f"manual_override → {override} (confirmado por Sanando)",
+                                suggested_correction=override,
                                 auto_corrected=True,
                             )
                         )
-                        val = corrected
+                        val = override
                     else:
-                        outliers.append(
-                            OutlierRecord(
-                                source="session",
-                                record_identifier=session_desc,
-                                field_name=f"{base_col} (final)",
-                                raw_value=raw,
-                                reason=f"Chakra value {val} exceeds max {MAX_CHAKRA_VALUE} — no safe correction",
+                        corrected, explanation = attempt_chakra_autocorrect(raw, val)
+                        if corrected is not None:
+                            outliers.append(
+                                OutlierRecord(
+                                    source="session",
+                                    record_identifier=session_desc,
+                                    field_name=f"{base_col} (final)",
+                                    raw_value=raw,
+                                    reason=f"Chakra value {val} exceeds max {MAX_CHAKRA_VALUE}. Auto-corrected: {explanation}",
+                                    suggested_correction=corrected,
+                                    auto_corrected=True,
+                                )
                             )
-                        )
-                        val = None
+                            val = corrected
+                        else:
+                            outliers.append(
+                                OutlierRecord(
+                                    source="session",
+                                    record_identifier=session_desc,
+                                    field_name=f"{base_col} (final)",
+                                    raw_value=raw,
+                                    reason=f"Chakra value {val} exceeds max {MAX_CHAKRA_VALUE} — no safe correction",
+                                )
+                            )
+                            val = None
                 if val is not None:
                     rec.chakra_readings.append(
                         {
@@ -768,31 +835,48 @@ def normalize_sessions(
                 if raw_i:
                     val_i = parse_percentage(raw_i)
                     if val_i is not None and val_i > MAX_DIMENSION_PERCENT:
-                        corrected, explanation = attempt_pct_autocorrect(raw_i, val_i)
-                        if corrected is not None:
+                        override = MANUAL_OVERRIDES.get(
+                            (client_name, session_date, initial_col, "initial")
+                        )
+                        if override is not None:
                             outliers.append(
                                 OutlierRecord(
                                     source="session",
                                     record_identifier=session_desc,
                                     field_name=f"{initial_col} (initial)",
                                     raw_value=raw_i,
-                                    reason=f"Percentage {val_i}% exceeds max. Auto-corrected: {explanation}",
-                                    suggested_correction=float(corrected),
+                                    reason=f"manual_override → {int(override)}% (confirmado por Sanando)",
+                                    suggested_correction=float(override),
                                     auto_corrected=True,
                                 )
                             )
-                            val_i = corrected
+                            val_i = int(override)
                         else:
-                            outliers.append(
-                                OutlierRecord(
-                                    source="session",
-                                    record_identifier=session_desc,
-                                    field_name=f"{initial_col} (initial)",
-                                    raw_value=raw_i,
-                                    reason=f"Percentage {val_i}% exceeds max {MAX_DIMENSION_PERCENT}% — no safe correction",
+                            corrected, explanation = attempt_pct_autocorrect(raw_i, val_i)
+                            if corrected is not None:
+                                outliers.append(
+                                    OutlierRecord(
+                                        source="session",
+                                        record_identifier=session_desc,
+                                        field_name=f"{initial_col} (initial)",
+                                        raw_value=raw_i,
+                                        reason=f"Percentage {val_i}% exceeds max. Auto-corrected: {explanation}",
+                                        suggested_correction=float(corrected),
+                                        auto_corrected=True,
+                                    )
                                 )
-                            )
-                            val_i = None
+                                val_i = corrected
+                            else:
+                                outliers.append(
+                                    OutlierRecord(
+                                        source="session",
+                                        record_identifier=session_desc,
+                                        field_name=f"{initial_col} (initial)",
+                                        raw_value=raw_i,
+                                        reason=f"Percentage {val_i}% exceeds max {MAX_DIMENSION_PERCENT}% — no safe correction",
+                                    )
+                                )
+                                val_i = None
                     if val_i is not None:
                         rec.dimension_readings.append(
                             {
@@ -808,33 +892,51 @@ def normalize_sessions(
                     if raw_f:
                         val_f = parse_percentage(raw_f)
                         if val_f is not None and val_f > MAX_DIMENSION_PERCENT:
-                            corrected, explanation = attempt_pct_autocorrect(
-                                raw_f, val_f
+                            # Usar initial_col como clave (sin " Final")
+                            override = MANUAL_OVERRIDES.get(
+                                (client_name, session_date, initial_col, "final")
                             )
-                            if corrected is not None:
+                            if override is not None:
                                 outliers.append(
                                     OutlierRecord(
                                         source="session",
                                         record_identifier=session_desc,
                                         field_name=f"{final_col} (final)",
                                         raw_value=raw_f,
-                                        reason=f"Percentage {val_f}% exceeds max. Auto-corrected: {explanation}",
-                                        suggested_correction=float(corrected),
+                                        reason=f"manual_override → {int(override)}% (confirmado por Sanando)",
+                                        suggested_correction=float(override),
                                         auto_corrected=True,
                                     )
                                 )
-                                val_f = corrected
+                                val_f = int(override)
                             else:
-                                outliers.append(
-                                    OutlierRecord(
-                                        source="session",
-                                        record_identifier=session_desc,
-                                        field_name=f"{final_col} (final)",
-                                        raw_value=raw_f,
-                                        reason=f"Percentage {val_f}% exceeds max {MAX_DIMENSION_PERCENT}% — no safe correction",
-                                    )
+                                corrected, explanation = attempt_pct_autocorrect(
+                                    raw_f, val_f
                                 )
-                                val_f = None
+                                if corrected is not None:
+                                    outliers.append(
+                                        OutlierRecord(
+                                            source="session",
+                                            record_identifier=session_desc,
+                                            field_name=f"{final_col} (final)",
+                                            raw_value=raw_f,
+                                            reason=f"Percentage {val_f}% exceeds max. Auto-corrected: {explanation}",
+                                            suggested_correction=float(corrected),
+                                            auto_corrected=True,
+                                        )
+                                    )
+                                    val_f = corrected
+                                else:
+                                    outliers.append(
+                                        OutlierRecord(
+                                            source="session",
+                                            record_identifier=session_desc,
+                                            field_name=f"{final_col} (final)",
+                                            raw_value=raw_f,
+                                            reason=f"Percentage {val_f}% exceeds max {MAX_DIMENSION_PERCENT}% — no safe correction",
+                                        )
+                                    )
+                                    val_f = None
                         if val_f is not None:
                             rec.dimension_readings.append(
                                 {
@@ -1063,10 +1165,14 @@ def generate_sanando_report(
         # Group by pattern for cleaner reading
         by_pattern: dict[str, list[OutlierRecord]] = {}
         for o in auto_corrected:
-            if "÷100" in o.reason:
-                by_pattern.setdefault("÷100", []).append(o)
+            if "manual_override" in o.reason:
+                by_pattern.setdefault("manual_override", []).append(o)
+            elif "÷1000" in o.reason:
+                by_pattern.setdefault("÷1000", []).append(o)
             elif "÷10" in o.reason:
                 by_pattern.setdefault("÷10", []).append(o)
+            elif "÷100" in o.reason:
+                by_pattern.setdefault("÷100", []).append(o)
             else:
                 by_pattern.setdefault("otro", []).append(o)
 
@@ -1076,7 +1182,15 @@ def generate_sanando_report(
                 f"**Patrón {pattern}** ({len(items)} lecturas en {len(sessions_affected)} sesiones):"
             )
             lines.append("")
-            if pattern == "÷100":
+            if pattern == "manual_override":
+                lines.append(
+                    "Valores confirmados manualmente por Sanando — importados con el valor indicado:"
+                )
+            elif pattern == "÷1000":
+                lines.append(
+                    "Valores como `500` que probablemente significan `0.5` en la escala 0-14:"
+                )
+            elif pattern == "÷100":
                 lines.append(
                     "Valores como `500` que probablemente significan `5.0` en la escala 0-14:"
                 )
@@ -1269,6 +1383,31 @@ def main() -> None:
     print(f"      Placeholders ('Nuevo Cliente') discarded: {len(placeholders)}")
     print(f"      Valid clients: {len(clean_clients)}")
 
+    # Nullificar fechas de nacimiento incorrectas confirmadas por Sanando
+    nullified_births = 0
+    for c in clean_clients:
+        if c.full_name in NULL_BIRTH_DATES and c.birth_date is not None:
+            c.birth_date = None
+            nullified_births += 1
+    if nullified_births:
+        print(f"      Birth dates nullified (confirmed errors): {nullified_births}")
+
+    # Merge duplicado Mauricio Jair/Jaur Palacios Ruiz
+    _JAUR = "Mauricio Jaur Palacios Ruiz"
+    _JAIR = "Mauricio Jair Palacios Ruiz"
+    jaur_records = [c for c in clean_clients if c.full_name == _JAUR]
+    jair_records = [c for c in clean_clients if c.full_name == _JAIR]
+    if jaur_records and jair_records:
+        jaur = jaur_records[0]
+        jair = jair_records[0]
+        # Para cada campo None en "Jair", rellenar con el valor de "Jaur"
+        for attr in vars(jair):
+            if getattr(jair, attr) is None and getattr(jaur, attr) is not None:
+                setattr(jair, attr, getattr(jaur, attr))
+        # Eliminar el registro "Jaur" (el typo)
+        clean_clients = [c for c in clean_clients if c.full_name != _JAUR]
+        print(f"      Merged duplicate: '{_JAUR}' → '{_JAIR}'")
+
     # Stats
     with_email = sum(1 for c in clean_clients if c.email)
     with_phone = sum(1 for c in clean_clients if c.phone)
@@ -1292,6 +1431,12 @@ def main() -> None:
     print(f"      Found: {session_csv.name}")
     outliers: list[OutlierRecord] = []
     sessions = normalize_sessions(session_csv, outliers)
+
+    # Remap sesiones del duplicado "Jaur" al nombre correcto "Jair"
+    for s in sessions:
+        if s.client_name == _JAUR:
+            s.client_name = _JAIR
+
     print(f"      Total sessions: {len(sessions)}")
     auto_corrected_count = sum(1 for o in outliers if o.auto_corrected)
     corrupt_count = sum(1 for o in outliers if not o.auto_corrected)
