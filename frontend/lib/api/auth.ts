@@ -2,15 +2,11 @@ import type { LoginResponse, User } from "@/types/api";
 import { apiClient, ApiError, RateLimitError } from "./client";
 
 export async function loginUser(
-  username: string,
+  email: string,
   password: string,
 ): Promise<LoginResponse> {
-  const form = new URLSearchParams();
-  form.append("username", username);
-  form.append("password", password);
-
   try {
-    return await apiClient.postForm<LoginResponse>("/api/v1/auth/login", form);
+    return await apiClient.post<LoginResponse>("/api/v1/auth/login", { email, password });
   } catch (err) {
     if (err instanceof RateLimitError) throw err;
     if (err instanceof ApiError) throw new Error(err.message);

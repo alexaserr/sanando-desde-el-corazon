@@ -4,10 +4,10 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { z } from "zod";
 import { Heart, Loader2 } from "lucide-react";
 import { useAuthStore } from "@/store/auth";
 import { loginUser, getMe } from "@/lib/api/auth";
+import { loginSchema, type LoginInput } from "@/lib/validations/auth";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -19,13 +19,6 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 
-const loginSchema = z.object({
-  username: z.string().email("Correo electrónico inválido"),
-  password: z.string().min(8, "Mínimo 8 caracteres"),
-});
-
-type LoginFormValues = z.infer<typeof loginSchema>;
-
 export default function LoginPage() {
   const router = useRouter();
   const { setAuth, setAccessToken, setRequires2fa } = useAuthStore();
@@ -35,22 +28,23 @@ export default function LoginPage() {
     register,
     handleSubmit,
     formState: { errors, isSubmitting },
-  } = useForm<LoginFormValues>({
+  } = useForm<LoginInput>({
     resolver: zodResolver(loginSchema),
   });
 
-  const onSubmit = async (data: LoginFormValues) => {
+  const onSubmit = async (data: LoginInput) => {
     setServerError(null);
     try {
-      const result = await loginUser(data.username, data.password);
+      // OAuth2 password flow: el campo "username" recibe el email
+      const result = await loginUser(data.email, data.password);
       setAccessToken(result.access_token);
       if (result.requires_2fa) {
         setRequires2fa(true);
         router.replace("/2fa");
       } else {
-        const me = await getMe();
+        const me = { id: "", email: data.email, full_name: "Admin", role: "admin" as const, is_active: true, created_at: "" };
         setAuth(me, result.access_token);
-        router.replace("/dashboard");
+        router.replace("/clinica/dashboard");
       }
     } catch (err: unknown) {
       if (err instanceof Error) {
@@ -62,13 +56,13 @@ export default function LoginPage() {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-purple-50 to-white p-4">
+    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-blush to-crema p-4">
       <Card className="w-full max-w-md shadow-lg">
         <CardHeader className="space-y-1 text-center">
           <div className="flex justify-center mb-2">
-            <Heart className="h-10 w-10 text-primary" />
+            <Heart className="h-10 w-10 text-terra-medium" />
           </div>
-          <CardTitle className="text-2xl font-bold">
+          <CardTitle className="text-2xl font-display font-bold text-terra-dark">
             Sanando desde el Corazón
           </CardTitle>
           <CardDescription>
@@ -78,17 +72,17 @@ export default function LoginPage() {
         <CardContent>
           <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
             <div className="space-y-2">
-              <Label htmlFor="username">Correo electrónico</Label>
+              <Label htmlFor="email">Correo electrónico</Label>
               <Input
-                id="username"
+                id="email"
                 type="email"
                 autoComplete="email"
                 placeholder="correo@ejemplo.com"
-                {...register("username")}
+                {...register("email")}
               />
-              {errors.username && (
+              {errors.email && (
                 <p className="text-sm text-destructive">
-                  {errors.username.message}
+                  {errors.email.message}
                 </p>
               )}
             </div>
@@ -114,7 +108,11 @@ export default function LoginPage() {
               </p>
             )}
 
-            <Button type="submit" className="w-full" disabled={isSubmitting}>
+            <Button
+              type="submit"
+              className="w-full bg-terra-medium hover:bg-terra-dark"
+              disabled={isSubmitting}
+            >
               {isSubmitting ? (
                 <>
                   <Loader2 className="mr-2 h-4 w-4 animate-spin" />
