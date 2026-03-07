@@ -696,7 +696,31 @@ async def process_subfolder(
 # Orquestador principal
 # ══════════════════════════════════════════════════════════════
 
-async def migrate_sessions(batch_id: uuid.UUID, dry_run: bool) -> None:
+async def build_registry_from_db(
+    conn: psycopg.AsyncConnection[Any],
+) -> dict[tuple[str | None, int | None], uuid.UUID]:
+    """
+    Reconstruye session_registry desde la BD para --subfolders-only.
+    JOIN sessions → clients para recuperar client.notion_page_id.
+    """
+    async with conn.cursor(row_factory=dict_row) as cur:
+        await cur.execute(
+            """
+            SELECT s.id, s.session_number, c.notion_page_id
+            FROM sessions s
+            LEFT JOIN clients c ON c.id = s.client_id
+            """
+        )
+        rows = await cur.fetchall()
+    registry: dict[tuple[str | None, int | None], uuid.UUID] = {}
+    for r in rows:
+        key = (r["notion_page_id"], r["session_number"])
+        registry[key] = r["id"]
+    log.info("registry_reconstruido_desde_bd", sesiones=len(registry))
+    return registry
+
+
+async def migrate_sessions(batch_id: uuid.UUID, dry_run: bool, subfolders_only: bool = False) -> None:
     clean_path = Path(settings.DATA_CLEAN_DIR) / "sessions_clean.json"
 
     if not clean_path.exists():
@@ -728,71 +752,77 @@ async def migrate_sessions(batch_id: uuid.UUID, dry_run: bool) -> None:
             total=total,
             batch_id=str(batch_id),
             dry_run=dry_run,
+            subfolders_only=subfolders_only,
         )
 
         # ── Fase 1: Insertar sesiones principales ─────────────
         # session_registry: (client_notion_id, session_number) → session_db_id
         session_registry: dict[tuple[str | None, int | None], uuid.UUID] = {}
 
-        for record in records:
-            client_notion_id = record.get("client_notion_id")
-            session_number = record.get("session_number")
+        if subfolders_only:
+            # Reconstruir registry desde BD — no insertar sesiones nuevas
+            session_registry = await build_registry_from_db(conn)
+            ok = skipped = error = 0
+        else:
+            for record in records:
+                client_notion_id = record.get("client_notion_id")
+                session_number = record.get("session_number")
 
-            try:
-                async with conn.transaction():
-                    session_id = await insert_session(
-                        conn, record, lookups, batch_id, dry_run
-                    )
-                    if session_id is None:
-                        skipped += 1
-                        continue
+                try:
+                    async with conn.transaction():
+                        session_id = await insert_session(
+                            conn, record, lookups, batch_id, dry_run
+                        )
+                        if session_id is None:
+                            skipped += 1
+                            continue
 
-                    n_energy = await insert_energy_readings(
-                        conn, session_id, record, lookups, dry_run
-                    )
-                    n_chakra = await insert_chakra_readings(
-                        conn, session_id, record, lookups, dry_run
-                    )
-
-                    log.debug(
-                        "sesion_insertada",
-                        client=record.get("client_name"),
-                        sesion=session_number,
-                        energy=n_energy,
-                        chakra=n_chakra,
-                    )
-
-                    if not dry_run:
-                        await log_migration(
-                            conn, batch_id, "migrate_sessions.py",
-                            None, "sessions", session_id, "success",
+                        n_energy = await insert_energy_readings(
+                            conn, session_id, record, lookups, dry_run
+                        )
+                        n_chakra = await insert_chakra_readings(
+                            conn, session_id, record, lookups, dry_run
                         )
 
-                    session_registry[(client_notion_id, session_number)] = session_id
-                    ok += 1
+                        log.debug(
+                            "sesion_insertada",
+                            client=record.get("client_name"),
+                            sesion=session_number,
+                            energy=n_energy,
+                            chakra=n_chakra,
+                        )
 
-            except Exception as exc:
-                log.error(
-                    "error_migrando_sesion",
-                    client=record.get("client_name"),
-                    sesion=session_number,
-                    error=str(exc),
-                )
-                if not dry_run:
-                    try:
-                        async with conn.transaction():
+                        if not dry_run:
                             await log_migration(
                                 conn, batch_id, "migrate_sessions.py",
-                                None, "sessions", None, "error", str(exc),
+                                None, "sessions", session_id, "success",
                             )
-                    except Exception:
-                        pass
-                error += 1
 
-        log.info(
-            "fase1_completada",
-            ok=ok, error=error, skipped=skipped,
-        )
+                        session_registry[(client_notion_id, session_number)] = session_id
+                        ok += 1
+
+                except Exception as exc:
+                    log.error(
+                        "error_migrando_sesion",
+                        client=record.get("client_name"),
+                        sesion=session_number,
+                        error=str(exc),
+                    )
+                    if not dry_run:
+                        try:
+                            async with conn.transaction():
+                                await log_migration(
+                                    conn, batch_id, "migrate_sessions.py",
+                                    None, "sessions", None, "error", str(exc),
+                                )
+                        except Exception:
+                            pass
+                    error += 1
+
+            log.info(
+                "fase1_completada",
+                ok=ok, error=error, skipped=skipped,
+            )
 
         # ── Fase 2: Procesar sub-carpetas ─────────────────────
         if not sessions_base.exists():
@@ -866,6 +896,11 @@ def parse_args() -> argparse.Namespace:
     p = argparse.ArgumentParser(description="Migración de sesiones Notion → SDC")
     p.add_argument("--batch-id", type=str, default=None)
     p.add_argument("--dry-run", action="store_true")
+    p.add_argument(
+        "--subfolders-only",
+        action="store_true",
+        help="Saltar Fase 1 (sesiones) y solo re-procesar sub-carpetas usando BD existente",
+    )
     return p.parse_args()
 
 
@@ -873,4 +908,4 @@ if __name__ == "__main__":
     args = parse_args()
     batch_id = uuid.UUID(args.batch_id) if args.batch_id else uuid.uuid4()
     log.info("batch_id", value=str(batch_id))
-    asyncio.run(migrate_sessions(batch_id, args.dry_run))
+    asyncio.run(migrate_sessions(batch_id, args.dry_run, args.subfolders_only))

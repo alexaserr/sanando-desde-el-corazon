@@ -146,8 +146,8 @@ async def upsert_client(
             ) VALUES (
                 gen_random_uuid(),
                 pgp_sym_encrypt(%s, %s),
-                CASE WHEN %s IS NOT NULL THEN pgp_sym_encrypt(%s, %s) ELSE NULL END,
-                CASE WHEN %s IS NOT NULL THEN pgp_sym_encrypt(%s, %s) ELSE NULL END,
+                CASE WHEN %s::text IS NOT NULL THEN pgp_sym_encrypt(%s, %s) ELSE NULL END,
+                CASE WHEN %s::text IS NOT NULL THEN pgp_sym_encrypt(%s, %s) ELSE NULL END,
                 %s, %s, %s,
                 %s::marital_status_enum,
                 %s,
@@ -161,8 +161,8 @@ async def upsert_client(
             )
             ON CONFLICT (notion_page_id) DO UPDATE SET
                 full_name           = pgp_sym_encrypt(%s, %s),
-                email               = CASE WHEN %s IS NOT NULL THEN pgp_sym_encrypt(%s, %s) ELSE NULL END,
-                phone               = CASE WHEN %s IS NOT NULL THEN pgp_sym_encrypt(%s, %s) ELSE NULL END,
+                email               = CASE WHEN %s::text IS NOT NULL THEN pgp_sym_encrypt(%s, %s) ELSE NULL END,
+                phone               = CASE WHEN %s::text IS NOT NULL THEN pgp_sym_encrypt(%s, %s) ELSE NULL END,
                 birth_date          = EXCLUDED.birth_date,
                 birth_place         = EXCLUDED.birth_place,
                 residence_place     = EXCLUDED.residence_place,
