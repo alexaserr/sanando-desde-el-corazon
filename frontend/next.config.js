@@ -16,15 +16,15 @@ const nextConfig = {
     return [
       {
         source: "/api/clinical/:path*",
-        destination: `${process.env.NEXT_PUBLIC_CLINICAL_API_URL}/:path*`,
+        destination: `${process.env.NEXT_PUBLIC_CLINICAL_API_URL || "http://localhost:8001"}/:path*`,
       },
       {
         source: "/api/portal/:path*",
-        destination: `${process.env.NEXT_PUBLIC_PORTAL_API_URL}/:path*`,
+        destination: `${process.env.NEXT_PUBLIC_PORTAL_API_URL || "http://localhost:8002"}/:path*`,
       },
       {
         source: "/api/podcast/:path*",
-        destination: `${process.env.NEXT_PUBLIC_PODCAST_API_URL}/:path*`,
+        destination: `${process.env.NEXT_PUBLIC_PODCAST_API_URL || "http://localhost:8003"}/:path*`,
       },
     ];
   },
