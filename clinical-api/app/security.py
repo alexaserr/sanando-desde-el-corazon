@@ -6,13 +6,11 @@ from datetime import datetime, timedelta, timezone
 from typing import Any
 from uuid import UUID
 
+import bcrypt
 import pyotp
 from jose import JWTError, jwt
-from passlib.context import CryptContext
 
 from app.config import settings
-
-_pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto", bcrypt__rounds=12)
 
 
 def create_access_token(user_id: UUID, role: str) -> str:
@@ -66,11 +64,11 @@ def decode_token(token: str) -> dict[str, Any]:
 
 
 def hash_password(plain: str) -> str:
-    return _pwd_context.hash(plain)
+    return bcrypt.hashpw(plain.encode("utf-8"), bcrypt.gensalt(rounds=12)).decode("utf-8")
 
 
 def verify_password(plain: str, hashed: str) -> bool:
-    return _pwd_context.verify(plain, hashed)
+    return bcrypt.checkpw(plain.encode("utf-8"), hashed.encode("utf-8"))
 
 
 def generate_totp_secret() -> str:
