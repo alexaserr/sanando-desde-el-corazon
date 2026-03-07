@@ -96,7 +96,6 @@ CHAKRA_FILE_PREFIX_TO_POSITION: list[tuple[str, int]] = [
 _NOTION_UUID_RE = re.compile(r"([0-9a-f]{32})", re.IGNORECASE)
 _SESSION_NUM_RE = re.compile(r"[Ss]esi[oó]n\s+(\d+)", re.IGNORECASE)
 _SHORT_UUID_RE = re.compile(r"([0-9a-f]{4})-([0-9a-f]{4})$", re.IGNORECASE)
-_DATE_MENTION_RE = re.compile(r"Fecha de Medición:\s*(.+)", re.IGNORECASE)
 _CLIENT_UUID_IN_CONTENT_RE = re.compile(
     r"Clientes:.*?([0-9a-f]{32})", re.IGNORECASE | re.DOTALL
 )
