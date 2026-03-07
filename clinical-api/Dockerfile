@@ -40,10 +40,10 @@ COPY --chown=app:app clinical-api/ .
 
 USER app
 
-ENV PATH=/home/app/.local/bin:$PATH \
+ENV PATH="/home/app/.local/bin:${PATH}" \
     PYTHONDONTWRITEBYTECODE=1 \
     PYTHONUNBUFFERED=1 \
-    PYTHONPATH=/app
+    PYTHONPATH="/home/app/.local/lib/python3.12/site-packages:/app"
 
 EXPOSE 8001
 
