@@ -59,17 +59,3 @@ export interface PaginatedResponse<T> {
   size: number;
   pages: number;
 }
-
-/** Respuesta de cada paso del wizard de sesión clínica */
-export interface WizardStepResponse {
-  session_id: string;
-  step: number;
-  completed: boolean;
-  data: Record<string, unknown>;
-}
-
-/** Respuesta de ClienteResponse del clinical-api */
-export type ClientResponse = Client;
-
-/** Respuesta de SessionResponse del clinical-api */
-export type SessionResponse = Session;

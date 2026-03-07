@@ -15,7 +15,6 @@ const config: Config = {
     },
     extend: {
       colors: {
-        // Colores shadcn (variables CSS)
         border: "hsl(var(--border))",
         input: "hsl(var(--input))",
         ring: "hsl(var(--ring))",
@@ -49,27 +48,6 @@ const config: Config = {
           DEFAULT: "hsl(var(--card))",
           foreground: "hsl(var(--card-foreground))",
         },
-        // Paleta SDC
-        terra: {
-          dark: "#4A1810",
-          medium: "#8B3A2A",
-          light: "#C5614A",
-        },
-        blush: "#F5EBE6",
-        crema: "#F7F4F1",
-        clinical: "#4A1810",
-        portal: "#2C6E49",
-        podcast: "#4A235A",
-        community: "#1A4A6E",
-        agenda: "#8B5E00",
-        success: "#1E5631",
-        error: "#922B21",
-        warning: "#8B5E00",
-      },
-      fontFamily: {
-        display: ["Playfair Display", "serif"],
-        body: ["Inter", "sans-serif"],
-        mono: ["JetBrains Mono", "monospace"],
       },
       borderRadius: {
         lg: "var(--radius)",
