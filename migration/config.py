@@ -5,7 +5,7 @@ Lee variables de entorno / .env usando pydantic-settings.
 from pathlib import Path
 from typing import Self
 
-from pydantic import Field, model_validator
+from pydantic import Field, field_validator, model_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 
@@ -19,6 +19,12 @@ class MigrationSettings(BaseSettings):
     # ── Base de datos clínica ──────────────────────────────────
     CLINICAL_DATABASE_URL: str = Field(...)
     CLINICAL_DB_PGCRYPTO_KEY: str = Field(..., min_length=32)
+
+    @field_validator("CLINICAL_DATABASE_URL", mode="before")
+    @classmethod
+    def normalize_db_url(cls, v: str) -> str:
+        # psycopg nativo no acepta el prefijo SQLAlchemy "postgresql+psycopg://"
+        return v.replace("postgresql+psycopg://", "postgresql://", 1)
 
     # ── Notion API ─────────────────────────────────────────────
     NOTION_API_TOKEN: str = Field(...)

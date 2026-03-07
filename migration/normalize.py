@@ -1437,6 +1437,20 @@ def main() -> None:
         if s.client_name == _JAUR:
             s.client_name = _JAIR
 
+    # Unificar notion_id secundario → principal para Mauricio Jair.
+    # Sus sesiones de la página vieja (1b323255...) deben apuntar al
+    # notion_page_id que quedó en clients_clean.json (28523255...).
+    _JAIR_NOTION_ID_2ND = "1b323255a860801cad42fff1db1cd220"
+    _JAIR_NOTION_ID_PRI = "28523255a860813f9ce3f35dbe8d4c7b"
+    remapped_notion = sum(
+        1 for s in sessions if s.client_notion_id == _JAIR_NOTION_ID_2ND
+    )
+    for s in sessions:
+        if s.client_notion_id == _JAIR_NOTION_ID_2ND:
+            s.client_notion_id = _JAIR_NOTION_ID_PRI
+    if remapped_notion:
+        print(f"      Remapped notion_id secundario Mauricio Jair: {remapped_notion} sesiones")
+
     print(f"      Total sessions: {len(sessions)}")
     auto_corrected_count = sum(1 for o in outliers if o.auto_corrected)
     corrupt_count = sum(1 for o in outliers if not o.auto_corrected)
