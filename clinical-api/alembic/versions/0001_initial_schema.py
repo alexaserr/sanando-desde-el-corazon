@@ -11,7 +11,7 @@ Campos nuevos incluidos (auditoría 2026-03-03):
   - notion_page_id + migration_batch_id en clients y sessions
 
 Revision ID: 0001
-Revises: Alexa Serrano Negrete
+Revises:
 Create Date: 2026-03-03
 """
 
@@ -19,9 +19,8 @@ from collections.abc import Sequence
 from typing import Union
 
 import sqlalchemy as sa
-from sqlalchemy.dialects import postgresql
-
 from alembic import op
+from sqlalchemy.dialects import postgresql
 
 revision: str = "0001"
 down_revision: Union[str, None] = None

@@ -23,6 +23,10 @@ pydantic[email]==2.7.1
 python-jose[cryptography]==3.3.0
 passlib[bcrypt]==1.7.4
 cryptography==42.0.7
+pyotp==2.9.0
+
+# --- Rate limiting ---
+slowapi==0.1.9
 
 # --- Redis ---
 redis[hiredis]==5.0.4
