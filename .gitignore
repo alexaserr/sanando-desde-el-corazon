@@ -125,4 +125,4 @@ logs/
 # Claude Code (settings locales del desarrollador)
 # ----------------------------------------------------------
 .claude/
-!.claude/settings.json
+!.claude/settings.jsonfrontend/tsconfig.tsbuildinfo
