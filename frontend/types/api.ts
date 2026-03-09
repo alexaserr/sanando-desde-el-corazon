@@ -22,12 +22,26 @@ export interface ApiErrorBody {
   detail: string;
 }
 
+export type MaritalStatus =
+  | "single"
+  | "married"
+  | "divorced"
+  | "widowed"
+  | "common_law"
+  | "other";
+
 export interface Client {
   id: string;
   full_name: string;
   email: string | null;
   phone: string | null;
   birth_date: string | null;
+  marital_status: MaritalStatus | null;
+  birth_place: string | null;
+  residence_place: string | null;
+  profession: string | null;
+  motivation_visit: Record<string, unknown> | null;
+  motivation_general: string | null;
   num_children: number | null;
   num_siblings: number | null;
   birth_order: number | null;
@@ -45,6 +59,7 @@ export interface Session {
   client_id: string | null;
   session_date: string;
   session_type: string | null;
+  status: string | null;
   cost: number | null;
   notes: string | null;
   created_at: string;

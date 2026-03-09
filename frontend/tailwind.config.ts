@@ -48,6 +48,19 @@ const config: Config = {
           DEFAULT: "hsl(var(--card))",
           foreground: "hsl(var(--card-foreground))",
         },
+        // Paleta SDC — Sanando desde el Corazón
+        terra: {
+          900: "#4A1810",
+          700: "#8B3A2A",
+          500: "#C5614A",
+          200: "#F5EBE6",
+          50: "#F7F4F1",
+        },
+        crema: "#F7F4F1",
+        blush: "#F5EBE6",
+        success: "#1E5631",
+        error: "#922B21",
+        warning: "#8B5E00",
       },
       borderRadius: {
         lg: "var(--radius)",

@@ -44,7 +44,7 @@ export default function LoginPage() {
       } else {
         const me = { id: "", email: data.email, full_name: "Admin", role: "admin" as const, is_active: true, created_at: "" };
         setAuth(me, result.access_token);
-        router.replace("/clinica/dashboard");
+        router.replace("/dashboard");
       }
     } catch (err: unknown) {
       if (err instanceof Error) {
@@ -60,9 +60,9 @@ export default function LoginPage() {
       <Card className="w-full max-w-md shadow-lg">
         <CardHeader className="space-y-1 text-center">
           <div className="flex justify-center mb-2">
-            <Heart className="h-10 w-10 text-terra-medium" />
+            <Heart className="h-10 w-10 text-terra-700" />
           </div>
-          <CardTitle className="text-2xl font-display font-bold text-terra-dark">
+          <CardTitle className="text-2xl font-display font-bold text-terra-900">
             Sanando desde el Corazón
           </CardTitle>
           <CardDescription>
@@ -110,7 +110,7 @@ export default function LoginPage() {
 
             <Button
               type="submit"
-              className="w-full bg-terra-medium hover:bg-terra-dark"
+              className="w-full"
               disabled={isSubmitting}
             >
               {isSubmitting ? (
