@@ -22,6 +22,8 @@ from app.db.models import (
     ClientSleep,
     ConditionType,
     FamilyMember,
+    Session,
+    TherapyType,
     User,
     UserRole,
 )
@@ -34,6 +36,8 @@ from app.schemas.clients import (
     ClientListResponse,
     ClientMedicationResponse,
     ClientResponse,
+    ClientSessionItem,
+    ClientSessionsResponse,
     ClientSleepResponse,
     ClientUpdate,
     FamilyMemberResponse,
@@ -363,3 +367,99 @@ async def update_client(
 
     await db.commit()
     return await _build_client_response(client_id, db, key, include_deleted=True)
+
+
+@router.get(
+    "/{client_id}/sessions",
+    response_model=ClientSessionsResponse,
+    summary="Listar sesiones de un cliente (paginado)",
+)
+async def list_client_sessions(
+    client_id: UUID,
+    page: int = 1,
+    per_page: int = 20,
+    sort_by: str = "measured_at",
+    sort_order: str = "desc",
+    db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(require_role(UserRole.therapist, UserRole.admin)),
+) -> ClientSessionsResponse:
+    if page < 1:
+        page = 1
+    if per_page < 1 or per_page > 100:
+        per_page = 20
+
+    # Verificar que el cliente existe y no está soft-deleted
+    client_exists = await db.scalar(
+        select(func.count(Client.id))
+        .where(Client.id == client_id)
+        .where(Client.deleted_at.is_(None))
+    )
+    if not client_exists:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Cliente no encontrado")
+
+    # Sanador: solo puede ver sesiones de sus propios clientes
+    if current_user.role == UserRole.therapist:
+        owns_client = await db.scalar(
+            select(func.count(Session.id))
+            .where(Session.client_id == client_id)
+            .where(Session.therapist_id == current_user.id)
+        )
+        if not owns_client:
+            raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Acceso denegado")
+
+    # Columnas permitidas para ordenamiento
+    _sort_cols = {
+        "measured_at": Session.measured_at,
+        "created_at": Session.created_at,
+        "cost": Session.cost,
+    }
+    sort_col = _sort_cols.get(sort_by, Session.measured_at)
+    order_expr = sort_col.desc() if sort_order == "desc" else sort_col.asc()
+
+    # Filtro base de sesiones
+    base_where = [
+        Session.client_id == client_id,
+        Session.deleted_at.is_(None),
+    ]
+    if current_user.role == UserRole.therapist:
+        base_where.append(Session.therapist_id == current_user.id)
+
+    # Total
+    total = (
+        await db.scalar(
+            select(func.count(Session.id)).where(*base_where)
+        )
+    ) or 0
+
+    # Página con join a therapy_types para obtener el nombre
+    rows = (
+        await db.execute(
+            select(
+                Session.id,
+                Session.measured_at,
+                TherapyType.name.label("therapy_type_name"),
+                Session.cost,
+                Session.payment_notes,
+                Session.general_energy_level,
+            )
+            .outerjoin(TherapyType, Session.therapy_type_id == TherapyType.id)
+            .where(*base_where)
+            .order_by(order_expr)
+            .limit(per_page)
+            .offset((page - 1) * per_page)
+        )
+    ).mappings().all()
+
+    items = [
+        ClientSessionItem(
+            id=r["id"],
+            measured_at=r["measured_at"],
+            therapy_type_name=r["therapy_type_name"],
+            cost=r["cost"],
+            notes=r["payment_notes"][:100] if r["payment_notes"] else None,
+            general_energy_level=r["general_energy_level"],
+        )
+        for r in rows
+    ]
+
+    return ClientSessionsResponse(data=items, total=total, page=page, per_page=per_page)

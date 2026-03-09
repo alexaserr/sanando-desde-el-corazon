@@ -1,6 +1,9 @@
 """
 Schemas Pydantic v2 para los endpoints de autenticación.
 """
+from datetime import datetime
+from uuid import UUID
+
 from pydantic import BaseModel, EmailStr
 
 
@@ -27,3 +30,17 @@ class TwoFactorRequest(BaseModel):
 class TwoFactorSetupResponse(BaseModel):
     secret: str
     qr_uri: str
+
+
+class MeData(BaseModel):
+    id: UUID
+    email: str
+    full_name: str
+    role: str
+    is_active: bool
+    has_2fa: bool
+    created_at: datetime
+
+
+class MeResponse(BaseModel):
+    data: MeData

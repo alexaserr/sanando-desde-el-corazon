@@ -58,6 +58,8 @@ class Settings(BaseSettings):
     CLINICAL_API_PORT: int = Field(default=8001)
     CLINICAL_CORS_ORIGINS: str = Field(default="")
     CLINICAL_DOCS_ENABLED: bool = Field(default=False)
+    # False en desarrollo (HTTP), True en producción (HTTPS)
+    COOKIE_SECURE: bool = Field(default=False)
 
     # ── SMTP (notificaciones) ─────────────────────────────────
     SMTP_HOST: str = Field(default="")

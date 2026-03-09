@@ -5,6 +5,7 @@ PII (full_name, email, phone) viaja en plaintext en la API;
 el cifrado/descifrado con pgcrypto ocurre en la capa de routers.
 """
 from datetime import date, datetime
+from decimal import Decimal
 from typing import Any
 from uuid import UUID
 
@@ -226,3 +227,23 @@ class ClientListResponse(BaseModel):
     page: int
     per_page: int
     pages: int
+
+
+# ── Sesiones del cliente ───────────────────────────────────────
+
+class ClientSessionItem(BaseModel):
+    """Resumen de sesión para el listado de sesiones de un cliente."""
+
+    id: UUID
+    measured_at: datetime
+    therapy_type_name: str | None = None
+    cost: Decimal | None = None
+    notes: str | None = None           # payment_notes truncado a 100 chars
+    general_energy_level: int | None = None
+
+
+class ClientSessionsResponse(BaseModel):
+    data: list[ClientSessionItem]
+    total: int
+    page: int
+    per_page: int

@@ -40,6 +40,7 @@ async def lifespan(app: FastAPI) -> AsyncGenerator[None, None]:
     Inicializa conexiones al arrancar y las cierra al detener.
     """
     from app.db.session import engine
+    from app.redis_client import close_redis, get_redis
 
     logger.info(
         "clinical_api.startup",
@@ -47,12 +48,15 @@ async def lifespan(app: FastAPI) -> AsyncGenerator[None, None]:
         port=settings.CLINICAL_API_PORT,
     )
 
-    # TODO: inicializar pool de Redis
+    # Inicializar pool de Redis (lazy — get_redis() crea el pool)
+    get_redis()
+
     # TODO: inicializar cliente MinIO
 
     yield
 
     await engine.dispose()
+    await close_redis()
     logger.info("clinical_api.shutdown")
 
 
@@ -90,11 +94,13 @@ def create_app() -> FastAPI:
     from app.routers.clients import router as clients_router
     from app.routers.sessions import router as sessions_router
     from app.routers.catalogs import router as catalogs_router
+    from app.routers.dashboard import router as dashboard_router
 
     app.include_router(auth_router)
     app.include_router(clients_router)
     app.include_router(sessions_router)
     app.include_router(catalogs_router)
+    app.include_router(dashboard_router)
 
     return app
 
