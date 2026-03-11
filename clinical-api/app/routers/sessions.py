@@ -25,7 +25,7 @@ from sqlalchemy.dialects.postgresql import insert as pg_insert
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
 
-from app.config import settings
+from app.config import get_settings
 from app.db.models import (
     AuditAction,
     Client,
@@ -41,7 +41,6 @@ from app.db.models import (
     User,
     UserRole,
 )
-from app.config import get_settings
 from app.db.session import get_db
 from app.dependencies import require_role
 from app.schemas.sessions import (
@@ -459,7 +458,7 @@ async def list_sessions(
     db: AsyncSession = Depends(get_db),
     current_user: User = Depends(require_role(UserRole.therapist, UserRole.admin)),
 ) -> SessionListResponse:
-    key = settings.CLINICAL_DB_PGCRYPTO_KEY
+    key = _settings.CLINICAL_DB_PGCRYPTO_KEY
 
     base = (
         select(
