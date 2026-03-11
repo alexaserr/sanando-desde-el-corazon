@@ -29,7 +29,12 @@ export function TopBar() {
             <span>{user.full_name}</span>
           </div>
         )}
-        <Button variant="ghost" size="sm" onClick={handleLogout}>
+        <Button
+          variant="ghost"
+          size="sm"
+          onClick={handleLogout}
+          className="text-gray-600 hover:text-terra-700"
+        >
           <LogOut className="h-4 w-4 mr-2" />
           Salir
         </Button>

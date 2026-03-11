@@ -66,6 +66,10 @@ const config: Config = {
         lg: "var(--radius)",
         md: "calc(var(--radius) - 2px)",
         sm: "calc(var(--radius) - 4px)",
+        card: "0.75rem",
+      },
+      boxShadow: {
+        card: "0 2px 8px rgba(74,24,16,0.08)",
       },
       keyframes: {
         "accordion-down": {
@@ -80,6 +84,12 @@ const config: Config = {
       animation: {
         "accordion-down": "accordion-down 0.2s ease-out",
         "accordion-up": "accordion-up 0.2s ease-out",
+      },
+      fontFamily: {
+        display: ["var(--font-display)", "Libre Baskerville", "serif"],
+        body: ["var(--font-body)", "Almarai", "sans-serif"],
+        sans: ["var(--font-body)", "Almarai", "sans-serif"],
+        mono: ["var(--font-mono)", "JetBrains Mono", "monospace"],
       },
     },
   },

@@ -6,13 +6,14 @@ import { Users, CalendarDays, Activity, Zap, ChevronRight } from "lucide-react";
 import { apiClient, ApiError } from "@/lib/api/client";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { formatDate } from "@/lib/utils/formatters";
-import type { Client, Session, PaginatedResponse } from "@/types/api";
+import type { Client, PaginatedResponse } from "@/types/api";
 
 interface DashboardStats {
   total_clients: number;
   sessions_this_month: number | null;
+  sessions_this_week: number | null;
   total_sessions: number;
-  avg_energy: number | null;
+  average_energy: number | null;
 }
 
 function StatCardSkeleton() {
@@ -35,17 +36,19 @@ interface StatCardProps {
   value: string | number;
   description: string;
   icon: React.ElementType;
+  iconBg: string;
+  iconColor: string;
 }
 
-function StatCard({ title, value, description, icon: Icon }: StatCardProps) {
+function StatCard({ title, value, description, icon: Icon, iconBg, iconColor }: StatCardProps) {
   return (
-    <Card>
+    <Card className="bg-white border border-gray-100 rounded-card shadow-card">
       <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
         <CardTitle className="text-sm font-medium text-muted-foreground">
           {title}
         </CardTitle>
-        <div className="h-8 w-8 rounded-md bg-terra-200 flex items-center justify-center flex-shrink-0">
-          <Icon className="h-4 w-4 text-terra-700" />
+        <div className={`h-8 w-8 rounded-full flex items-center justify-center flex-shrink-0 ${iconBg}`}>
+          <Icon className={`h-4 w-4 ${iconColor}`} />
         </div>
       </CardHeader>
       <CardContent>
@@ -61,37 +64,23 @@ export default function ClinicaDashboardPage() {
   const [stats, setStats] = useState<DashboardStats | null>(null);
   const [recentClients, setRecentClients] = useState<Client[]>([]);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
     const fetchData = async () => {
       setLoading(true);
 
-      // Intentar endpoint dedicado; si no existe aún, fallback a queries individuales
       try {
-        const dashboardStats = await apiClient.get<DashboardStats>(
+        const res = await apiClient.get<{ data: DashboardStats }>(
           "/api/v1/clinical/dashboard/stats",
         );
-        setStats(dashboardStats);
+        setStats(res.data);
       } catch (err) {
-        if (err instanceof ApiError && err.status === 404) {
-          const [clientsRes, sessionsRes] = await Promise.allSettled([
-            apiClient.get<PaginatedResponse<Client>>(
-              "/api/v1/clinical/clients?page=1&size=1",
-            ),
-            apiClient.get<PaginatedResponse<Session>>(
-              "/api/v1/clinical/sessions?page=1&size=1",
-            ),
-          ]);
-          setStats({
-            total_clients:
-              clientsRes.status === "fulfilled" ? clientsRes.value.total : 0,
-            sessions_this_month: null, // requiere filtro de fecha en backend
-            total_sessions:
-              sessionsRes.status === "fulfilled" ? sessionsRes.value.total : 0,
-            avg_energy: null,
-          });
-        }
-        // Otros errores (401, red) son manejados por apiClient
+        const message =
+          err instanceof ApiError
+            ? `Error ${err.status}: no se pudieron cargar las estadísticas`
+            : "No se pudieron cargar las estadísticas del dashboard";
+        setError(message);
       }
 
       // Pacientes recientes — independiente de las stats
@@ -116,24 +105,32 @@ export default function ClinicaDashboardPage() {
       value: stats?.total_clients ?? "—",
       description: "Expedientes registrados",
       icon: Users,
+      iconBg: "bg-terra-200/50",
+      iconColor: "text-terra-700",
     },
     {
       title: "Sesiones Este Mes",
       value: stats?.sessions_this_month ?? "—",
       description: "Mes actual",
       icon: CalendarDays,
+      iconBg: "bg-blue-50",
+      iconColor: "text-blue-600",
     },
     {
       title: "Total Sesiones",
       value: stats?.total_sessions ?? "—",
       description: "Histórico",
       icon: Activity,
+      iconBg: "bg-green-50",
+      iconColor: "text-green-600",
     },
     {
       title: "Energía Promedio",
-      value: stats?.avg_energy != null ? stats.avg_energy.toFixed(1) : "—",
+      value: stats?.average_energy != null ? stats.average_energy.toFixed(1) : "—",
       description: "Últimas sesiones",
       icon: Zap,
+      iconBg: "bg-amber-50",
+      iconColor: "text-amber-600",
     },
   ];
 
@@ -147,6 +144,13 @@ export default function ClinicaDashboardPage() {
           Bienvenido a Sanando desde el Corazón
         </p>
       </div>
+
+      {/* Error de estadísticas */}
+      {error && (
+        <div className="rounded-md border border-destructive/40 bg-destructive/10 px-4 py-3 text-sm text-destructive">
+          {error}
+        </div>
+      )}
 
       {/* Stat cards */}
       <div className="grid gap-4 grid-cols-1 sm:grid-cols-2 lg:grid-cols-4">

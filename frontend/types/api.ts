@@ -8,6 +8,7 @@ export interface User {
   full_name: string;
   role: UserRole;
   is_active: boolean;
+  has_2fa: boolean;
   created_at: string;
 }
 
@@ -58,6 +59,7 @@ export interface Session {
   id: string;
   client_id: string | null;
   session_date: string;
+  measured_at: string | null;
   session_type: string | null;
   status: string | null;
   cost: number | null;
@@ -73,4 +75,72 @@ export interface PaginatedResponse<T> {
   page: number;
   size: number;
   pages: number;
+}
+
+// ─── Catálogos clínicos ────────────────────────────────────────────────────────
+
+export interface TherapyType {
+  id: string;
+  name: string;
+  description: string | null;
+}
+
+export interface ChakraPosition {
+  id: string;
+  name: string;
+  position: number;
+}
+
+export interface EnergyDimension {
+  id: string;
+  name: string;
+  is_active: boolean;
+}
+
+export interface ClientListItem {
+  id: string;
+  full_name: string;
+}
+
+// ─── Payloads del wizard de sesión ────────────────────────────────────────────
+
+export interface CreateSessionPayload {
+  client_id: string;
+  therapy_type_id: string;
+  measured_at?: string;
+  notes?: string;
+}
+
+export interface UpdateGeneralPayload {
+  general_energy_level: number;
+  notes?: string;
+  cost?: number;
+  payment_notes?: string;
+}
+
+export interface EnergyReadingPayload {
+  dimension_id: string;
+  value: number;
+}
+
+export interface ChakraReadingPayload {
+  chakra_position_id: string;
+  value: number;
+}
+
+export interface TopicPayload {
+  source_type: string;
+  zone: string;
+  adult_theme: string;
+  child_theme: string;
+  adult_age: number | null;
+  child_age: number | null;
+  emotions: string;
+  initial_energy: number;
+  final_energy: number;
+}
+
+export interface CloseSessionPayload {
+  cost: number;
+  payment_notes?: string;
 }

@@ -1,6 +1,9 @@
 import { useAuthStore } from "@/store/auth";
 
-const BASE_URL = process.env.NEXT_PUBLIC_CLINICAL_API_URL ?? "http://localhost:8001";
+// URLs relativas → el proxy de Next.js (next.config.js) las reescribe al backend.
+// No usar NEXT_PUBLIC_CLINICAL_API_URL para evitar requests cross-origin que
+// impiden el envío de cookies HttpOnly.
+const BASE_URL = "";
 
 // ---------------------------------------------------------------------------
 // Error types
@@ -35,6 +38,7 @@ type RequestOptions = Omit<RequestInit, "body"> & {
 async function request<TResponse>(
   path: string,
   { body, formBody, headers: extraHeaders, ...rest }: RequestOptions = {},
+  _retried = false,
 ): Promise<TResponse> {
   const token = useAuthStore.getState().accessToken;
   const headers = new Headers(extraHeaders as HeadersInit | undefined);
@@ -61,7 +65,33 @@ async function request<TResponse>(
           : undefined,
   });
 
+  if (response.status === 401 && !_retried) {
+    // Intentar renovar el access_token con la cookie refresh_token
+    try {
+      const refreshRes = await fetch(`${BASE_URL}/api/v1/auth/refresh`, {
+        method: "POST",
+        credentials: "include",
+      });
+      if (refreshRes.ok) {
+        const refreshData = (await refreshRes.json()) as { data: { access_token: string } };
+        useAuthStore.getState().setAccessToken(refreshData.data.access_token);
+        // Reintentar la request original una sola vez
+        return request<TResponse>(path, { body, formBody, headers: extraHeaders, ...rest }, true);
+      }
+    } catch {
+      // refresh falló — continuar a logout
+    }
+
+    // Refresh fallido → limpiar sesión y redirigir
+    useAuthStore.getState().logout();
+    if (typeof window !== "undefined") {
+      window.location.href = "/login";
+    }
+    throw new ApiError(401, "Sesión expirada");
+  }
+
   if (response.status === 401) {
+    // Ya se intentó el refresh — limpiar sesión
     useAuthStore.getState().logout();
     if (typeof window !== "undefined") {
       window.location.href = "/login";

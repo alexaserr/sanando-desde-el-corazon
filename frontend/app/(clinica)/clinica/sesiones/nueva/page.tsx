@@ -1,0 +1,484 @@
+'use client';
+
+import { useEffect, useState, useMemo, useCallback } from 'react';
+import { useRouter } from 'next/navigation';
+
+import { WizardShell }        from '@/components/clinical/wizard/WizardShell';
+import { StepGeneral }        from '@/components/clinical/wizard/StepGeneral';
+import { StepEnergyInitial }  from '@/components/clinical/wizard/StepEnergyInitial';
+import { StepChakrasInitial } from '@/components/clinical/wizard/StepChakrasInitial';
+import { StepTopics }         from '@/components/clinical/wizard/StepTopics';
+import { StepEnergyFinal }    from '@/components/clinical/wizard/StepEnergyFinal';
+import { StepChakrasFinal }   from '@/components/clinical/wizard/StepChakrasFinal';
+import { StepClose }          from '@/components/clinical/wizard/StepClose';
+
+import { useWizardStore } from '@/lib/stores/wizardStore';
+import {
+  getTherapyTypes,
+  getChakraPositions,
+  getEnergyDimensions,
+  getClientsList,
+  createSession,
+  updateSessionGeneral,
+  saveEnergyReadings,
+  saveChakraReadings,
+  saveTopics,
+  closeSession,
+} from '@/lib/api/clinical';
+
+import type { TherapyType, ChakraPosition, EnergyDimension, ClientListItem } from '@/types/api';
+import type {
+  GeneralData,
+  EnergyReading,
+  WizardChakraReading,
+  Topic,
+  CloseData,
+  SessionSummary,
+} from '@/components/clinical/wizard/types';
+
+// ─── Tipos internos de catálogos cargados ─────────────────────────────────────
+
+interface Catalogs {
+  therapyTypes: TherapyType[];
+  chakras: ChakraPosition[];
+  dimensions: EnergyDimension[];
+  clients: ClientListItem[];
+}
+
+// ─── Valores por defecto ───────────────────────────────────────────────────────
+
+function defaultGeneralData(): GeneralData {
+  const now = new Date();
+  // datetime-local espera "YYYY-MM-DDTHH:mm"
+  const pad = (n: number) => String(n).padStart(2, '0');
+  const measured_at = `${now.getFullYear()}-${pad(now.getMonth() + 1)}-${pad(now.getDate())}T${pad(now.getHours())}:${pad(now.getMinutes())}`;
+  return { client_id: '', therapy_type_id: '', measured_at, general_energy: 50, notes: '' };
+}
+
+function defaultCloseData(): CloseData {
+  return { cost: '', payment_notes: '', entities: '', implants: '' };
+}
+
+function initEnergyReadings(dimensions: EnergyDimension[]): EnergyReading[] {
+  return dimensions.filter((d) => d.is_active).map((d) => ({ dimension_id: d.id, value: 50 }));
+}
+
+function initChakraReadings(chakras: ChakraPosition[]): WizardChakraReading[] {
+  return chakras.map((c) => ({ chakra_position_id: c.id, name: c.name, value: 7 }));
+}
+
+function newTopic(): Topic {
+  return {
+    _localId: crypto.randomUUID(),
+    source_type: 'spine',
+    zone: '',
+    adult_theme: '',
+    child_theme: '',
+    adult_age: '',
+    child_age: '',
+    emotions: '',
+    initial_energy: 50,
+    final_energy: 50,
+  };
+}
+
+// ─── Página ────────────────────────────────────────────────────────────────────
+
+export default function NuevaSessionPage() {
+  const router = useRouter();
+
+  // Wizard store
+  const { currentStep, sessionId, setStep, markStepComplete, setSessionId, reset } =
+    useWizardStore();
+
+  // Estado de catálogos
+  const [catalogs, setCatalogs] = useState<Catalogs | null>(null);
+  const [loadError, setLoadError] = useState<string | null>(null);
+
+  // Estado de cada paso
+  const [generalData, setGeneralData]               = useState<GeneralData>(defaultGeneralData);
+  const [energyInitial, setEnergyInitial]           = useState<EnergyReading[]>([]);
+  const [chakraInitial, setChakraInitial]           = useState<WizardChakraReading[]>([]);
+  const [topics, setTopics]                         = useState<Topic[]>([]);
+  const [energyFinal, setEnergyFinal]               = useState<EnergyReading[]>([]);
+  const [chakraFinal, setChakraFinal]               = useState<WizardChakraReading[]>([]);
+  const [closeData, setCloseData]                   = useState<CloseData>(defaultCloseData);
+
+  // Estado de UI
+  const [isSaving, setIsSaving] = useState(false);
+  const [stepError, setStepError] = useState<string | null>(null);
+
+  // Resetear store al montar (nueva sesión en blanco)
+  useEffect(() => {
+    reset();
+  }, [reset]);
+
+  // Cargar catálogos
+  useEffect(() => {
+    async function load() {
+      try {
+        const [therapyTypes, chakras, dimensions, clients] = await Promise.all([
+          getTherapyTypes(),
+          getChakraPositions(),
+          getEnergyDimensions(),
+          getClientsList(),
+        ]);
+        setCatalogs({ therapyTypes, chakras, dimensions, clients });
+        setEnergyInitial(initEnergyReadings(dimensions));
+        setEnergyFinal(initEnergyReadings(dimensions));
+        setChakraInitial(initChakraReadings(chakras));
+        setChakraFinal(initChakraReadings(chakras));
+      } catch {
+        setLoadError('Error cargando catálogos. Intenta recargar la página.');
+      }
+    }
+    load();
+  }, []);
+
+  // ─── Helpers de estado de pasos ───────────────────────────────────────────────
+
+  function updateEnergyReading(
+    setState: React.Dispatch<React.SetStateAction<EnergyReading[]>>,
+    dimensionId: string,
+    value: number,
+  ) {
+    setState((prev) =>
+      prev.map((r) => (r.dimension_id === dimensionId ? { ...r, value } : r)),
+    );
+  }
+
+  function updateChakraReading(
+    setState: React.Dispatch<React.SetStateAction<WizardChakraReading[]>>,
+    chakraPositionId: string,
+    value: number,
+  ) {
+    setState((prev) =>
+      prev.map((r) => (r.chakra_position_id === chakraPositionId ? { ...r, value } : r)),
+    );
+  }
+
+  const addTopic    = useCallback(() => setTopics((prev) => [...prev, newTopic()]), []);
+  const removeTopic = useCallback((localId: string) =>
+    setTopics((prev) => prev.filter((t) => t._localId !== localId)), []);
+  const updateTopic = useCallback(
+    (localId: string, updates: Partial<Omit<Topic, '_localId'>>) =>
+      setTopics((prev) =>
+        prev.map((t) => (t._localId === localId ? { ...t, ...updates } : t)),
+      ),
+    [],
+  );
+
+  // ─── Resumen de sesión para StepClose ─────────────────────────────────────────
+
+  const sessionSummary = useMemo<SessionSummary>(() => {
+    const client = catalogs?.clients.find((c) => c.id === generalData.client_id);
+    const therapy = catalogs?.therapyTypes.find((t) => t.id === generalData.therapy_type_id);
+
+    const avg = (readings: EnergyReading[]) => {
+      if (readings.length === 0) return null;
+      return Math.round(readings.reduce((s, r) => s + r.value, 0) / readings.length);
+    };
+
+    return {
+      clientName:       client?.full_name ?? '',
+      therapyTypeName:  therapy?.name ?? '',
+      measuredAt:       generalData.measured_at,
+      generalEnergy:    generalData.general_energy,
+      energyInitialAvg: avg(energyInitial),
+      energyFinalAvg:   avg(energyFinal),
+      topicsCount:      topics.length,
+      chakraInitialCount: chakraInitial.length,
+      chakraFinalCount:   chakraFinal.length,
+    };
+  }, [catalogs, generalData, energyInitial, energyFinal, topics, chakraInitial, chakraFinal]);
+
+  // ─── Validación del paso 1 ─────────────────────────────────────────────────────
+
+  const isStep1Valid =
+    !!generalData.client_id && !!generalData.therapy_type_id && !!generalData.measured_at;
+
+  // ─── Lógica de avance por paso ────────────────────────────────────────────────
+
+  const handleNext = useCallback(async () => {
+    setIsSaving(true);
+    setStepError(null);
+
+    try {
+      if (currentStep === 1) {
+        // POST /sessions + PATCH /sessions/{id}/general
+        const session = await createSession({
+          client_id:        generalData.client_id,
+          therapy_type_id:  generalData.therapy_type_id,
+          measured_at:      generalData.measured_at
+            ? new Date(generalData.measured_at).toISOString()
+            : undefined,
+          notes: generalData.notes || undefined,
+        });
+        setSessionId(session.id);
+
+        await updateSessionGeneral(session.id, {
+          general_energy_level: generalData.general_energy,
+          notes: generalData.notes || undefined,
+        });
+
+        markStepComplete(1);
+        setStep(2);
+
+      } else if (currentStep === 2) {
+        if (!sessionId) throw new Error('Sesión no iniciada');
+        await saveEnergyReadings(sessionId, 'initial', energyInitial);
+        markStepComplete(2);
+        setStep(3);
+
+      } else if (currentStep === 3) {
+        if (!sessionId) throw new Error('Sesión no iniciada');
+        await saveChakraReadings(
+          sessionId,
+          'initial',
+          chakraInitial.map((r) => ({ chakra_position_id: r.chakra_position_id, value: r.value })),
+        );
+        markStepComplete(3);
+        setStep(4);
+
+      } else if (currentStep === 4) {
+        if (!sessionId) throw new Error('Sesión no iniciada');
+        await saveTopics(
+          sessionId,
+          topics.map((t) => ({
+            source_type:   t.source_type,
+            zone:          t.zone,
+            adult_theme:   t.adult_theme,
+            child_theme:   t.child_theme,
+            adult_age:     t.adult_age !== '' ? parseInt(t.adult_age, 10) : null,
+            child_age:     t.child_age !== '' ? parseInt(t.child_age, 10) : null,
+            emotions:      t.emotions,
+            initial_energy: t.initial_energy,
+            final_energy:   t.final_energy,
+          })),
+        );
+        markStepComplete(4);
+        setStep(5);
+
+      } else if (currentStep === 5) {
+        if (!sessionId) throw new Error('Sesión no iniciada');
+        await saveEnergyReadings(sessionId, 'final', energyFinal);
+        markStepComplete(5);
+        setStep(6);
+
+      } else if (currentStep === 6) {
+        if (!sessionId) throw new Error('Sesión no iniciada');
+        await saveChakraReadings(
+          sessionId,
+          'final',
+          chakraFinal.map((r) => ({ chakra_position_id: r.chakra_position_id, value: r.value })),
+        );
+        markStepComplete(6);
+        setStep(7);
+      }
+    } catch (err) {
+      setStepError(err instanceof Error ? err.message : 'Error al guardar. Intenta de nuevo.');
+    } finally {
+      setIsSaving(false);
+    }
+  }, [
+    currentStep, sessionId, generalData, energyInitial, chakraInitial,
+    topics, energyFinal, chakraFinal,
+    setSessionId, markStepComplete, setStep,
+  ]);
+
+  const handlePrev = useCallback(() => {
+    setStepError(null);
+    setStep(currentStep - 1);
+  }, [currentStep, setStep]);
+
+  const handleSaveDraft = useCallback(async () => {
+    // Solo guarda si ya existe una sesión (pasos 2+)
+    if (!sessionId) return;
+    setIsSaving(true);
+    setStepError(null);
+    try {
+      if (currentStep === 2) {
+        await saveEnergyReadings(sessionId, 'initial', energyInitial);
+      } else if (currentStep === 3) {
+        await saveChakraReadings(
+          sessionId, 'initial',
+          chakraInitial.map((r) => ({ chakra_position_id: r.chakra_position_id, value: r.value })),
+        );
+      } else if (currentStep === 4) {
+        await saveTopics(
+          sessionId,
+          topics.map((t) => ({
+            source_type: t.source_type, zone: t.zone,
+            adult_theme: t.adult_theme, child_theme: t.child_theme,
+            adult_age: t.adult_age !== '' ? parseInt(t.adult_age, 10) : null,
+            child_age: t.child_age !== '' ? parseInt(t.child_age, 10) : null,
+            emotions: t.emotions, initial_energy: t.initial_energy, final_energy: t.final_energy,
+          })),
+        );
+      } else if (currentStep === 5) {
+        await saveEnergyReadings(sessionId, 'final', energyFinal);
+      } else if (currentStep === 6) {
+        await saveChakraReadings(
+          sessionId, 'final',
+          chakraFinal.map((r) => ({ chakra_position_id: r.chakra_position_id, value: r.value })),
+        );
+      }
+    } catch (err) {
+      setStepError(err instanceof Error ? err.message : 'Error al guardar borrador.');
+    } finally {
+      setIsSaving(false);
+    }
+  }, [sessionId, currentStep, energyInitial, chakraInitial, topics, energyFinal, chakraFinal]);
+
+  const handleCloseSession = useCallback(async () => {
+    if (!sessionId) return;
+    const cost = parseFloat(closeData.cost);
+    if (isNaN(cost)) {
+      setStepError('Ingresa un costo válido para cerrar la sesión.');
+      return;
+    }
+    setIsSaving(true);
+    setStepError(null);
+    try {
+      await closeSession(sessionId, {
+        cost,
+        payment_notes: closeData.payment_notes || undefined,
+      });
+      markStepComplete(7);
+      reset();
+      router.push('/clinica/sesiones');
+    } catch (err) {
+      setStepError(err instanceof Error ? err.message : 'Error al cerrar la sesión.');
+    } finally {
+      setIsSaving(false);
+    }
+  }, [sessionId, closeData, markStepComplete, reset, router]);
+
+  // ─── Render ────────────────────────────────────────────────────────────────────
+
+  if (loadError) {
+    return (
+      <div className="p-8">
+        <p className="text-sm text-red-700 bg-red-50 border border-red-200 rounded-lg px-4 py-3">
+          {loadError}
+        </p>
+      </div>
+    );
+  }
+
+  if (!catalogs) {
+    return (
+      <div className="p-8 text-sm text-gray-500">Cargando wizard de sesión…</div>
+    );
+  }
+
+  // Dimensiones activas para los steps de energía
+  const activeDimensions = catalogs.dimensions.filter((d) => d.is_active);
+
+  // isNextDisabled solo aplica al paso 1
+  const isNextDisabled = currentStep === 1 ? !isStep1Valid : false;
+
+  return (
+    <div className="max-w-4xl mx-auto px-4 py-6">
+      {/* Banner de error de paso */}
+      {stepError && (
+        <div
+          role="alert"
+          className="mb-4 flex items-start gap-2 rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700"
+        >
+          <svg
+            aria-hidden="true"
+            className="mt-0.5 w-4 h-4 shrink-0"
+            fill="none"
+            viewBox="0 0 24 24"
+            stroke="currentColor"
+            strokeWidth={2}
+          >
+            <path
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              d="M12 9v3.75m-9.303 3.376c-.866 1.5.217 3.374 1.948 3.374h14.71c1.73 0 2.813-1.874 1.948-3.374L13.949 3.378c-.866-1.5-3.032-1.5-3.898 0L2.697 16.126zM12 15.75h.007v.008H12v-.008z"
+            />
+          </svg>
+          {stepError}
+        </div>
+      )}
+
+      <WizardShell
+        onNext={handleNext}
+        onPrev={handlePrev}
+        onSaveDraft={handleSaveDraft}
+        onCloseSession={handleCloseSession}
+        isNextDisabled={isNextDisabled}
+        isSaving={isSaving}
+      >
+        {currentStep === 1 && (
+          <StepGeneral
+            clients={catalogs.clients}
+            therapyTypes={catalogs.therapyTypes}
+            value={generalData}
+            onChange={setGeneralData}
+            disabled={isSaving}
+          />
+        )}
+
+        {currentStep === 2 && (
+          <StepEnergyInitial
+            catalogDimensions={activeDimensions}
+            readings={energyInitial}
+            onChange={(id, val) => updateEnergyReading(setEnergyInitial, id, val)}
+            disabled={isSaving}
+          />
+        )}
+
+        {currentStep === 3 && (
+          <StepChakrasInitial
+            readings={chakraInitial}
+            onChange={(id, val) => updateChakraReading(setChakraInitial, id, val)}
+            disabled={isSaving}
+          />
+        )}
+
+        {currentStep === 4 && (
+          <StepTopics
+            topics={topics}
+            onAdd={addTopic}
+            onRemove={removeTopic}
+            onChange={updateTopic}
+            disabled={isSaving}
+          />
+        )}
+
+        {currentStep === 5 && (
+          <StepEnergyFinal
+            catalogDimensions={activeDimensions}
+            readings={energyFinal}
+            compareReadings={energyInitial}
+            onChange={(id, val) => updateEnergyReading(setEnergyFinal, id, val)}
+            disabled={isSaving}
+          />
+        )}
+
+        {currentStep === 6 && (
+          <StepChakrasFinal
+            readings={chakraFinal}
+            compareReadings={chakraInitial}
+            onChange={(id, val) => updateChakraReading(setChakraFinal, id, val)}
+            disabled={isSaving}
+          />
+        )}
+
+        {currentStep === 7 && (
+          <StepClose
+            value={closeData}
+            onChange={(field, val) => setCloseData((prev) => ({ ...prev, [field]: val }))}
+            summary={sessionSummary}
+            onCloseSession={handleCloseSession}
+            disabled={isSaving}
+            isClosing={isSaving}
+          />
+        )}
+      </WizardShell>
+    </div>
+  );
+}

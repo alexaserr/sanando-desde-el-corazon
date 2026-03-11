@@ -2,13 +2,14 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { Heart, LayoutDashboard, Users, CalendarDays } from "lucide-react";
+import { LayoutDashboard, Users, CalendarDays, PlusCircle } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 const navItems = [
   { href: "/clinica", label: "Dashboard", icon: LayoutDashboard, exact: true },
   { href: "/clinica/pacientes", label: "Clientes", icon: Users, exact: false },
-  { href: "/clinica/sesiones", label: "Sesiones", icon: CalendarDays, exact: false },
+  { href: "/clinica/sesiones", label: "Sesiones", icon: CalendarDays, exact: true },
+  { href: "/clinica/sesiones/nueva", label: "Nueva sesión", icon: PlusCircle, exact: false },
 ];
 
 export function SidebarNav() {
@@ -17,8 +18,8 @@ export function SidebarNav() {
   return (
     <aside className="w-64 bg-white border-r flex flex-col">
       <div className="h-16 flex items-center gap-2 px-6 border-b">
-        <Heart className="h-6 w-6 text-primary" />
-        <span className="font-semibold text-sm leading-tight">
+        <img src="/images/sdc-icon.png" alt="SDC" className="h-8 w-8 object-contain flex-shrink-0" />
+        <span className="font-display font-semibold text-sm leading-tight text-terra-900">
           Sanando desde
           <br />
           el Corazón

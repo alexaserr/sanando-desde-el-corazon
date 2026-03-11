@@ -253,7 +253,7 @@ export default function PacienteDetailPage() {
                       }
                       className="border-b cursor-pointer hover:bg-terra-50 transition-colors text-terra-900"
                     >
-                      <td className="px-4 py-3">{formatDate(session.session_date)}</td>
+                      <td className="px-4 py-3">{formatDate(session.measured_at ?? session.created_at)}</td>
                       <td className="px-4 py-3 text-muted-foreground hidden sm:table-cell">
                         {session.session_type ?? "—"}
                       </td>
