@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useRef } from "react";
 import { useRouter } from "next/navigation";
 import { Search, ChevronLeft, ChevronRight } from "lucide-react";
 import { apiClient } from "@/lib/api/client";
@@ -31,6 +31,20 @@ export default function PacientesPage() {
   const [query, setQuery] = useState("");
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const isFirstRender = useRef(true);
+
+  // Debounce: actualiza query 400ms después de que el usuario deja de escribir
+  useEffect(() => {
+    if (isFirstRender.current) {
+      isFirstRender.current = false;
+      return;
+    }
+    const timer = setTimeout(() => {
+      setPage(1);
+      setQuery(search);
+    }, 400);
+    return () => clearTimeout(timer);
+  }, [search]);
 
   const fetchClients = useCallback(async () => {
     setLoading(true);
@@ -71,7 +85,7 @@ export default function PacientesPage() {
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="text-2xl font-bold tracking-tight text-terra-900">Clientes</h1>
+        <h1 className="font-display text-2xl font-bold text-terra-900">Clientes</h1>
         <p className="text-muted-foreground">Gestión de expedientes clínicos</p>
       </div>
 
@@ -90,14 +104,14 @@ export default function PacientesPage() {
       {error && <p className="text-sm text-destructive">{error}</p>}
 
       {/* Tabla */}
-      <div className="rounded-lg border overflow-hidden">
+      <div className="rounded-xl border border-terra-100 overflow-hidden">
         <table className="w-full text-sm">
           <thead>
-            <tr className="bg-terra-200 text-terra-900">
-              <th className="px-4 py-3 text-left font-semibold">Nombre</th>
-              <th className="px-4 py-3 text-left font-semibold hidden sm:table-cell">Email</th>
-              <th className="px-4 py-3 text-left font-semibold hidden md:table-cell">Teléfono</th>
-              <th className="px-4 py-3 text-left font-semibold hidden md:table-cell">Profesión</th>
+            <tr className="bg-terra-50 text-terra-600 text-xs uppercase tracking-wider">
+              <th className="px-5 py-3 text-left font-medium">Nombre</th>
+              <th className="px-5 py-3 text-left font-medium hidden sm:table-cell">Email</th>
+              <th className="px-5 py-3 text-left font-medium hidden md:table-cell">Teléfono</th>
+              <th className="px-5 py-3 text-left font-medium hidden md:table-cell">Profesión</th>
             </tr>
           </thead>
           <tbody>
@@ -105,7 +119,7 @@ export default function PacientesPage() {
               Array.from({ length: 8 }).map((_, i) => <SkeletonRow key={i} />)
             ) : clients.length === 0 ? (
               <tr>
-                <td colSpan={4} className="px-4 py-12 text-center text-muted-foreground">
+                <td colSpan={4} className="px-5 py-12 text-center text-muted-foreground">
                   {query
                     ? `No se encontraron resultados para "${query}"`
                     : "No hay clientes registrados aún."}
@@ -116,16 +130,16 @@ export default function PacientesPage() {
                 <tr
                   key={client.id}
                   onClick={() => router.push(`/clinica/pacientes/${client.id}`)}
-                  className="border-b cursor-pointer hover:bg-terra-50 transition-colors text-terra-900"
+                  className="border-b border-terra-100/40 cursor-pointer hover:bg-terra-50/40 transition-colors duration-150 text-terra-800"
                 >
-                  <td className="px-4 py-3 font-medium">{client.full_name}</td>
-                  <td className="px-4 py-3 text-muted-foreground hidden sm:table-cell">
+                  <td className="px-5 py-4 font-medium">{client.full_name}</td>
+                  <td className="px-5 py-4 text-terra-500 hidden sm:table-cell">
                     {client.email ?? "—"}
                   </td>
-                  <td className="px-4 py-3 text-muted-foreground hidden md:table-cell">
+                  <td className="px-5 py-4 text-terra-500 hidden md:table-cell">
                     {client.phone ?? "—"}
                   </td>
-                  <td className="px-4 py-3 text-muted-foreground hidden md:table-cell">
+                  <td className="px-5 py-4 text-terra-500 hidden md:table-cell">
                     {client.profession ?? "—"}
                   </td>
                 </tr>

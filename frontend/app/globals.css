@@ -4,48 +4,48 @@
 
 @layer base {
   :root {
-    --background: 30 23% 96%;      /* #F7F4F1 crema */
-    --foreground: 12 52% 18%;      /* #4A1810 terra oscuro */
+    --background: 30 33% 97%;      /* #FAF7F4 terra-50 */
+    --foreground: 14 60% 15%;      /* #3D1A0F terra-900 */
     --card: 0 0% 100%;
-    --card-foreground: 12 52% 18%;
+    --card-foreground: 14 60% 15%;
     --popover: 0 0% 100%;
-    --popover-foreground: 12 52% 18%;
-    --primary: 12 52% 35%;         /* #8B3A2A terra medio */
+    --popover-foreground: 14 60% 15%;
+    --primary: 14 39% 34%;         /* #7A4535 terra-700 */
     --primary-foreground: 0 0% 100%;
-    --secondary: 20 33% 93%;       /* #F5EBE6 blush */
-    --secondary-foreground: 12 52% 18%;
+    --secondary: 20 40% 93%;       /* #EDE0D6 terra-200 */
+    --secondary-foreground: 14 60% 15%;
     --muted: 20 20% 90%;
-    --muted-foreground: 12 15% 40%;
-    --accent: 20 33% 93%;          /* #F5EBE6 blush */
-    --accent-foreground: 12 52% 18%;
-    --destructive: 4 63% 35%;      /* #922B21 error */
+    --muted-foreground: 14 15% 42%;
+    --accent: 20 40% 93%;          /* #EDE0D6 terra-200 */
+    --accent-foreground: 14 60% 15%;
+    --destructive: 0 43% 55%;      /* #C75050 error */
     --destructive-foreground: 0 0% 100%;
-    --border: 20 18% 80%;          /* #D4C5BF */
-    --input: 20 18% 80%;
-    --ring: 12 52% 35%;            /* terra medio para focus */
+    --border: 20 22% 85%;          /* ~terra-300 */
+    --input: 20 22% 85%;
+    --ring: 14 39% 34%;            /* terra-700 para focus */
     --radius: 0.5rem;
   }
 
   .dark {
-    --background: 12 52% 10%;
-    --foreground: 30 23% 96%;
-    --card: 12 52% 12%;
-    --card-foreground: 30 23% 96%;
-    --popover: 12 52% 12%;
-    --popover-foreground: 30 23% 96%;
-    --primary: 12 52% 50%;
+    --background: 14 60% 10%;
+    --foreground: 30 33% 97%;
+    --card: 14 52% 12%;
+    --card-foreground: 30 33% 97%;
+    --popover: 14 52% 12%;
+    --popover-foreground: 30 33% 97%;
+    --primary: 14 39% 50%;
     --primary-foreground: 0 0% 100%;
-    --secondary: 12 30% 20%;
-    --secondary-foreground: 30 23% 96%;
-    --muted: 12 20% 20%;
+    --secondary: 14 30% 20%;
+    --secondary-foreground: 30 33% 97%;
+    --muted: 14 20% 20%;
     --muted-foreground: 20 15% 65%;
-    --accent: 12 30% 20%;
-    --accent-foreground: 30 23% 96%;
-    --destructive: 4 63% 45%;
+    --accent: 14 30% 20%;
+    --accent-foreground: 30 33% 97%;
+    --destructive: 0 43% 55%;
     --destructive-foreground: 0 0% 100%;
-    --border: 12 20% 25%;
-    --input: 12 20% 25%;
-    --ring: 12 52% 50%;
+    --border: 14 20% 25%;
+    --input: 14 20% 25%;
+    --ring: 14 39% 50%;
   }
 }
 
@@ -55,5 +55,13 @@
   }
   body {
     @apply bg-background text-foreground;
+    font-size: 15px;
+    line-height: 1.6;
+  }
+  .font-display,
+  h1.font-display,
+  h2.font-display,
+  h3.font-display {
+    letter-spacing: -0.02em;
   }
 }

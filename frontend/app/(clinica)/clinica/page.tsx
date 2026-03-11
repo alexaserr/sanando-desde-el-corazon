@@ -2,17 +2,19 @@
 
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
+import Link from "next/link";
 import { Users, CalendarDays, Activity, Zap, ChevronRight } from "lucide-react";
 import { apiClient, ApiError } from "@/lib/api/client";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { formatDate } from "@/lib/utils/formatters";
-import type { Client, Session, PaginatedResponse } from "@/types/api";
+import type { Client, PaginatedResponse } from "@/types/api";
 
 interface DashboardStats {
   total_clients: number;
   sessions_this_month: number | null;
+  sessions_this_week: number | null;
   total_sessions: number;
-  avg_energy: number | null;
+  average_energy: number | null;
 }
 
 function StatCardSkeleton() {
@@ -35,25 +37,37 @@ interface StatCardProps {
   value: string | number;
   description: string;
   icon: React.ElementType;
+  iconBg: string;
+  iconColor: string;
+  href?: string;
 }
 
-function StatCard({ title, value, description, icon: Icon }: StatCardProps) {
-  return (
-    <Card>
-      <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+function StatCard({ title, value, description, icon: Icon, iconBg, iconColor, href }: StatCardProps) {
+  const card = (
+    <Card
+      className={`bg-white border border-terra-100 rounded-card shadow-card transition-shadow ${
+        href ? "cursor-pointer hover:shadow-card-hover" : "cursor-default"
+      }`}
+    >
+      <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-3 p-6">
         <CardTitle className="text-sm font-medium text-muted-foreground">
           {title}
         </CardTitle>
-        <div className="h-8 w-8 rounded-md bg-terra-200 flex items-center justify-center flex-shrink-0">
-          <Icon className="h-4 w-4 text-terra-700" />
+        <div className={`h-12 w-12 rounded-full flex items-center justify-center flex-shrink-0 ${iconBg}`}>
+          <Icon className={`h-5 w-5 ${iconColor}`} />
         </div>
       </CardHeader>
-      <CardContent>
+      <CardContent className="px-6 pb-6 pt-0">
         <div className="text-2xl font-bold text-terra-900">{value}</div>
         <p className="text-xs text-muted-foreground mt-1">{description}</p>
       </CardContent>
     </Card>
   );
+
+  if (href) {
+    return <Link href={href} className="block">{card}</Link>;
+  }
+  return card;
 }
 
 export default function ClinicaDashboardPage() {
@@ -61,37 +75,23 @@ export default function ClinicaDashboardPage() {
   const [stats, setStats] = useState<DashboardStats | null>(null);
   const [recentClients, setRecentClients] = useState<Client[]>([]);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
     const fetchData = async () => {
       setLoading(true);
 
-      // Intentar endpoint dedicado; si no existe aún, fallback a queries individuales
       try {
-        const dashboardStats = await apiClient.get<DashboardStats>(
+        const res = await apiClient.get<{ data: DashboardStats }>(
           "/api/v1/clinical/dashboard/stats",
         );
-        setStats(dashboardStats);
+        setStats(res.data);
       } catch (err) {
-        if (err instanceof ApiError && err.status === 404) {
-          const [clientsRes, sessionsRes] = await Promise.allSettled([
-            apiClient.get<PaginatedResponse<Client>>(
-              "/api/v1/clinical/clients?page=1&size=1",
-            ),
-            apiClient.get<PaginatedResponse<Session>>(
-              "/api/v1/clinical/sessions?page=1&size=1",
-            ),
-          ]);
-          setStats({
-            total_clients:
-              clientsRes.status === "fulfilled" ? clientsRes.value.total : 0,
-            sessions_this_month: null, // requiere filtro de fecha en backend
-            total_sessions:
-              sessionsRes.status === "fulfilled" ? sessionsRes.value.total : 0,
-            avg_energy: null,
-          });
-        }
-        // Otros errores (401, red) son manejados por apiClient
+        const message =
+          err instanceof ApiError
+            ? `Error ${err.status}: no se pudieron cargar las estadísticas`
+            : "No se pudieron cargar las estadísticas del dashboard";
+        setError(message);
       }
 
       // Pacientes recientes — independiente de las stats
@@ -116,31 +116,42 @@ export default function ClinicaDashboardPage() {
       value: stats?.total_clients ?? "—",
       description: "Expedientes registrados",
       icon: Users,
+      iconBg: "bg-terra-100",
+      iconColor: "text-terra-600",
+      href: "/clinica/pacientes",
     },
     {
       title: "Sesiones Este Mes",
       value: stats?.sessions_this_month ?? "—",
       description: "Mes actual",
       icon: CalendarDays,
+      iconBg: "bg-blue-50/80",
+      iconColor: "text-blue-500",
+      href: "/clinica/sesiones",
     },
     {
       title: "Total Sesiones",
       value: stats?.total_sessions ?? "—",
       description: "Histórico",
       icon: Activity,
+      iconBg: "bg-emerald-50/80",
+      iconColor: "text-emerald-500",
+      href: "/clinica/sesiones",
     },
     {
       title: "Energía Promedio",
-      value: stats?.avg_energy != null ? stats.avg_energy.toFixed(1) : "—",
+      value: stats?.average_energy != null ? stats.average_energy.toFixed(1) : "—",
       description: "Últimas sesiones",
       icon: Zap,
+      iconBg: "bg-amber-50/80",
+      iconColor: "text-amber-500",
     },
   ];
 
   return (
     <div className="space-y-8">
       <div>
-        <h1 className="text-2xl font-bold tracking-tight text-terra-900">
+        <h1 className="font-display text-2xl font-bold text-terra-900">
           Dashboard
         </h1>
         <p className="text-muted-foreground">
@@ -148,8 +159,15 @@ export default function ClinicaDashboardPage() {
         </p>
       </div>
 
+      {/* Error de estadísticas */}
+      {error && (
+        <div className="rounded-md border border-destructive/40 bg-destructive/10 px-4 py-3 text-sm text-destructive">
+          {error}
+        </div>
+      )}
+
       {/* Stat cards */}
-      <div className="grid gap-4 grid-cols-1 sm:grid-cols-2 lg:grid-cols-4">
+      <div className="grid gap-5 grid-cols-1 sm:grid-cols-2 lg:grid-cols-4">
         {loading
           ? Array.from({ length: 4 }).map((_, i) => <StatCardSkeleton key={i} />)
           : statCards.map((card) => <StatCard key={card.title} {...card} />)}
@@ -170,7 +188,7 @@ export default function ClinicaDashboardPage() {
           </button>
         </div>
 
-        <div className="rounded-lg border overflow-hidden bg-white">
+        <div className="rounded-xl border border-terra-100 overflow-hidden bg-white">
           {loading ? (
             <ul className="divide-y">
               {Array.from({ length: 5 }).map((_, i) => (
