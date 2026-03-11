@@ -1,9 +1,10 @@
 'use client';
 
-import { useState, useId, useRef } from 'react';
+import { useState, useId, useRef, useEffect } from 'react';
 import { BlockageRow } from './BlockageRow';
 import { AgesSection } from './AgesSection';
 import { EnergySlider } from '../EnergySlider';
+import EmotionSelector from '../EmotionSelector';
 import type { ThemeEntry, BlockageData } from './types';
 import type { ChakraPosition } from '@/types/api';
 
@@ -14,6 +15,8 @@ export interface ThemeCardProps {
   onChange: (updates: Partial<ThemeEntry>) => void;
   onDelete?: () => void;
   disabled?: boolean;
+  /** Si es true, la tarjeta se desplaza automáticamente al viewport al montar. */
+  isNew?: boolean;
 }
 
 const EMPTY_BLOCKAGE: BlockageData = {
@@ -22,14 +25,24 @@ const EMPTY_BLOCKAGE: BlockageData = {
   energy: 0,
 };
 
-export function ThemeCard({ theme, index, chakras, onChange, onDelete, disabled = false }: ThemeCardProps) {
+export function ThemeCard({ theme, index, chakras, onChange, onDelete, disabled = false, isNew = false }: ThemeCardProps) {
   const [expanded, setExpanded]           = useState(true);
   const [isEditingName, setIsEditingName] = useState(false);
   const [nameInput, setNameInput]         = useState(theme.name);
   const [blockageCount, setBlockageCount] = useState<1 | 2 | 3>(1);
   const nameInputRef                      = useRef<HTMLInputElement>(null);
+  const articleRef                        = useRef<HTMLElement>(null);
   const headingId      = useId();
   const secondaryTogId = useId();
+
+  // Desplazar al viewport cuando la tarjeta es recién añadida
+  useEffect(() => {
+    if (isNew) {
+      articleRef.current?.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+    }
+    // Solo ejecutar al montar — isNew no cambia después del primer render
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   function updateBlockage(slot: 0 | 1 | 2, val: BlockageData) {
     const next: [BlockageData, BlockageData, BlockageData] = [...theme.blockages] as [BlockageData, BlockageData, BlockageData];
@@ -56,6 +69,7 @@ export function ThemeCard({ theme, index, chakras, onChange, onDelete, disabled 
 
   return (
     <article
+      ref={articleRef}
       aria-labelledby={headingId}
       className="bg-white rounded-xl border border-gray-200 shadow-sm overflow-hidden"
     >
@@ -230,7 +244,29 @@ export function ThemeCard({ theme, index, chakras, onChange, onDelete, disabled 
             </label>
           </div>
 
-          {/* Sliders energía ini/fin del tema secundario */}
+          {/* Nombre + sliders energía ini/fin del tema secundario */}
+          {theme.is_secondary && (
+            <div className="pl-7 space-y-4">
+              {/* Nombre del tema secundario */}
+              <div className="flex flex-col gap-1">
+                <label
+                  className="text-xs font-bold text-terra-700 uppercase tracking-wide select-none"
+                  style={{ fontFamily: 'Almarai, sans-serif' }}
+                >
+                  Nombre del tema secundario
+                </label>
+                <input
+                  type="text"
+                  value={theme.secondary_name ?? ''}
+                  disabled={disabled}
+                  onChange={(e) => onChange({ secondary_name: e.target.value })}
+                  placeholder="Ej. Miedo al rechazo"
+                  className="w-full rounded-lg border border-[#EDE5E0] bg-white px-3 py-2 text-sm text-[#362017] placeholder-[#A9967E] shadow-sm focus:outline-none focus:ring-2 focus:ring-[#B1481E]/30 focus:border-[#B1481E] disabled:opacity-50 disabled:cursor-not-allowed"
+                  style={{ fontFamily: 'Almarai, sans-serif' }}
+                />
+              </div>
+            </div>
+          )}
           {theme.is_secondary && (
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4 pl-7">
               <EnergySlider
@@ -252,6 +288,23 @@ export function ThemeCard({ theme, index, chakras, onChange, onDelete, disabled 
               />
             </div>
           )}
+
+          <hr className="border-gray-100" />
+
+          {/* Emociones predominantes */}
+          <div className="flex flex-col gap-1.5">
+            <p
+              className="text-xs font-bold text-terra-700 uppercase tracking-wide select-none"
+              style={{ fontFamily: 'Almarai, sans-serif' }}
+            >
+              Emociones predominantes
+            </p>
+            <EmotionSelector
+              selected={theme.emotions ?? []}
+              onChange={(emotions) => onChange({ emotions })}
+              disabled={disabled}
+            />
+          </div>
 
           <hr className="border-gray-100" />
 

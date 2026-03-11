@@ -13,6 +13,7 @@ import { StepChakrasFinal }   from '@/components/clinical/wizard/StepChakrasFina
 import { StepClose }          from '@/components/clinical/wizard/StepClose';
 
 import { useWizardStore } from '@/lib/stores/wizardStore';
+import { getWizardConfig } from '@/lib/data/wizard-config';
 import {
   getTherapyTypes,
   getChakraPositions,
@@ -155,6 +156,23 @@ export default function NuevaSessionPage() {
       .catch(() => setClientTopics([]));
   }, [generalData.client_id]);
 
+  // ─── Configuración del wizard según tipo de terapia ───────────────────────────
+
+  const wizardConfig = useMemo(() => {
+    const therapy = catalogs?.therapyTypes.find((t) => t.id === generalData.therapy_type_id);
+    return getWizardConfig(therapy?.name ?? '');
+  }, [catalogs, generalData.therapy_type_id]);
+
+  const activeSteps = wizardConfig.steps;
+
+  // Auto-rellenar costo por defecto al llegar al paso de cierre
+  useEffect(() => {
+    if (activeSteps[currentStep - 1]?.component === 'StepClose' && closeData.cost === '') {
+      setCloseData((prev) => ({ ...prev, cost: String(wizardConfig.defaultCost) }));
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [currentStep, activeSteps, wizardConfig.defaultCost]);
+
   // ─── Helpers de estado de pasos ───────────────────────────────────────────────
 
   function updateEnergyReading(
@@ -210,14 +228,78 @@ export default function NuevaSessionPage() {
   const isStep1Valid =
     !!generalData.client_id && !!generalData.therapy_type_id && !!generalData.measured_at;
 
+  // ─── Helpers para serializar entradas de temas ────────────────────────────────
+
+  function buildThemeEntries(themeList: ThemeEntry[]) {
+    return themeList.flatMap((t) => {
+      const blockageRows = (['bloqueo_1', 'bloqueo_2', 'bloqueo_3'] as const).map((et, i) => {
+        const b = t.blockages[i];
+        if (!b.chakra_position_id && !b.organ_name) return null;
+        return {
+          client_topic_id: t.topic_id,
+          entry_type: et,
+          chakra_position_id: b.chakra_position_id || null,
+          organ_name: b.organ_name || null,
+          initial_energy: b.energy,
+          final_energy: b.final_energy ?? null,
+        };
+      }).filter((r): r is NonNullable<typeof r> => r !== null);
+
+      const resultantRow = (t.resultant.chakra_position_id || t.resultant.organ_name) ? [{
+        client_topic_id: t.topic_id,
+        entry_type: 'resultante' as const,
+        chakra_position_id: t.resultant.chakra_position_id || null,
+        organ_name: t.resultant.organ_name || null,
+        initial_energy: t.resultant.energy,
+        final_energy: t.resultant.final_energy ?? null,
+      }] : [];
+
+      const secondaryRow = t.is_secondary ? [{
+        client_topic_id: t.topic_id,
+        entry_type: 'secundario' as const,
+        initial_energy: t.secondary_energy_initial,
+        final_energy: t.secondary_energy_final,
+      }] : [];
+
+      const a = t.adulthood;
+      const adultRow = (a.situation || a.description || a.emotions || a.place || a.people) ? [{
+        client_topic_id: t.topic_id,
+        entry_type: 'edad_adulta' as const,
+        adult_theme: a.situation || a.description || null,
+        emotions: a.emotions || null,
+      }] : [];
+
+      const c = t.childhood;
+      const childRow = (c.situation || c.description || c.emotions || c.place || c.people) ? [{
+        client_topic_id: t.topic_id,
+        entry_type: 'edad_infancia' as const,
+        child_theme: c.situation || c.description || null,
+      }] : [];
+
+      return [...blockageRows, ...resultantRow, ...secondaryRow, ...adultRow, ...childRow];
+    });
+  }
+
+  async function saveTopicsStep(sid: string) {
+    const entries = buildThemeEntries(themes);
+    if (entries.length > 0) {
+      const topicProgress = themes
+        .filter((t) => t.topic_id !== null)
+        .map((t) => ({ client_topic_id: t.topic_id as string, progress_pct: t.progress_pct }));
+      await saveThemeEntries(sid, { entries, topic_progress: topicProgress });
+    }
+  }
+
   // ─── Lógica de avance por paso ────────────────────────────────────────────────
 
   const handleNext = useCallback(async () => {
     setIsSaving(true);
     setStepError(null);
 
+    const stepComponent = activeSteps[currentStep - 1]?.component;
+
     try {
-      if (currentStep === 1) {
+      if (stepComponent === 'StepGeneral') {
         // POST /sessions + PATCH /sessions/{id}/general
         const session = await createSession({
           client_id:        generalData.client_id,
@@ -237,99 +319,51 @@ export default function NuevaSessionPage() {
           total_cleanings: generalData.requires_cleanings === true ? generalData.total_cleanings : null,
         });
 
-        markStepComplete(1);
-        setStep(2);
+        markStepComplete(currentStep);
+        setStep(currentStep + 1);
 
-      } else if (currentStep === 2) {
+      } else if (stepComponent === 'StepEnergyInitial') {
         if (!sessionId) throw new Error('Sesión no iniciada');
         await saveEnergyReadings(sessionId, 'initial', energyInitial);
-        markStepComplete(2);
-        setStep(3);
+        markStepComplete(currentStep);
+        setStep(currentStep + 1);
 
-      } else if (currentStep === 3) {
+      } else if (stepComponent === 'StepChakrasInitial') {
         if (!sessionId) throw new Error('Sesión no iniciada');
         await saveChakraReadings(
           sessionId,
           'initial',
           chakraInitial.map((r) => ({ chakra_position_id: r.chakra_position_id, value: r.value })),
         );
-        markStepComplete(3);
-        setStep(4);
+        markStepComplete(currentStep);
+        setStep(currentStep + 1);
 
-      } else if (currentStep === 4) {
+      } else if (stepComponent === 'StepTopics') {
         if (!sessionId) throw new Error('Sesión no iniciada');
-        const entries = themes.flatMap((t) => {
-          const blockageRows = (['bloqueo_1', 'bloqueo_2', 'bloqueo_3'] as const).map((et, i) => {
-            const b = t.blockages[i];
-            if (!b.chakra_position_id && !b.organ_name) return null;
-            return {
-              client_topic_id: t.topic_id,
-              entry_type: et,
-              chakra_position_id: b.chakra_position_id || null,
-              organ_name: b.organ_name || null,
-              initial_energy: b.energy,
-              final_energy: b.final_energy ?? null,
-            };
-          }).filter((r): r is NonNullable<typeof r> => r !== null);
+        await saveTopicsStep(sessionId);
+        markStepComplete(currentStep);
+        setStep(currentStep + 1);
 
-          const resultantRow = (t.resultant.chakra_position_id || t.resultant.organ_name) ? [{
-            client_topic_id: t.topic_id,
-            entry_type: 'resultante' as const,
-            chakra_position_id: t.resultant.chakra_position_id || null,
-            organ_name: t.resultant.organ_name || null,
-            initial_energy: t.resultant.energy,
-            final_energy: t.resultant.final_energy ?? null,
-          }] : [];
+      } else if (stepComponent === 'StepLNT' || stepComponent === 'StepCleaning') {
+        // Placeholder — los componentes reales se implementarán después
+        markStepComplete(currentStep);
+        setStep(currentStep + 1);
 
-          const secondaryRow = t.is_secondary ? [{
-            client_topic_id: t.topic_id,
-            entry_type: 'secundario' as const,
-            initial_energy: t.secondary_energy_initial,
-            final_energy: t.secondary_energy_final,
-          }] : [];
-
-          const a = t.adulthood;
-          const adultRow = (a.situation || a.description || a.emotions || a.place || a.people) ? [{
-            client_topic_id: t.topic_id,
-            entry_type: 'edad_adulta' as const,
-            adult_theme: a.situation || a.description || null,
-            emotions: a.emotions || null,
-          }] : [];
-
-          const c = t.childhood;
-          const childRow = (c.situation || c.description || c.emotions || c.place || c.people) ? [{
-            client_topic_id: t.topic_id,
-            entry_type: 'edad_infancia' as const,
-            child_theme: c.situation || c.description || null,
-          }] : [];
-
-          return [...blockageRows, ...resultantRow, ...secondaryRow, ...adultRow, ...childRow];
-        });
-        // Solo llamar al API si hay al menos una entrada; si no, avanzar sin guardar
-        if (entries.length > 0) {
-          const topicProgress = themes
-            .filter((t) => t.topic_id !== null)
-            .map((t) => ({ client_topic_id: t.topic_id as string, progress_pct: t.progress_pct }));
-          await saveThemeEntries(sessionId, { entries, topic_progress: topicProgress });
-        }
-        markStepComplete(4);
-        setStep(5);
-
-      } else if (currentStep === 5) {
+      } else if (stepComponent === 'StepEnergyFinal') {
         if (!sessionId) throw new Error('Sesión no iniciada');
         await saveEnergyReadings(sessionId, 'final', energyFinal);
-        markStepComplete(5);
-        setStep(6);
+        markStepComplete(currentStep);
+        setStep(currentStep + 1);
 
-      } else if (currentStep === 6) {
+      } else if (stepComponent === 'StepChakrasFinal') {
         if (!sessionId) throw new Error('Sesión no iniciada');
         await saveChakraReadings(
           sessionId,
           'final',
           chakraFinal.map((r) => ({ chakra_position_id: r.chakra_position_id, value: r.value })),
         );
-        markStepComplete(6);
-        setStep(7);
+        markStepComplete(currentStep);
+        setStep(currentStep + 1);
       }
     } catch (err) {
       setStepError(err instanceof Error ? err.message : 'Error al guardar. Intenta de nuevo.');
@@ -337,7 +371,7 @@ export default function NuevaSessionPage() {
       setIsSaving(false);
     }
   }, [
-    currentStep, sessionId, generalData, energyInitial, chakraInitial,
+    currentStep, activeSteps, sessionId, generalData, energyInitial, chakraInitial,
     themes, energyFinal, chakraFinal,
     setSessionId, markStepComplete, setStep,
   ]);
@@ -352,82 +386,34 @@ export default function NuevaSessionPage() {
     if (!sessionId) return;
     setIsSaving(true);
     setStepError(null);
+
+    const stepComponent = activeSteps[currentStep - 1]?.component;
+
     try {
-      if (currentStep === 2) {
+      if (stepComponent === 'StepEnergyInitial') {
         await saveEnergyReadings(sessionId, 'initial', energyInitial);
-      } else if (currentStep === 3) {
+      } else if (stepComponent === 'StepChakrasInitial') {
         await saveChakraReadings(
           sessionId, 'initial',
           chakraInitial.map((r) => ({ chakra_position_id: r.chakra_position_id, value: r.value })),
         );
-      } else if (currentStep === 4) {
-        const draftEntries = themes.flatMap((t) => {
-          const blockageRows = (['bloqueo_1', 'bloqueo_2', 'bloqueo_3'] as const).map((et, i) => {
-            const b = t.blockages[i];
-            if (!b.chakra_position_id && !b.organ_name) return null;
-            return {
-              client_topic_id: t.topic_id,
-              entry_type: et,
-              chakra_position_id: b.chakra_position_id || null,
-              organ_name: b.organ_name || null,
-              initial_energy: b.energy,
-              final_energy: b.final_energy ?? null,
-            };
-          }).filter((r): r is NonNullable<typeof r> => r !== null);
-
-          const resultantRow = (t.resultant.chakra_position_id || t.resultant.organ_name) ? [{
-            client_topic_id: t.topic_id,
-            entry_type: 'resultante' as const,
-            chakra_position_id: t.resultant.chakra_position_id || null,
-            organ_name: t.resultant.organ_name || null,
-            initial_energy: t.resultant.energy,
-            final_energy: t.resultant.final_energy ?? null,
-          }] : [];
-
-          const secondaryRow = t.is_secondary ? [{
-            client_topic_id: t.topic_id,
-            entry_type: 'secundario' as const,
-            initial_energy: t.secondary_energy_initial,
-            final_energy: t.secondary_energy_final,
-          }] : [];
-
-          const a = t.adulthood;
-          const adultRow = (a.situation || a.description || a.emotions || a.place || a.people) ? [{
-            client_topic_id: t.topic_id,
-            entry_type: 'edad_adulta' as const,
-            adult_theme: a.situation || a.description || null,
-            emotions: a.emotions || null,
-          }] : [];
-
-          const c = t.childhood;
-          const childRow = (c.situation || c.description || c.emotions || c.place || c.people) ? [{
-            client_topic_id: t.topic_id,
-            entry_type: 'edad_infancia' as const,
-            child_theme: c.situation || c.description || null,
-          }] : [];
-
-          return [...blockageRows, ...resultantRow, ...secondaryRow, ...adultRow, ...childRow];
-        });
-        if (draftEntries.length > 0) {
-          const draftProgress = themes
-            .filter((t) => t.topic_id !== null)
-            .map((t) => ({ client_topic_id: t.topic_id as string, progress_pct: t.progress_pct }));
-          await saveThemeEntries(sessionId, { entries: draftEntries, topic_progress: draftProgress });
-        }
-      } else if (currentStep === 5) {
+      } else if (stepComponent === 'StepTopics') {
+        await saveTopicsStep(sessionId);
+      } else if (stepComponent === 'StepEnergyFinal') {
         await saveEnergyReadings(sessionId, 'final', energyFinal);
-      } else if (currentStep === 6) {
+      } else if (stepComponent === 'StepChakrasFinal') {
         await saveChakraReadings(
           sessionId, 'final',
           chakraFinal.map((r) => ({ chakra_position_id: r.chakra_position_id, value: r.value })),
         );
       }
+      // StepLNT, StepCleaning — sin datos que guardar aún
     } catch (err) {
       setStepError(err instanceof Error ? err.message : 'Error al guardar borrador.');
     } finally {
       setIsSaving(false);
     }
-  }, [sessionId, currentStep, energyInitial, chakraInitial, themes, energyFinal, chakraFinal]);
+  }, [sessionId, currentStep, activeSteps, energyInitial, chakraInitial, themes, energyFinal, chakraFinal]);
 
   const handleCloseSession = useCallback(async () => {
     if (!sessionId) return;
@@ -443,7 +429,7 @@ export default function NuevaSessionPage() {
         cost,
         payment_notes: closeData.payment_notes || undefined,
       });
-      markStepComplete(7);
+      markStepComplete(activeSteps.length);
       reset();
       router.push('/clinica/sesiones');
     } catch (err) {
@@ -451,7 +437,7 @@ export default function NuevaSessionPage() {
     } finally {
       setIsSaving(false);
     }
-  }, [sessionId, closeData, markStepComplete, reset, router]);
+  }, [sessionId, closeData, activeSteps.length, markStepComplete, reset, router]);
 
   // ─── Render ────────────────────────────────────────────────────────────────────
 
@@ -475,7 +461,8 @@ export default function NuevaSessionPage() {
   const activeDimensions = catalogs.dimensions.filter((d) => d.is_active);
 
   // isNextDisabled solo aplica al paso 1
-  const isNextDisabled = currentStep === 1 ? !isStep1Valid : false;
+  const currentComponent = activeSteps[currentStep - 1]?.component;
+  const isNextDisabled = currentComponent === 'StepGeneral' ? !isStep1Valid : false;
 
   return (
     <div className="max-w-4xl mx-auto px-4 py-6">
@@ -504,6 +491,7 @@ export default function NuevaSessionPage() {
       )}
 
       <WizardShell
+        steps={activeSteps}
         onNext={handleNext}
         onPrev={handlePrev}
         onSaveDraft={handleSaveDraft}
@@ -511,7 +499,7 @@ export default function NuevaSessionPage() {
         isNextDisabled={isNextDisabled}
         isSaving={isSaving}
       >
-        {currentStep === 1 && (
+        {currentComponent === 'StepGeneral' && (
           <StepGeneral
             clients={catalogs.clients}
             therapyTypes={catalogs.therapyTypes}
@@ -522,7 +510,7 @@ export default function NuevaSessionPage() {
           />
         )}
 
-        {currentStep === 2 && (
+        {currentComponent === 'StepEnergyInitial' && (
           <StepEnergyInitial
             catalogDimensions={activeDimensions}
             readings={energyInitial}
@@ -531,7 +519,7 @@ export default function NuevaSessionPage() {
           />
         )}
 
-        {currentStep === 3 && (
+        {currentComponent === 'StepChakrasInitial' && (
           <StepChakrasInitial
             readings={chakraInitial}
             onChange={(id, val) => updateChakraReading(setChakraInitial, id, val)}
@@ -539,7 +527,7 @@ export default function NuevaSessionPage() {
           />
         )}
 
-        {currentStep === 4 && (
+        {currentComponent === 'StepTopics' && (
           <StepTopics
             themes={themes}
             clientTopics={clientTopics}
@@ -550,7 +538,19 @@ export default function NuevaSessionPage() {
           />
         )}
 
-        {currentStep === 5 && (
+        {currentComponent === 'StepLNT' && (
+          <div className="p-6 text-sm text-gray-500 bg-gray-50 rounded-lg border border-gray-200">
+            StepLNT — próximamente
+          </div>
+        )}
+
+        {currentComponent === 'StepCleaning' && (
+          <div className="p-6 text-sm text-gray-500 bg-gray-50 rounded-lg border border-gray-200">
+            StepCleaning — próximamente
+          </div>
+        )}
+
+        {currentComponent === 'StepEnergyFinal' && (
           <StepEnergyFinal
             catalogDimensions={activeDimensions}
             readings={energyFinal}
@@ -560,7 +560,7 @@ export default function NuevaSessionPage() {
           />
         )}
 
-        {currentStep === 6 && (
+        {currentComponent === 'StepChakrasFinal' && (
           <StepChakrasFinal
             readings={chakraFinal}
             compareReadings={chakraInitial}
@@ -569,7 +569,7 @@ export default function NuevaSessionPage() {
           />
         )}
 
-        {currentStep === 7 && (
+        {currentComponent === 'StepClose' && (
           <StepClose
             value={closeData}
             onChange={(field, val) => setCloseData((prev) => ({ ...prev, [field]: val }))}

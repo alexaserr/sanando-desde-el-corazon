@@ -102,12 +102,16 @@ export interface ThemeEntry {
   _isCreatedLocally?: boolean;
   name: string;
   is_secondary: boolean;
+  /** Solo relevante si is_secondary = true. */
+  secondary_name?: string;
   /** Siempre 3 bloqueos. */
   blockages: [BlockageData, BlockageData, BlockageData];
   resultant: BlockageData;
   /** Solo relevante si is_secondary = true. */
   secondary_energy_initial: number;
   secondary_energy_final: number;
+  /** Emociones predominantes del tema (array de strings). */
+  emotions?: string[];
   childhood: AgeData;
   adulthood: AgeData;
   progress_pct: number;
