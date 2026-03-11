@@ -9,7 +9,13 @@ import { Card, CardContent } from "@/components/ui/card";
 import { formatDate, formatPhone, formatCurrency } from "@/lib/utils/formatters";
 import type { Client, Session, PaginatedResponse, MaritalStatus } from "@/types/api";
 
-type Tab = "datos" | "sesiones";
+type Tab = "datos" | "sesiones" | "salud";
+
+const TAB_LABELS: Record<Tab, string> = {
+  datos: "Datos Personales",
+  sesiones: "Historial de Sesiones",
+  salud: "Salud",
+};
 
 const MARITAL_LABELS: Record<MaritalStatus, string> = {
   single: "Soltero/a",
@@ -46,7 +52,38 @@ function Field({
       <dt className="text-xs font-medium text-muted-foreground uppercase tracking-wide">
         {label}
       </dt>
-      <dd className="mt-1 text-sm text-terra-900">{value ?? "—"}</dd>
+      <dd className="mt-1 text-sm text-terra-900">{value ?? <span className="text-gray-400">—</span>}</dd>
+    </div>
+  );
+}
+
+function SectionTitle({ children }: { children: React.ReactNode }) {
+  return (
+    <h2 className="font-display text-lg text-terra-900 mb-4">{children}</h2>
+  );
+}
+
+function Divider() {
+  return <div className="border-b border-gray-100 my-6" />;
+}
+
+function TagList({
+  items,
+  className,
+}: {
+  items: string[] | null | undefined;
+  className: string;
+}) {
+  if (!items || items.length === 0) {
+    return <span className="text-sm text-gray-400">—</span>;
+  }
+  return (
+    <div className="flex flex-wrap gap-2 mt-1">
+      {items.map((item) => (
+        <span key={item} className={`text-xs px-2 py-1 rounded-full ${className}`}>
+          {item}
+        </span>
+      ))}
     </div>
   );
 }
@@ -61,6 +98,10 @@ export default function PacienteDetailPage() {
   const [loading, setLoading] = useState(true);
   const [sessionsLoading, setSessionsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+
+  // Salud tab state
+  const [conditionsAvailable, setConditionsAvailable] = useState<boolean | null>(null);
+  const [conditionsLoading, setConditionsLoading] = useState(false);
 
   useEffect(() => {
     const fetchClient = async () => {
@@ -90,7 +131,6 @@ export default function PacienteDetailPage() {
         );
         setSessions(data.items);
       } catch {
-        // Si el endpoint no existe aún, mostrar lista vacía
         setSessions([]);
       } finally {
         setSessionsLoading(false);
@@ -98,6 +138,25 @@ export default function PacienteDetailPage() {
     };
     fetchSessions();
   }, [tab, params.id]);
+
+  useEffect(() => {
+    if (tab !== "salud") return;
+    if (conditionsAvailable !== null) return; // ya se intentó
+    const fetchConditions = async () => {
+      setConditionsLoading(true);
+      try {
+        await apiClient.get<PaginatedResponse<unknown>>(
+          `/api/v1/clinical/clients/${params.id}/conditions?page=1&size=50`,
+        );
+        setConditionsAvailable(true);
+      } catch {
+        setConditionsAvailable(false);
+      } finally {
+        setConditionsLoading(false);
+      }
+    };
+    fetchConditions();
+  }, [tab, params.id, conditionsAvailable]);
 
   return (
     <div className="space-y-6 max-w-4xl">
@@ -145,7 +204,7 @@ export default function PacienteDetailPage() {
       {/* Tabs */}
       <div className="border-b border-border">
         <nav className="flex gap-6" aria-label="Pestañas">
-          {(["datos", "sesiones"] as Tab[]).map((t) => (
+          {(["datos", "sesiones", "salud"] as Tab[]).map((t) => (
             <button
               key={t}
               onClick={() => setTab(t)}
@@ -155,7 +214,7 @@ export default function PacienteDetailPage() {
                   : "border-transparent text-muted-foreground hover:text-terra-900"
               }`}
             >
-              {t === "datos" ? "Datos Personales" : "Historial de Sesiones"}
+              {TAB_LABELS[t]}
             </button>
           ))}
         </nav>
@@ -166,49 +225,111 @@ export default function PacienteDetailPage() {
         <Card>
           <CardContent className="pt-6">
             {loading ? (
-              <SkeletonBlock lines={8} />
+              <SkeletonBlock lines={12} />
             ) : client ? (
-              <dl className="grid grid-cols-1 sm:grid-cols-2 gap-6">
-                <Field label="Nombre completo" value={client.full_name} />
-                <Field label="Correo electrónico" value={client.email} />
-                <Field
-                  label="Teléfono"
-                  value={client.phone ? formatPhone(client.phone) : null}
-                />
-                <Field
-                  label="Fecha de nacimiento"
-                  value={client.birth_date ? formatDate(client.birth_date) : null}
-                />
-                <Field
-                  label="Estado civil"
-                  value={
-                    client.marital_status
-                      ? MARITAL_LABELS[client.marital_status]
-                      : null
-                  }
-                />
-                <Field label="Lugar de nacimiento" value={client.birth_place} />
-                <Field label="Lugar de residencia" value={client.residence_place} />
-                <Field label="Profesión" value={client.profession} />
-                {client.motivation_general && (
-                  <div className="sm:col-span-2">
+              <div>
+                {/* SECCIÓN 1: Información Personal */}
+                <section>
+                  <SectionTitle>Información Personal</SectionTitle>
+                  <dl className="grid grid-cols-1 sm:grid-cols-2 gap-6">
+                    <Field label="Nombre completo" value={client.full_name} />
+                    <Field label="Correo electrónico" value={client.email} />
                     <Field
-                      label="Motivación general"
-                      value={client.motivation_general}
+                      label="Teléfono"
+                      value={client.phone ? formatPhone(client.phone) : null}
                     />
+                    <Field
+                      label="Fecha de nacimiento"
+                      value={client.birth_date ? formatDate(client.birth_date) : null}
+                    />
+                    <Field
+                      label="Estado civil"
+                      value={
+                        client.marital_status
+                          ? MARITAL_LABELS[client.marital_status]
+                          : null
+                      }
+                    />
+                    <Field label="Lugar de nacimiento" value={client.birth_place} />
+                    <Field label="Lugar de residencia" value={client.residence_place} />
+                    <Field label="Profesión" value={client.profession} />
+                  </dl>
+                </section>
+
+                <Divider />
+
+                {/* SECCIÓN 2: Perfil Emocional */}
+                <section>
+                  <SectionTitle>Perfil Emocional</SectionTitle>
+                  <div className="space-y-6">
+                    <div>
+                      <dt className="text-xs font-medium text-muted-foreground uppercase tracking-wide">
+                        Emociones predominantes
+                      </dt>
+                      <TagList
+                        items={client.predominant_emotions}
+                        className="bg-terra-200/50 text-terra-700"
+                      />
+                    </div>
+                    <div>
+                      <dt className="text-xs font-medium text-muted-foreground uppercase tracking-wide">
+                        Motivación de visita
+                      </dt>
+                      <TagList
+                        items={client.motivation_visit}
+                        className="bg-blue-50 text-blue-700"
+                      />
+                    </div>
                   </div>
-                )}
-                {client.important_notes && (
-                  <div className="sm:col-span-2">
-                    <dt className="text-xs font-medium text-muted-foreground uppercase tracking-wide">
-                      Notas importantes
-                    </dt>
-                    <dd className="mt-1 text-sm text-terra-900 bg-terra-50 rounded p-3 border border-terra-200">
-                      {client.important_notes}
-                    </dd>
+                </section>
+
+                <Divider />
+
+                {/* SECCIÓN 3: Familia */}
+                <section>
+                  <SectionTitle>Familia</SectionTitle>
+                  <dl className="grid grid-cols-1 sm:grid-cols-2 gap-6">
+                    <Field label="Número de hijos" value={client.num_children} />
+                    <Field label="Número de hermanos" value={client.num_siblings} />
+                    <Field label="Orden de nacimiento" value={client.birth_order} />
+                    <Field label="Abortos en sistema familiar" value={client.family_abortions} />
+                    <div className="sm:col-span-2">
+                      <Field label="Fallecimientos antes de 41" value={client.deaths_before_41} />
+                    </div>
+                  </dl>
+                </section>
+
+                <Divider />
+
+                {/* SECCIÓN 4: Notas */}
+                <section>
+                  <SectionTitle>Notas</SectionTitle>
+                  <div className="space-y-4">
+                    {client.motivation_general && (
+                      <div>
+                        <dt className="text-xs font-medium text-muted-foreground uppercase tracking-wide">
+                          Motivación general
+                        </dt>
+                        <dd className="mt-1 text-sm text-terra-900">
+                          {client.motivation_general}
+                        </dd>
+                      </div>
+                    )}
+                    {client.important_notes ? (
+                      <div>
+                        <dt className="text-xs font-medium text-muted-foreground uppercase tracking-wide mb-2">
+                          Notas importantes
+                        </dt>
+                        <dd className="bg-amber-50 border-l-4 border-amber-400 p-4 text-sm text-terra-900">
+                          {client.important_notes}
+                        </dd>
+                      </div>
+                    ) : !client.motivation_general ? (
+                      <p className="text-sm text-gray-400">—</p>
+                    ) : null}
                   </div>
-                )}
-              </dl>
+                </section>
+              </div>
             ) : null}
           </CardContent>
         </Card>
@@ -253,7 +374,9 @@ export default function PacienteDetailPage() {
                       }
                       className="border-b cursor-pointer hover:bg-terra-50 transition-colors text-terra-900"
                     >
-                      <td className="px-4 py-3">{formatDate(session.measured_at ?? session.created_at)}</td>
+                      <td className="px-4 py-3">
+                        {formatDate(session.measured_at ?? session.created_at)}
+                      </td>
                       <td className="px-4 py-3 text-muted-foreground hidden sm:table-cell">
                         {session.session_type ?? "—"}
                       </td>
@@ -270,6 +393,24 @@ export default function PacienteDetailPage() {
             </div>
           )}
         </>
+      )}
+
+      {/* Tab: Salud */}
+      {tab === "salud" && (
+        <Card>
+          <CardContent className="pt-6">
+            {conditionsLoading ? (
+              <SkeletonBlock lines={4} />
+            ) : conditionsAvailable === false ? (
+              <div className="py-12 text-center text-muted-foreground">
+                <p className="text-lg font-medium text-terra-900 mb-2">Próximamente</p>
+                <p className="text-sm">El historial de condiciones médicas estará disponible en una próxima versión.</p>
+              </div>
+            ) : (
+              <p className="text-sm text-muted-foreground">Sin condiciones médicas registradas.</p>
+            )}
+          </CardContent>
+        </Card>
       )}
     </div>
   );

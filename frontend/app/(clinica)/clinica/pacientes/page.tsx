@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useRef } from "react";
 import { useRouter } from "next/navigation";
 import { Search, ChevronLeft, ChevronRight } from "lucide-react";
 import { apiClient } from "@/lib/api/client";
@@ -31,6 +31,20 @@ export default function PacientesPage() {
   const [query, setQuery] = useState("");
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const isFirstRender = useRef(true);
+
+  // Debounce: actualiza query 400ms después de que el usuario deja de escribir
+  useEffect(() => {
+    if (isFirstRender.current) {
+      isFirstRender.current = false;
+      return;
+    }
+    const timer = setTimeout(() => {
+      setPage(1);
+      setQuery(search);
+    }, 400);
+    return () => clearTimeout(timer);
+  }, [search]);
 
   const fetchClients = useCallback(async () => {
     setLoading(true);

@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
+import Link from "next/link";
 import { Users, CalendarDays, Activity, Zap, ChevronRight } from "lucide-react";
 import { apiClient, ApiError } from "@/lib/api/client";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -38,11 +39,16 @@ interface StatCardProps {
   icon: React.ElementType;
   iconBg: string;
   iconColor: string;
+  href?: string;
 }
 
-function StatCard({ title, value, description, icon: Icon, iconBg, iconColor }: StatCardProps) {
-  return (
-    <Card className="bg-white border border-gray-100 rounded-card shadow-card">
+function StatCard({ title, value, description, icon: Icon, iconBg, iconColor, href }: StatCardProps) {
+  const card = (
+    <Card
+      className={`bg-white border border-gray-100 rounded-card shadow-card transition-shadow ${
+        href ? "cursor-pointer hover:shadow-card-hover" : "cursor-default"
+      }`}
+    >
       <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
         <CardTitle className="text-sm font-medium text-muted-foreground">
           {title}
@@ -57,6 +63,11 @@ function StatCard({ title, value, description, icon: Icon, iconBg, iconColor }: 
       </CardContent>
     </Card>
   );
+
+  if (href) {
+    return <Link href={href} className="block">{card}</Link>;
+  }
+  return card;
 }
 
 export default function ClinicaDashboardPage() {
@@ -107,6 +118,7 @@ export default function ClinicaDashboardPage() {
       icon: Users,
       iconBg: "bg-terra-200/50",
       iconColor: "text-terra-700",
+      href: "/clinica/pacientes",
     },
     {
       title: "Sesiones Este Mes",
@@ -115,6 +127,7 @@ export default function ClinicaDashboardPage() {
       icon: CalendarDays,
       iconBg: "bg-blue-50",
       iconColor: "text-blue-600",
+      href: "/clinica/sesiones",
     },
     {
       title: "Total Sesiones",
@@ -123,6 +136,7 @@ export default function ClinicaDashboardPage() {
       icon: Activity,
       iconBg: "bg-green-50",
       iconColor: "text-green-600",
+      href: "/clinica/sesiones",
     },
     {
       title: "Energía Promedio",

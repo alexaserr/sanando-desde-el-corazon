@@ -70,6 +70,7 @@ const config: Config = {
       },
       boxShadow: {
         card: "0 2px 8px rgba(74,24,16,0.08)",
+        "card-hover": "0 4px 16px rgba(74,24,16,0.14)",
       },
       keyframes: {
         "accordion-down": {

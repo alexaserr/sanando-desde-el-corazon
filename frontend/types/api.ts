@@ -41,13 +41,13 @@ export interface Client {
   birth_place: string | null;
   residence_place: string | null;
   profession: string | null;
-  motivation_visit: Record<string, unknown> | null;
+  motivation_visit: string[] | null;
   motivation_general: string | null;
   num_children: number | null;
   num_siblings: number | null;
   birth_order: number | null;
   predominant_emotions: string[] | null;
-  family_abortions: number | null;
+  family_abortions: string | null;
   deaths_before_41: string | null;
   important_notes: string | null;
   created_at: string;
