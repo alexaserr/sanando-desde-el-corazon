@@ -15,18 +15,20 @@ Sub-endpoints (sin número de paso fijo):
 
 Cada paso hace autosave y retorna WizardStepResponse con el progreso.
 """
-from datetime import datetime, timezone
+from datetime import date, datetime, timezone
 from typing import Any
 from uuid import UUID
 
-from fastapi import APIRouter, Depends, HTTPException, Request, status
-from sqlalchemy import func, insert, select, update
+from fastapi import APIRouter, Depends, HTTPException, Query, Request, status
+from sqlalchemy import LargeBinary, asc, cast, desc, func, insert, select, update
 from sqlalchemy.dialects.postgresql import insert as pg_insert
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
 
+from app.config import settings
 from app.db.models import (
     AuditAction,
+    Client,
     Session,
     SessionAffectation,
     SessionChakraReading,
@@ -35,6 +37,7 @@ from app.db.models import (
     SessionLnt,
     SessionOrgan,
     SessionTopic,
+    TherapyType,
     User,
     UserRole,
 )
@@ -59,6 +62,8 @@ from app.schemas.sessions import (
     SessionCloseRequest,
     SessionCreate,
     SessionGeneralUpdate,
+    SessionListItem,
+    SessionListResponse,
     SessionResponse,
     TopicResponse,
     TopicsUpdate,
@@ -307,6 +312,7 @@ async def _build_session_response(session_id: UUID, db: AsyncSession) -> Session
         await db.execute(
             select(Session)
             .options(
+                selectinload(Session.therapy_type),
                 selectinload(Session.energy_readings).selectinload(SessionEnergyReading.dimension),
                 selectinload(Session.chakra_readings).selectinload(SessionChakraReading.chakra),
                 selectinload(Session.topics),
@@ -315,7 +321,7 @@ async def _build_session_response(session_id: UUID, db: AsyncSession) -> Session
                 selectinload(Session.affectations),
                 selectinload(Session.organs),
             )
-            .where(Session.id == session_id)
+            .where(Session.id == session_id, Session.deleted_at.is_(None))
         )
     ).scalar_one_or_none()
 
@@ -358,6 +364,7 @@ async def _build_session_response(session_id: UUID, db: AsyncSession) -> Session
         client_id=session.client_id,
         therapist_id=session.therapist_id,
         therapy_type_id=session.therapy_type_id,
+        therapy_type_name=session.therapy_type.name if session.therapy_type else None,
         session_number=session.session_number,
         measured_at=session.measured_at,
         general_energy_level=session.general_energy_level,
@@ -427,6 +434,78 @@ async def create_session(
     return await _build_session_response(session_id, db)
 
 
+_SORT_COLUMNS = {
+    "measured_at": Session.measured_at,
+    "created_at": Session.created_at,
+    "cost": Session.cost,
+    "general_energy_level": Session.general_energy_level,
+}
+
+
+@router.get(
+    "",
+    response_model=SessionListResponse,
+    summary="Listar sesiones con filtros y paginación",
+)
+async def list_sessions(
+    page: int = Query(1, ge=1),
+    per_page: int = Query(20, ge=1, le=100),
+    client_id: UUID | None = Query(None),
+    therapy_type_id: UUID | None = Query(None),
+    date_from: date | None = Query(None),
+    date_to: date | None = Query(None),
+    sort_by: str = Query("measured_at"),
+    sort_order: str = Query("desc"),
+    db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(require_role(UserRole.therapist, UserRole.admin)),
+) -> SessionListResponse:
+    key = settings.CLINICAL_DB_PGCRYPTO_KEY
+
+    base = (
+        select(
+            Session.id,
+            Session.client_id,
+            func.pgp_sym_decrypt(cast(Client.full_name, LargeBinary), key).label("client_name"),
+            TherapyType.name.label("therapy_type_name"),
+            Session.measured_at,
+            Session.general_energy_level,
+            Session.cost,
+            Session.created_at,
+        )
+        .outerjoin(Client, Session.client_id == Client.id)
+        .outerjoin(TherapyType, Session.therapy_type_id == TherapyType.id)
+        .where(Session.deleted_at.is_(None))
+    )
+
+    if current_user.role == UserRole.therapist:
+        base = base.where(Session.therapist_id == current_user.id)
+    if client_id is not None:
+        base = base.where(Session.client_id == client_id)
+    if therapy_type_id is not None:
+        base = base.where(Session.therapy_type_id == therapy_type_id)
+    if date_from is not None:
+        base = base.where(Session.measured_at >= date_from)
+    if date_to is not None:
+        base = base.where(Session.measured_at <= date_to)
+
+    total = (await db.scalar(select(func.count()).select_from(base.subquery()))) or 0
+
+    sort_col = _SORT_COLUMNS.get(sort_by, Session.measured_at)
+    order_fn = desc if sort_order == "desc" else asc
+    rows = (
+        await db.execute(
+            base.order_by(order_fn(sort_col)).offset((page - 1) * per_page).limit(per_page)
+        )
+    ).mappings().all()
+
+    return SessionListResponse(
+        data=[SessionListItem(**row) for row in rows],
+        total=total,
+        page=page,
+        per_page=per_page,
+    )
+
+
 @router.get(
     "/{session_id}",
     response_model=SessionResponse,
@@ -435,8 +514,15 @@ async def create_session(
 async def get_session(
     session_id: UUID,
     db: AsyncSession = Depends(get_db),
-    _: User = Depends(require_role(UserRole.therapist, UserRole.admin)),
+    current_user: User = Depends(require_role(UserRole.therapist, UserRole.admin)),
 ) -> SessionResponse:
+    if current_user.role == UserRole.therapist:
+        session = await _get_session_or_404(session_id, db)
+        if session.therapist_id != current_user.id:
+            raise HTTPException(
+                status_code=status.HTTP_403_FORBIDDEN,
+                detail="No tienes acceso a esta sesión",
+            )
     return await _build_session_response(session_id, db)
 
 

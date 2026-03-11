@@ -266,6 +266,7 @@ class SessionResponse(BaseModel):
     client_id: UUID | None = None
     therapist_id: UUID | None = None
     therapy_type_id: UUID | None = None
+    therapy_type_name: str | None = None
     session_number: int | None = None
     measured_at: datetime
     general_energy_level: int | None = None
@@ -291,6 +292,28 @@ class SessionResponse(BaseModel):
     organs: list[OrganResponse] = []
 
     model_config = {"from_attributes": True}
+
+
+# ── Lista global de sesiones ──────────────────────────────────
+
+class SessionListItem(BaseModel):
+    id: UUID
+    client_id: UUID | None = None
+    client_name: str | None = None
+    therapy_type_name: str | None = None
+    measured_at: datetime
+    general_energy_level: int | None = None
+    cost: Decimal | None = None
+    created_at: datetime
+
+    model_config = {"from_attributes": True}
+
+
+class SessionListResponse(BaseModel):
+    data: list[SessionListItem]
+    total: int
+    page: int
+    per_page: int
 
 
 class WizardStepResponse(BaseModel):
