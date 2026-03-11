@@ -22,16 +22,17 @@ import {
   updateSessionGeneral,
   saveEnergyReadings,
   saveChakraReadings,
-  saveTopics,
   closeSession,
+  getClientTopics,
+  saveThemeEntries,
 } from '@/lib/api/clinical';
 
-import type { TherapyType, ChakraPosition, EnergyDimension, ClientListItem } from '@/types/api';
+import type { TherapyType, ChakraPosition, EnergyDimension, ClientListItem, ClientTopic } from '@/types/api';
 import type {
   GeneralData,
   EnergyReading,
   WizardChakraReading,
-  Topic,
+  ThemeEntry,
   CloseData,
   SessionSummary,
 } from '@/components/clinical/wizard/types';
@@ -73,21 +74,6 @@ function initChakraReadings(chakras: ChakraPosition[]): WizardChakraReading[] {
   return chakras.map((c) => ({ chakra_position_id: c.id, name: c.name, value: 7 }));
 }
 
-function newTopic(): Topic {
-  return {
-    _localId: crypto.randomUUID(),
-    source_type: 'spine',
-    zone: '',
-    adult_theme: '',
-    child_theme: '',
-    adult_age: '',
-    child_age: '',
-    emotions: '',
-    initial_energy: 50,
-    final_energy: 50,
-  };
-}
-
 // ─── Página ────────────────────────────────────────────────────────────────────
 
 export default function NuevaSessionPage() {
@@ -103,11 +89,14 @@ export default function NuevaSessionPage() {
   const [catalogs, setCatalogs] = useState<Catalogs | null>(null);
   const [loadError, setLoadError] = useState<string | null>(null);
 
+  // Temas del paciente (cargados al seleccionar cliente)
+  const [clientTopics, setClientTopics] = useState<ClientTopic[]>([]);
+
   // Estado de cada paso
   const [generalData, setGeneralData]               = useState<GeneralData>(defaultGeneralData);
   const [energyInitial, setEnergyInitial]           = useState<EnergyReading[]>([]);
   const [chakraInitial, setChakraInitial]           = useState<WizardChakraReading[]>([]);
-  const [topics, setTopics]                         = useState<Topic[]>([]);
+  const [themes, setThemes]                         = useState<ThemeEntry[]>([]);
   const [energyFinal, setEnergyFinal]               = useState<EnergyReading[]>([]);
   const [chakraFinal, setChakraFinal]               = useState<WizardChakraReading[]>([]);
   const [closeData, setCloseData]                   = useState<CloseData>(defaultCloseData);
@@ -152,6 +141,17 @@ export default function NuevaSessionPage() {
     load();
   }, []);
 
+  // Cargar temas del paciente cuando cambia el cliente seleccionado
+  useEffect(() => {
+    if (!generalData.client_id) {
+      setClientTopics([]);
+      return;
+    }
+    getClientTopics(generalData.client_id)
+      .then(setClientTopics)
+      .catch(() => setClientTopics([]));
+  }, [generalData.client_id]);
+
   // ─── Helpers de estado de pasos ───────────────────────────────────────────────
 
   function updateEnergyReading(
@@ -174,16 +174,9 @@ export default function NuevaSessionPage() {
     );
   }
 
-  const addTopic    = useCallback(() => setTopics((prev) => [...prev, newTopic()]), []);
-  const removeTopic = useCallback((localId: string) =>
-    setTopics((prev) => prev.filter((t) => t._localId !== localId)), []);
-  const updateTopic = useCallback(
-    (localId: string, updates: Partial<Omit<Topic, '_localId'>>) =>
-      setTopics((prev) =>
-        prev.map((t) => (t._localId === localId ? { ...t, ...updates } : t)),
-      ),
-    [],
-  );
+  const handleThemesChange = useCallback((updated: ThemeEntry[]) => {
+    setThemes(updated);
+  }, []);
 
   // ─── Resumen de sesión para StepClose ─────────────────────────────────────────
 
@@ -203,11 +196,11 @@ export default function NuevaSessionPage() {
       generalEnergy:    generalData.general_energy,
       energyInitialAvg: avg(energyInitial),
       energyFinalAvg:   avg(energyFinal),
-      topicsCount:      topics.length,
+      topicsCount:      themes.length,
       chakraInitialCount: chakraInitial.length,
       chakraFinalCount:   chakraFinal.length,
     };
-  }, [catalogs, generalData, energyInitial, energyFinal, topics, chakraInitial, chakraFinal]);
+  }, [catalogs, generalData, energyInitial, energyFinal, themes, chakraInitial, chakraFinal]);
 
   // ─── Validación del paso 1 ─────────────────────────────────────────────────────
 
@@ -262,20 +255,40 @@ export default function NuevaSessionPage() {
 
       } else if (currentStep === 4) {
         if (!sessionId) throw new Error('Sesión no iniciada');
-        await saveTopics(
-          sessionId,
-          topics.map((t) => ({
-            source_type:   t.source_type,
-            zone:          t.zone,
-            adult_theme:   t.adult_theme,
-            child_theme:   t.child_theme,
-            adult_age:     t.adult_age !== '' ? parseInt(t.adult_age, 10) : null,
-            child_age:     t.child_age !== '' ? parseInt(t.child_age, 10) : null,
-            emotions:      t.emotions,
-            initial_energy: t.initial_energy,
-            final_energy:   t.final_energy,
-          })),
-        );
+        const entries = themes.map((t) => ({
+          topic_id:                   t.topic_id,
+          topic_name:                 t.name,
+          is_secondary:               t.is_secondary,
+          blockage_1_chakra_id:       t.blockages[0]?.chakra_position_id || null,
+          blockage_1_organ:           t.blockages[0]?.organ_name || null,
+          blockage_1_energy:          t.blockages[0]?.energy ?? null,
+          blockage_2_chakra_id:       t.blockages[1]?.chakra_position_id || null,
+          blockage_2_organ:           t.blockages[1]?.organ_name || null,
+          blockage_2_energy:          t.blockages[1]?.energy ?? null,
+          blockage_3_chakra_id:       t.blockages[2]?.chakra_position_id || null,
+          blockage_3_organ:           t.blockages[2]?.organ_name || null,
+          blockage_3_energy:          t.blockages[2]?.energy ?? null,
+          resultant_chakra_id:        t.resultant.chakra_position_id || null,
+          resultant_organ:            t.resultant.organ_name || null,
+          resultant_energy:           t.resultant.energy,
+          secondary_energy_initial:   t.is_secondary ? t.secondary_energy_initial : null,
+          secondary_energy_final:     t.is_secondary ? t.secondary_energy_final : null,
+          childhood_place:            t.childhood.place || null,
+          childhood_people:           t.childhood.people || null,
+          childhood_situation:        t.childhood.situation || null,
+          childhood_description:      t.childhood.description || null,
+          childhood_emotions:         t.childhood.emotions || null,
+          adulthood_place:            t.adulthood.place || null,
+          adulthood_people:           t.adulthood.people || null,
+          adulthood_situation:        t.adulthood.situation || null,
+          adulthood_description:      t.adulthood.description || null,
+          adulthood_emotions:         t.adulthood.emotions || null,
+          progress_pct:               t.progress_pct,
+        }));
+        const topicProgress = themes
+          .filter((t) => t.topic_id !== null)
+          .map((t) => ({ topic_id: t.topic_id as string, progress_pct: t.progress_pct }));
+        await saveThemeEntries(sessionId, entries, topicProgress);
         markStepComplete(4);
         setStep(5);
 
@@ -302,7 +315,7 @@ export default function NuevaSessionPage() {
     }
   }, [
     currentStep, sessionId, generalData, energyInitial, chakraInitial,
-    topics, energyFinal, chakraFinal,
+    themes, energyFinal, chakraFinal,
     setSessionId, markStepComplete, setStep,
   ]);
 
@@ -325,16 +338,36 @@ export default function NuevaSessionPage() {
           chakraInitial.map((r) => ({ chakra_position_id: r.chakra_position_id, value: r.value })),
         );
       } else if (currentStep === 4) {
-        await saveTopics(
-          sessionId,
-          topics.map((t) => ({
-            source_type: t.source_type, zone: t.zone,
-            adult_theme: t.adult_theme, child_theme: t.child_theme,
-            adult_age: t.adult_age !== '' ? parseInt(t.adult_age, 10) : null,
-            child_age: t.child_age !== '' ? parseInt(t.child_age, 10) : null,
-            emotions: t.emotions, initial_energy: t.initial_energy, final_energy: t.final_energy,
-          })),
-        );
+        const draftEntries = themes.map((t) => ({
+          topic_id: t.topic_id, topic_name: t.name, is_secondary: t.is_secondary,
+          blockage_1_chakra_id: t.blockages[0]?.chakra_position_id || null,
+          blockage_1_organ: t.blockages[0]?.organ_name || null,
+          blockage_1_energy: t.blockages[0]?.energy ?? null,
+          blockage_2_chakra_id: t.blockages[1]?.chakra_position_id || null,
+          blockage_2_organ: t.blockages[1]?.organ_name || null,
+          blockage_2_energy: t.blockages[1]?.energy ?? null,
+          blockage_3_chakra_id: t.blockages[2]?.chakra_position_id || null,
+          blockage_3_organ: t.blockages[2]?.organ_name || null,
+          blockage_3_energy: t.blockages[2]?.energy ?? null,
+          resultant_chakra_id: t.resultant.chakra_position_id || null,
+          resultant_organ: t.resultant.organ_name || null,
+          resultant_energy: t.resultant.energy,
+          secondary_energy_initial: t.is_secondary ? t.secondary_energy_initial : null,
+          secondary_energy_final: t.is_secondary ? t.secondary_energy_final : null,
+          childhood_place: t.childhood.place || null, childhood_people: t.childhood.people || null,
+          childhood_situation: t.childhood.situation || null,
+          childhood_description: t.childhood.description || null,
+          childhood_emotions: t.childhood.emotions || null,
+          adulthood_place: t.adulthood.place || null, adulthood_people: t.adulthood.people || null,
+          adulthood_situation: t.adulthood.situation || null,
+          adulthood_description: t.adulthood.description || null,
+          adulthood_emotions: t.adulthood.emotions || null,
+          progress_pct: t.progress_pct,
+        }));
+        const draftProgress = themes
+          .filter((t) => t.topic_id !== null)
+          .map((t) => ({ topic_id: t.topic_id as string, progress_pct: t.progress_pct }));
+        await saveThemeEntries(sessionId, draftEntries, draftProgress);
       } else if (currentStep === 5) {
         await saveEnergyReadings(sessionId, 'final', energyFinal);
       } else if (currentStep === 6) {
@@ -348,7 +381,7 @@ export default function NuevaSessionPage() {
     } finally {
       setIsSaving(false);
     }
-  }, [sessionId, currentStep, energyInitial, chakraInitial, topics, energyFinal, chakraFinal]);
+  }, [sessionId, currentStep, energyInitial, chakraInitial, themes, energyFinal, chakraFinal]);
 
   const handleCloseSession = useCallback(async () => {
     if (!sessionId) return;
@@ -461,10 +494,10 @@ export default function NuevaSessionPage() {
 
         {currentStep === 4 && (
           <StepTopics
-            topics={topics}
-            onAdd={addTopic}
-            onRemove={removeTopic}
-            onChange={updateTopic}
+            themes={themes}
+            clientTopics={clientTopics}
+            chakras={catalogs.chakras}
+            onChange={handleThemesChange}
             disabled={isSaving}
           />
         )}

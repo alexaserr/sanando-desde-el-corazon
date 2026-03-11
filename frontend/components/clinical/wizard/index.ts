@@ -25,7 +25,15 @@ export type {
   GeneralData,
   CloseData,
   SessionSummary,
+  AgeData,
+  BlockageData,
+  ThemeEntry,
 } from './types';
+
+// Componentes paso 4 (rediseño)
+export { BlockageRow }  from './BlockageRow';
+export { AgesSection }  from './AgesSection';
+export { ThemeCard }    from './ThemeCard';
 
 // Props de cada paso (para el wizard page)
 export type { StepGeneralProps }        from './StepGeneral';

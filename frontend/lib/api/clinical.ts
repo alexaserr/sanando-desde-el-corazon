@@ -11,7 +11,11 @@ import type {
   TopicPayload,
   CloseSessionPayload,
   Session,
+  ClientTopic,
+  SessionThemeEntry,
+  ChakraOrgan,
 } from '@/types/api';
+import { CHAKRA_ORGANS } from '@/lib/data/chakra-organs';
 
 // ─── Catálogos ─────────────────────────────────────────────────────────────────
 
@@ -90,4 +94,89 @@ export async function closeSession(
     `/api/v1/clinical/sessions/${sessionId}/close`,
     data,
   );
+}
+
+// ─── Temas del paciente ────────────────────────────────────────────────────────
+
+export async function getClientTopics(clientId: string): Promise<ClientTopic[]> {
+  return apiClient.get<ClientTopic[]>(`/api/v1/clinical/clients/${clientId}/topics`);
+}
+
+export async function createClientTopic(
+  clientId: string,
+  name: string,
+): Promise<ClientTopic> {
+  return apiClient.post<ClientTopic, { name: string }>(
+    `/api/v1/clinical/clients/${clientId}/topics`,
+    { name },
+  );
+}
+
+export async function updateClientTopic(
+  clientId: string,
+  topicId: string,
+  data: Partial<Pick<ClientTopic, 'progress_pct' | 'is_completed'>>,
+): Promise<ClientTopic> {
+  return apiClient.patch<ClientTopic, typeof data>(
+    `/api/v1/clinical/clients/${clientId}/topics/${topicId}`,
+    data,
+  );
+}
+
+export async function completeClientTopic(
+  clientId: string,
+  topicId: string,
+): Promise<ClientTopic> {
+  return updateClientTopic(clientId, topicId, { is_completed: true });
+}
+
+// ─── Entradas de temas de sesión ──────────────────────────────────────────────
+
+interface TopicProgressUpdate {
+  topic_id: string;
+  progress_pct: number;
+}
+
+interface SaveThemeEntriesPayload {
+  entries: Omit<SessionThemeEntry, 'id' | 'session_id' | 'created_at' | 'updated_at'>[];
+  topic_progress: TopicProgressUpdate[];
+}
+
+export async function saveThemeEntries(
+  sessionId: string,
+  entries: SaveThemeEntriesPayload['entries'],
+  topicProgress: TopicProgressUpdate[],
+): Promise<unknown> {
+  return apiClient.put<unknown, SaveThemeEntriesPayload>(
+    `/api/v1/clinical/sessions/${sessionId}/theme-entries`,
+    { entries, topic_progress: topicProgress },
+  );
+}
+
+export async function getThemeEntries(sessionId: string): Promise<SessionThemeEntry[]> {
+  return apiClient.get<SessionThemeEntry[]>(
+    `/api/v1/clinical/sessions/${sessionId}/theme-entries`,
+  );
+}
+
+// ─── Catálogo de órganos por chakra ───────────────────────────────────────────
+
+export async function getChakraOrgans(): Promise<ChakraOrgan[]> {
+  try {
+    return await apiClient.get<ChakraOrgan[]>('/api/v1/catalogs/chakra-organs');
+  } catch {
+    // Fallback al catálogo estático — mapea posición a ID placeholder
+    const result: ChakraOrgan[] = [];
+    for (const [posStr, organs] of Object.entries(CHAKRA_ORGANS)) {
+      for (const organ of organs) {
+        result.push({
+          id: organ.id,
+          chakra_position_id: posStr,
+          organ_name: organ.organ_name,
+          system_name: organ.system_name,
+        });
+      }
+    }
+    return result;
+  }
 }

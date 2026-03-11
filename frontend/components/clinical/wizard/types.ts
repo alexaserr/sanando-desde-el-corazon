@@ -73,6 +73,42 @@ export interface GeneralData {
   total_cleanings: number;
 }
 
+// ─── Nuevos tipos para el rediseño del paso 4 ────────────────────────────────
+
+/** Datos de una sección etaria (infancia o adultez). */
+export interface AgeData {
+  place: string;
+  people: string;
+  situation: string;
+  description: string;
+  emotions: string;
+}
+
+/** Un bloqueo individual (chakra + órgano + energía). */
+export interface BlockageData {
+  chakra_position_id: string;
+  organ_name: string;
+  energy: number; // 0-100
+}
+
+/** Tema trabajado con el nuevo modelo (rediseño paso 4). */
+export interface ThemeEntry {
+  _localId: string;
+  /** ID del ClientTopic existente, o null si es nuevo. */
+  topic_id: string | null;
+  name: string;
+  is_secondary: boolean;
+  /** Siempre 3 bloqueos. */
+  blockages: [BlockageData, BlockageData, BlockageData];
+  resultant: BlockageData;
+  /** Solo relevante si is_secondary = true. */
+  secondary_energy_initial: number;
+  secondary_energy_final: number;
+  childhood: AgeData;
+  adulthood: AgeData;
+  progress_pct: number;
+}
+
 /** Datos del paso 7 — Cierre de la sesión. */
 export interface CloseData {
   cost: string;           // string para manejar campo vacío en input

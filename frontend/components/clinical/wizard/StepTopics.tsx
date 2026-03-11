@@ -1,302 +1,301 @@
 'use client';
 
-import { useId } from 'react';
-import { EnergySlider } from '../EnergySlider';
-import type { Topic, SourceType } from './types';
+import { useState, useId } from 'react';
+import { ThemeCard } from './ThemeCard';
+import type { ThemeEntry, BlockageData, AgeData } from './types';
+import type { ChakraPosition, ClientTopic } from '@/types/api';
 
-// ─── TopicCard ────────────────────────────────────────────────────────────────
+// ─── Helpers ──────────────────────────────────────────────────────────────────
 
-interface TopicCardProps {
-  topic: Topic;
-  index: number;
-  onChange: (localId: string, updates: Partial<Omit<Topic, '_localId'>>) => void;
-  onRemove: (localId: string) => void;
-  disabled: boolean;
+const EMPTY_BLOCKAGE: BlockageData = { chakra_position_id: '', organ_name: '', energy: 50 };
+
+const EMPTY_AGE_DATA: AgeData = {
+  place: '',
+  people: '',
+  situation: '',
+  description: '',
+  emotions: '',
+};
+
+function newThemeEntry(name = '', topicId: string | null = null): ThemeEntry {
+  return {
+    _localId: crypto.randomUUID(),
+    topic_id: topicId,
+    name,
+    is_secondary: false,
+    blockages: [
+      { ...EMPTY_BLOCKAGE },
+      { ...EMPTY_BLOCKAGE },
+      { ...EMPTY_BLOCKAGE },
+    ],
+    resultant: { ...EMPTY_BLOCKAGE },
+    secondary_energy_initial: 50,
+    secondary_energy_final: 50,
+    childhood: { ...EMPTY_AGE_DATA },
+    adulthood: { ...EMPTY_AGE_DATA },
+    progress_pct: 0,
+  };
 }
 
-function TopicCard({ topic, index, onChange, onRemove, disabled }: TopicCardProps) {
-  const headingId   = useId();
-  const zoneId      = useId();
-  const adultThemeId = useId();
-  const childThemeId = useId();
-  const adultAgeId  = useId();
-  const childAgeId  = useId();
-  const emotionsId  = useId();
+// ─── Props ────────────────────────────────────────────────────────────────────
 
-  function update<K extends keyof Omit<Topic, '_localId'>>(
-    field: K,
-    value: Omit<Topic, '_localId'>[K],
-  ) {
-    onChange(topic._localId, { [field]: value });
-  }
-
-  return (
-    <article
-      aria-labelledby={headingId}
-      className="bg-white rounded-lg border border-gray-200 shadow-sm overflow-hidden"
-    >
-      {/* Cabecera */}
-      <div className="flex items-center justify-between px-4 py-3 bg-gray-50 border-b border-gray-100">
-        <h3 id={headingId} className="text-sm font-semibold text-gray-700">
-          Tema {index + 1}
-        </h3>
-
-        {/* source_type — radio compacto */}
-        <div
-          role="group"
-          aria-label="Tipo de fuente"
-          className="flex items-center gap-3"
-        >
-          {(['spine', 'organ'] as SourceType[]).map((type) => (
-            <label
-              key={type}
-              className="flex items-center gap-1.5 text-sm cursor-pointer select-none"
-            >
-              <input
-                type="radio"
-                name={`source-${topic._localId}`}
-                value={type}
-                checked={topic.source_type === type}
-                disabled={disabled}
-                onChange={() => update('source_type', type)}
-                className="accent-[#4A1810]"
-              />
-              {type === 'spine' ? 'Columna' : 'Órgano'}
-            </label>
-          ))}
-        </div>
-
-        {/* Botón eliminar */}
-        {!disabled && (
-          <button
-            type="button"
-            onClick={() => onRemove(topic._localId)}
-            aria-label={`Eliminar tema ${index + 1}`}
-            className="ml-3 p-1 rounded text-gray-400 hover:text-red-600 hover:bg-red-50 transition-colors"
-          >
-            <svg
-              aria-hidden="true"
-              className="w-4 h-4"
-              fill="none"
-              viewBox="0 0 24 24"
-              stroke="currentColor"
-              strokeWidth={2}
-            >
-              <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                d="M6 18L18 6M6 6l12 12"
-              />
-            </svg>
-          </button>
-        )}
-      </div>
-
-      {/* Cuerpo del tema */}
-      <div className="p-4 space-y-4">
-        {/* Zona + temas adulto/niño en grid */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
-          <div className="flex flex-col gap-1">
-            <label htmlFor={zoneId} className="text-xs font-medium text-gray-600">
-              Zona
-            </label>
-            <input
-              id={zoneId}
-              type="text"
-              value={topic.zone}
-              disabled={disabled}
-              onChange={(e) => update('zone', e.target.value)}
-              placeholder="Ej: L3, hígado…"
-              className="rounded border border-gray-300 px-2.5 py-1.5 text-sm focus:outline-none focus:ring-1 focus:ring-[#4A1810] disabled:opacity-50"
-            />
-          </div>
-
-          <div className="flex flex-col gap-1">
-            <label htmlFor={adultThemeId} className="text-xs font-medium text-gray-600">
-              Tema adulto
-            </label>
-            <input
-              id={adultThemeId}
-              type="text"
-              value={topic.adult_theme}
-              disabled={disabled}
-              onChange={(e) => update('adult_theme', e.target.value)}
-              placeholder="Tema en el adulto…"
-              className="rounded border border-gray-300 px-2.5 py-1.5 text-sm focus:outline-none focus:ring-1 focus:ring-[#4A1810] disabled:opacity-50"
-            />
-          </div>
-
-          <div className="flex flex-col gap-1">
-            <label htmlFor={childThemeId} className="text-xs font-medium text-gray-600">
-              Tema niño interior
-            </label>
-            <input
-              id={childThemeId}
-              type="text"
-              value={topic.child_theme}
-              disabled={disabled}
-              onChange={(e) => update('child_theme', e.target.value)}
-              placeholder="Tema en el niño…"
-              className="rounded border border-gray-300 px-2.5 py-1.5 text-sm focus:outline-none focus:ring-1 focus:ring-[#4A1810] disabled:opacity-50"
-            />
-          </div>
-        </div>
-
-        {/* Edades */}
-        <div className="grid grid-cols-2 gap-3 max-w-xs">
-          <div className="flex flex-col gap-1">
-            <label htmlFor={adultAgeId} className="text-xs font-medium text-gray-600">
-              Edad adulto
-            </label>
-            <input
-              id={adultAgeId}
-              type="number"
-              min={0}
-              max={120}
-              value={topic.adult_age}
-              disabled={disabled}
-              onChange={(e) => update('adult_age', e.target.value)}
-              placeholder="—"
-              className="rounded border border-gray-300 px-2.5 py-1.5 text-sm text-center focus:outline-none focus:ring-1 focus:ring-[#4A1810] disabled:opacity-50"
-            />
-          </div>
-          <div className="flex flex-col gap-1">
-            <label htmlFor={childAgeId} className="text-xs font-medium text-gray-600">
-              Edad niño
-            </label>
-            <input
-              id={childAgeId}
-              type="number"
-              min={0}
-              max={18}
-              value={topic.child_age}
-              disabled={disabled}
-              onChange={(e) => update('child_age', e.target.value)}
-              placeholder="—"
-              className="rounded border border-gray-300 px-2.5 py-1.5 text-sm text-center focus:outline-none focus:ring-1 focus:ring-[#4A1810] disabled:opacity-50"
-            />
-          </div>
-        </div>
-
-        {/* Emociones */}
-        <div className="flex flex-col gap-1">
-          <label htmlFor={emotionsId} className="text-xs font-medium text-gray-600">
-            Emociones / notas
-          </label>
-          <textarea
-            id={emotionsId}
-            value={topic.emotions}
-            disabled={disabled}
-            onChange={(e) => update('emotions', e.target.value)}
-            rows={2}
-            placeholder="Emociones relacionadas, observaciones…"
-            className="rounded border border-gray-300 px-2.5 py-1.5 text-sm resize-none focus:outline-none focus:ring-1 focus:ring-[#4A1810] disabled:opacity-50"
-          />
-        </div>
-
-        {/* Energía inicial y final del tema */}
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 pt-1">
-          <EnergySlider
-            label="Energía inicial del tema"
-            value={topic.initial_energy}
-            onChange={(v) => update('initial_energy', v)}
-            phase="initial"
-            max={100}
-            disabled={disabled}
-          />
-          <EnergySlider
-            label="Energía final del tema"
-            value={topic.final_energy}
-            compareValue={topic.initial_energy}
-            onChange={(v) => update('final_energy', v)}
-            phase="final"
-            max={100}
-            disabled={disabled}
-          />
-        </div>
-      </div>
-    </article>
-  );
+export interface StepTopicsProps {
+  themes: ThemeEntry[];
+  clientTopics: ClientTopic[];
+  chakras: ChakraPosition[];
+  onChange: (themes: ThemeEntry[]) => void;
+  disabled?: boolean;
 }
 
 // ─── StepTopics ───────────────────────────────────────────────────────────────
 
-export interface StepTopicsProps {
-  topics: Topic[];
-  onAdd: () => void;
-  onRemove: (localId: string) => void;
-  onChange: (localId: string, updates: Partial<Omit<Topic, '_localId'>>) => void;
-  disabled?: boolean;
-}
-
 export function StepTopics({
-  topics,
-  onAdd,
-  onRemove,
+  themes,
+  clientTopics,
+  chakras,
   onChange,
   disabled = false,
 }: StepTopicsProps) {
+  // Modo de selección: 'existing' | 'new'
+  const [mode, setMode]               = useState<'existing' | 'new'>('new');
+  // Cuántos temas mostrar (1-5)
+  const [themeCount, setThemeCount]   = useState(1);
+  // Tema existente seleccionado del selector
+  const [selectedTopicId, setSelectedTopicId] = useState('');
+  // Nombre para tema nuevo
+  const [newTopicName, setNewTopicName]        = useState('');
+
+  const modeGroupId      = useId();
+  const existingSelectId = useId();
+  const newNameId        = useId();
+  const counterId        = useId();
+
+  // ── Ajustar cantidad de temas al cambiar el counter ───────────────────────
+
+  function handleCountChange(count: number) {
+    setThemeCount(count);
+    if (count > themes.length) {
+      // Agregar temas vacíos hasta llegar al count
+      const extras = Array.from({ length: count - themes.length }, () =>
+        newThemeEntry(),
+      );
+      onChange([...themes, ...extras]);
+    } else if (count < themes.length) {
+      onChange(themes.slice(0, count));
+    }
+  }
+
+  // ── Agregar tema desde el selector/input ──────────────────────────────────
+
+  function handleAddTheme() {
+    if (mode === 'existing') {
+      const existing = clientTopics.find((t) => t.id === selectedTopicId);
+      if (!existing) return;
+      const entry = newThemeEntry(existing.name, existing.id);
+      // Marcar progreso actual del tema
+      const updated = { ...entry, progress_pct: existing.progress_pct };
+      const next = [...themes, updated];
+      onChange(next);
+      setThemeCount(next.length);
+    } else {
+      const name = newTopicName.trim();
+      const entry = newThemeEntry(name || `Tema ${themes.length + 1}`, null);
+      const next = [...themes, entry];
+      onChange(next);
+      setThemeCount(next.length);
+      setNewTopicName('');
+    }
+  }
+
+  // ── Actualizar un tema individual ─────────────────────────────────────────
+
+  function handleThemeChange(localId: string, updates: Partial<ThemeEntry>) {
+    onChange(
+      themes.map((t) => (t._localId === localId ? { ...t, ...updates } : t)),
+    );
+  }
+
+  // ── Counter (1-5) ─────────────────────────────────────────────────────────
+
+  const counterValue = Math.min(5, Math.max(1, themeCount));
+
+  const tooManyTopics = themes.length >= 5;
+
   return (
-    <section aria-labelledby="step-topics-heading" className="space-y-5">
-      <div className="flex items-center justify-between">
-        <div>
-          <h2
-            id="step-topics-heading"
-            className="text-base font-semibold text-[#4A1810]"
-          >
-            Temas trabajados
-          </h2>
-          <p className="text-sm text-gray-500 mt-0.5">
-            Agrega los temas abordados durante la sesión.
+    <section aria-labelledby="step-topics-heading" className="space-y-6">
+      {/* Cabecera */}
+      <div>
+        <h2 id="step-topics-heading" className="text-base font-semibold text-terra-700">
+          Temas trabajados
+        </h2>
+        <p className="text-sm text-gray-500 mt-0.5">
+          Agrega los temas abordados durante la sesión.
+        </p>
+      </div>
+
+      {/* ── Selector: ¿Tema existente o nuevo? ────────────────────────────── */}
+      <div className="bg-gray-50 rounded-lg border border-gray-200 p-4 space-y-4">
+        {/* Radio group */}
+        <div role="group" aria-labelledby={modeGroupId} className="flex gap-4 flex-wrap">
+          <p id={modeGroupId} className="text-sm font-medium text-gray-700 w-full">
+            ¿Tema existente o nuevo?
           </p>
+          {(['existing', 'new'] as const).map((m) => (
+            <label
+              key={m}
+              className="flex items-center gap-2 text-sm cursor-pointer select-none"
+              style={{ minHeight: 44 }}
+            >
+              <input
+                type="radio"
+                name="topic-mode"
+                value={m}
+                checked={mode === m}
+                disabled={disabled || tooManyTopics}
+                onChange={() => setMode(m)}
+                className="accent-terra-700"
+              />
+              {m === 'existing' ? 'Tema existente del paciente' : 'Tema nuevo'}
+            </label>
+          ))}
         </div>
 
-        {!disabled && (
-          <button
-            type="button"
-            onClick={onAdd}
-            className="inline-flex items-center gap-1.5 rounded-md bg-[#4A1810] px-3 py-2 text-sm font-medium text-white hover:bg-[#6A2015] focus:outline-none focus:ring-2 focus:ring-[#4A1810] focus:ring-offset-2 transition-colors"
-          >
-            <svg
-              aria-hidden="true"
-              className="w-4 h-4"
-              fill="none"
-              viewBox="0 0 24 24"
-              stroke="currentColor"
-              strokeWidth={2}
+        {/* Selector de tema existente */}
+        {mode === 'existing' && (
+          <div className="flex flex-col gap-1">
+            <label htmlFor={existingSelectId} className="text-xs font-medium text-gray-600">
+              Seleccionar tema
+            </label>
+            <select
+              id={existingSelectId}
+              value={selectedTopicId}
+              disabled={disabled || tooManyTopics}
+              onChange={(e) => setSelectedTopicId(e.target.value)}
+              className="min-h-[44px] rounded border border-gray-300 px-2.5 py-1.5 text-sm bg-white focus:outline-none focus:ring-1 focus:ring-terra-700 disabled:opacity-50"
             >
-              <path strokeLinecap="round" strokeLinejoin="round" d="M12 4v16m8-8H4" />
-            </svg>
-            Agregar tema
-          </button>
+              <option value="">— Seleccionar tema —</option>
+              {clientTopics.map((t) => (
+                <option key={t.id} value={t.id}>
+                  {t.name} ({t.progress_pct}%)
+                </option>
+              ))}
+            </select>
+            {clientTopics.length === 0 && (
+              <p className="text-xs text-gray-400 mt-1">
+                El paciente no tiene temas registrados aún.
+              </p>
+            )}
+          </div>
+        )}
+
+        {/* Input para nombre del tema nuevo */}
+        {mode === 'new' && (
+          <div className="flex flex-col gap-1">
+            <label htmlFor={newNameId} className="text-xs font-medium text-gray-600">
+              Nombre del tema
+            </label>
+            <input
+              id={newNameId}
+              type="text"
+              value={newTopicName}
+              disabled={disabled || tooManyTopics}
+              onChange={(e) => setNewTopicName(e.target.value)}
+              placeholder="Ej: Miedo al abandono"
+              className="min-h-[44px] rounded border border-gray-300 px-2.5 py-1.5 text-sm focus:outline-none focus:ring-1 focus:ring-terra-700 disabled:opacity-50"
+            />
+          </div>
+        )}
+
+        {/* Botón agregar */}
+        <button
+          type="button"
+          onClick={handleAddTheme}
+          disabled={
+            disabled ||
+            tooManyTopics ||
+            (mode === 'existing' && !selectedTopicId)
+          }
+          className="inline-flex items-center gap-1.5 rounded-md bg-terra-700 px-4 py-2.5 text-sm font-medium text-white hover:bg-terra-800 focus:outline-none focus:ring-2 focus:ring-terra-700 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+          style={{ minHeight: 44 }}
+        >
+          <svg
+            aria-hidden="true"
+            className="w-4 h-4"
+            fill="none"
+            viewBox="0 0 24 24"
+            stroke="currentColor"
+            strokeWidth={2}
+          >
+            <path strokeLinecap="round" strokeLinejoin="round" d="M12 4v16m8-8H4" />
+          </svg>
+          Agregar tema
+        </button>
+
+        {tooManyTopics && (
+          <p className="text-xs text-amber-600">Máximo 5 temas por sesión.</p>
         )}
       </div>
 
-      {topics.length === 0 ? (
-        <div className="flex flex-col items-center justify-center py-12 text-center">
-          <p className="text-sm text-gray-400">
-            No hay temas registrados. Pulsa "Agregar tema" para comenzar.
-          </p>
+      {/* ── Counter: ¿Cuántos temas? ────────────────────────────────────────── */}
+      {themes.length > 0 && (
+        <div className="flex items-center gap-3">
+          <label htmlFor={counterId} className="text-sm font-medium text-gray-700 shrink-0">
+            Cantidad de temas:
+          </label>
+          <div className="flex items-center gap-1">
+            <button
+              type="button"
+              onClick={() => handleCountChange(Math.max(1, counterValue - 1))}
+              disabled={disabled || counterValue <= 1}
+              aria-label="Reducir temas"
+              className="w-11 h-11 flex items-center justify-center rounded border border-gray-300 bg-white text-gray-700 hover:bg-gray-50 disabled:opacity-40 disabled:cursor-not-allowed focus:outline-none focus:ring-2 focus:ring-terra-700 transition-colors"
+            >
+              −
+            </button>
+            <output
+              id={counterId}
+              aria-live="polite"
+              className="w-10 text-center text-sm font-semibold text-gray-900 tabular-nums"
+            >
+              {themes.length}
+            </output>
+            <button
+              type="button"
+              onClick={() => handleCountChange(Math.min(5, counterValue + 1))}
+              disabled={disabled || counterValue >= 5}
+              aria-label="Agregar tema"
+              className="w-11 h-11 flex items-center justify-center rounded border border-gray-300 bg-white text-gray-700 hover:bg-gray-50 disabled:opacity-40 disabled:cursor-not-allowed focus:outline-none focus:ring-2 focus:ring-terra-700 transition-colors"
+            >
+              +
+            </button>
+          </div>
+        </div>
+      )}
+
+      {/* ── Lista de ThemeCards ───────────────────────────────────────────────── */}
+      {themes.length === 0 ? (
+        <div className="flex flex-col items-center justify-center py-12 text-center text-sm text-gray-400">
+          No hay temas. Usa el panel de arriba para agregar uno.
         </div>
       ) : (
         <div className="space-y-4">
-          {topics.map((topic, index) => (
-            <TopicCard
-              key={topic._localId}
-              topic={topic}
+          {themes.map((theme, index) => (
+            <ThemeCard
+              key={theme._localId}
+              theme={theme}
               index={index}
-              onChange={onChange}
-              onRemove={onRemove}
+              chakras={chakras}
+              onChange={(updates) => handleThemeChange(theme._localId, updates)}
               disabled={disabled}
             />
           ))}
         </div>
       )}
 
-      {/* Footer con contador */}
-      {topics.length > 0 && (
+      {/* Footer contador */}
+      {themes.length > 0 && (
         <p className="text-xs text-gray-400 text-right">
-          {topics.length} {topics.length === 1 ? 'tema' : 'temas'}
+          {themes.length} {themes.length === 1 ? 'tema' : 'temas'}
         </p>
       )}
     </section>

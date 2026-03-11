@@ -16,6 +16,7 @@ import {
   PlusCircle,
 } from "lucide-react";
 import { apiClient } from "@/lib/api/client";
+import { getClientTopics, completeClientTopic } from "@/lib/api/clinical";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { formatDate, formatPhone, formatCurrency } from "@/lib/utils/formatters";
@@ -25,13 +26,15 @@ import type {
   PaginatedResponse,
   MaritalStatus,
   SleepQuality,
+  ClientTopic,
 } from "@/types/api";
 
-type Tab = "datos" | "sesiones" | "salud";
+type Tab = "datos" | "sesiones" | "temas" | "salud";
 
 const TAB_LABELS: Record<Tab, string> = {
   datos: "Datos Personales",
   sesiones: "Historial de Sesiones",
+  temas: "Temas",
   salud: "Salud",
 };
 
@@ -141,6 +144,109 @@ function TagList({
   );
 }
 
+function progressColor(pct: number): string {
+  if (pct < 30) return "bg-red-500";
+  if (pct < 70) return "bg-amber-400";
+  return "bg-green-500";
+}
+
+function TopicsTabContent({
+  clientId,
+  topics,
+  onTopicCompleted,
+}: {
+  clientId: string;
+  topics: ClientTopic[];
+  onTopicCompleted: (updated: ClientTopic) => void;
+}) {
+  const [completing, setCompleting] = useState<string | null>(null);
+
+  const active = topics.filter((t) => !t.is_completed);
+  const completed = topics.filter((t) => t.is_completed);
+
+  const handleComplete = async (topicId: string) => {
+    setCompleting(topicId);
+    try {
+      const updated = await completeClientTopic(clientId, topicId);
+      onTopicCompleted(updated);
+    } catch {
+      // silenciar — el usuario puede reintentar
+    } finally {
+      setCompleting(null);
+    }
+  };
+
+  if (topics.length === 0) {
+    return (
+      <Card>
+        <CardContent className="py-12 text-center text-muted-foreground text-sm">
+          No hay temas registrados para esta clienta. Los temas se crean durante las sesiones.
+        </CardContent>
+      </Card>
+    );
+  }
+
+  return (
+    <div className="space-y-6">
+      {/* Temas activos */}
+      {active.length > 0 && (
+        <div className="space-y-3">
+          {active.map((topic) => (
+            <div
+              key={topic.id}
+              className="bg-white rounded-lg border border-gray-100 p-5 space-y-3"
+            >
+              <div className="flex items-start justify-between gap-4">
+                <p className="font-medium text-gray-900">{topic.name}</p>
+                <button
+                  onClick={() => handleComplete(topic.id)}
+                  disabled={completing === topic.id}
+                  className="shrink-0 text-sm text-terra-700 hover:text-terra-900 border border-terra-200 rounded px-3 py-1 transition-colors disabled:opacity-50"
+                >
+                  {completing === topic.id ? "Guardando…" : "Marcar completado"}
+                </button>
+              </div>
+              <div className="space-y-1">
+                <div className="h-2 rounded-full bg-gray-100 overflow-hidden">
+                  <div
+                    className={`h-full rounded-full transition-all ${progressColor(topic.progress_pct)}`}
+                    style={{ width: `${Math.min(100, Math.max(0, topic.progress_pct))}%` }}
+                  />
+                </div>
+                <p className="text-xs text-gray-500">{topic.progress_pct}% completado</p>
+              </div>
+              <p className="text-xs text-gray-400">Creado el {formatDate(topic.created_at)}</p>
+            </div>
+          ))}
+        </div>
+      )}
+
+      {/* Temas completados */}
+      {completed.length > 0 && (
+        <div className="space-y-3">
+          <h3 className="text-sm font-semibold text-gray-500 uppercase tracking-wide">
+            Temas completados
+          </h3>
+          {completed.map((topic) => (
+            <div
+              key={topic.id}
+              className="bg-white rounded-lg border border-gray-100 p-5 space-y-2"
+            >
+              <div className="flex items-center justify-between gap-4">
+                <p className="font-medium text-gray-900">{topic.name}</p>
+                <span className="text-xs font-medium bg-green-50 text-green-700 border border-green-200 rounded-full px-3 py-1">
+                  Completado
+                  {topic.completed_at ? ` · ${formatDate(topic.completed_at)}` : ""}
+                </span>
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
+
 export default function PacienteDetailPage() {
   const params = useParams<{ id: string }>();
   const router = useRouter();
@@ -148,8 +254,11 @@ export default function PacienteDetailPage() {
   const [tab, setTab] = useState<Tab>("datos");
   const [client, setClient] = useState<Client | null>(null);
   const [sessions, setSessions] = useState<Session[]>([]);
+  const [topics, setTopics] = useState<ClientTopic[]>([]);
   const [loading, setLoading] = useState(true);
   const [sessionsLoading, setSessionsLoading] = useState(false);
+  const [topicsLoading, setTopicsLoading] = useState(false);
+  const [topicsEndpointMissing, setTopicsEndpointMissing] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
@@ -188,6 +297,28 @@ export default function PacienteDetailPage() {
       }
     };
     fetchSessions();
+  }, [tab, params.id]);
+
+  useEffect(() => {
+    if (tab !== "temas") return;
+    const fetchTopics = async () => {
+      setTopicsLoading(true);
+      setTopicsEndpointMissing(false);
+      try {
+        const data = await getClientTopics(params.id);
+        setTopics(data);
+      } catch (err) {
+        // Si el endpoint aún no existe (404), mostrar placeholder
+        const msg = err instanceof Error ? err.message : "";
+        if (msg.includes("404") || msg.includes("Not Found")) {
+          setTopicsEndpointMissing(true);
+        }
+        setTopics([]);
+      } finally {
+        setTopicsLoading(false);
+      }
+    };
+    fetchTopics();
   }, [tab, params.id]);
 
   return (
@@ -269,7 +400,7 @@ export default function PacienteDetailPage() {
       {/* ─── Tabs ─── */}
       <div className="border-b border-border">
         <nav className="flex gap-6" aria-label="Pestañas">
-          {(["datos", "sesiones", "salud"] as Tab[]).map((t) => (
+          {(["datos", "sesiones", "temas", "salud"] as Tab[]).map((t) => (
             <button
               key={t}
               onClick={() => setTab(t)}
@@ -494,6 +625,35 @@ export default function PacienteDetailPage() {
                 </tbody>
               </table>
             </div>
+          )}
+        </>
+      )}
+
+      {/* ─── Tab: Temas ─── */}
+      {tab === "temas" && (
+        <>
+          {topicsLoading ? (
+            <Card>
+              <CardContent className="pt-6">
+                <SkeletonBlock lines={4} />
+              </CardContent>
+            </Card>
+          ) : topicsEndpointMissing ? (
+            <Card>
+              <CardContent className="py-12 text-center text-muted-foreground">
+                Próximamente
+              </CardContent>
+            </Card>
+          ) : (
+            <TopicsTabContent
+              clientId={params.id}
+              topics={topics}
+              onTopicCompleted={(updated) =>
+                setTopics((prev) =>
+                  prev.map((t) => (t.id === updated.id ? updated : t)),
+                )
+              }
+            />
           )}
         </>
       )}
