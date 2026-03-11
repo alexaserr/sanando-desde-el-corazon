@@ -29,7 +29,7 @@ from sqlalchemy import (
     func,
     text,
 )
-from sqlalchemy.dialects.postgresql import JSONB, UUID as PG_UUID
+from sqlalchemy.dialects.postgresql import ARRAY, JSONB, UUID as PG_UUID
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from app.db.base import Base, SoftDeleteMixin, TimestampMixin, UUIDPrimaryKeyMixin
@@ -341,6 +341,8 @@ class Session(Base, UUIDPrimaryKeyMixin, TimestampMixin, SoftDeleteMixin):
     organs: Mapped[list["SessionOrgan"]] = relationship(back_populates="session")
     cleaning_materials: Mapped[list["CleaningMaterial"]] = relationship(back_populates="session")
     theme_entries: Mapped[list["SessionThemeEntry"]] = relationship(back_populates="session")
+    ancestors: Mapped[list["SessionAncestor"]] = relationship(back_populates="session")
+    ancestor_conciliation: Mapped["SessionAncestorConciliation | None"] = relationship(back_populates="session", uselist=False)
 
     __table_args__ = (
         Index("ix_sessions_client_id", "client_id"),
@@ -473,6 +475,7 @@ class SessionLnt(Base, UUIDPrimaryKeyMixin, TimestampMixin, SoftDeleteMixin):
     healing_energy_body: Mapped[bool | None] = mapped_column(Boolean, nullable=True)
     healing_spiritual_body: Mapped[bool | None] = mapped_column(Boolean, nullable=True)
     healing_physical_body: Mapped[bool | None] = mapped_column(Boolean, nullable=True)
+    peticiones: Mapped[str | None] = mapped_column(Text, nullable=True)
 
     session: Mapped["Session"] = relationship(back_populates="lnt_entries")
 
@@ -661,6 +664,10 @@ class SessionThemeEntry(Base, UUIDPrimaryKeyMixin, TimestampMixin, SoftDeleteMix
     adulthood_description: Mapped[str | None] = mapped_column(Text, nullable=True)
     adulthood_emotions: Mapped[str | None] = mapped_column(Text, nullable=True)
 
+    # Interpretación del tema — migración 0008
+    significado: Mapped[str | None] = mapped_column(Text, nullable=True)
+    interpretacion_tema: Mapped[str | None] = mapped_column(Text, nullable=True)
+
     session: Mapped["Session"] = relationship(back_populates="theme_entries")
     client_topic: Mapped["ClientTopic"] = relationship(back_populates="theme_entries")
 
@@ -671,6 +678,66 @@ class SessionThemeEntry(Base, UUIDPrimaryKeyMixin, TimestampMixin, SoftDeleteMix
         ),
         Index("ix_session_theme_entries_session_id", "session_id"),
         Index("ix_session_theme_entries_topic_id", "client_topic_id"),
+    )
+
+
+# ══════════════════════════════════════════════════════════════
+# ANCESTROS SISTÉMICOS (migración 0008)
+# ══════════════════════════════════════════════════════════════
+
+class SessionAncestor(Base, UUIDPrimaryKeyMixin, TimestampMixin, SoftDeleteMixin):
+    """
+    Miembros del árbol familiar trabajados en una sesión sistémica.
+    bond_energy y *_roles son arrays de opciones predefinidas.
+    energy_expressions / family_traumas: [{number, expression/trauma}]
+    """
+    __tablename__ = "session_ancestors"
+
+    session_id: Mapped[UUID] = mapped_column(
+        PG_UUID(as_uuid=True), ForeignKey("sessions.id", ondelete="CASCADE"), nullable=False
+    )
+    member: Mapped[str | None] = mapped_column(String(200), nullable=True)
+    lineage: Mapped[str | None] = mapped_column(
+        String(20),
+        sa.CheckConstraint(
+            "lineage IN ('materno', 'paterno', 'ambos')",
+            name="ck_session_ancestors_lineage",
+        ),
+        nullable=True,
+    )
+    bond_energy: Mapped[list[str] | None] = mapped_column(ARRAY(Text), nullable=True)
+    ancestor_roles: Mapped[list[str] | None] = mapped_column(ARRAY(Text), nullable=True)
+    consultant_roles: Mapped[list[str] | None] = mapped_column(ARRAY(Text), nullable=True)
+    energy_expressions: Mapped[dict[str, Any] | None] = mapped_column(JSONB, nullable=True)
+    family_traumas: Mapped[dict[str, Any] | None] = mapped_column(JSONB, nullable=True)
+
+    session: Mapped["Session"] = relationship(back_populates="ancestors")
+
+    __table_args__ = (Index("ix_session_ancestors_session_id", "session_id"),)
+
+
+class SessionAncestorConciliation(Base, UUIDPrimaryKeyMixin, TimestampMixin, SoftDeleteMixin):
+    """
+    Conciliación sistémica de la sesión (1:1 con sessions).
+    Frases de sanación, actos de conciliación y áreas de vida afectadas.
+    """
+    __tablename__ = "session_ancestor_conciliation"
+
+    session_id: Mapped[UUID] = mapped_column(
+        PG_UUID(as_uuid=True),
+        ForeignKey("sessions.id", ondelete="CASCADE"),
+        nullable=False,
+        unique=True,
+    )
+    healing_phrases: Mapped[str | None] = mapped_column(Text, nullable=True)
+    conciliation_acts: Mapped[str | None] = mapped_column(Text, nullable=True)
+    life_aspects_affected: Mapped[str | None] = mapped_column(Text, nullable=True)
+    session_relationship: Mapped[str | None] = mapped_column(Text, nullable=True)
+
+    session: Mapped["Session"] = relationship(back_populates="ancestor_conciliation")
+
+    __table_args__ = (
+        Index("ix_session_ancestor_conciliation_session_id", "session_id"),
     )
 
 
