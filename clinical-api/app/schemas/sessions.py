@@ -12,6 +12,7 @@ from uuid import UUID
 from pydantic import BaseModel, Field
 
 from app.db.models import OrganSourceType
+from app.schemas.ancestors import AncestorConciliationResponse, AncestorResponse
 
 
 # ── Lecturas energéticas ──────────────────────────────────────
@@ -107,6 +108,7 @@ class LNTItem(BaseModel):
 
 class LNTUpdate(BaseModel):
     entries: list[LNTItem] = Field(..., min_length=1)
+    peticiones: str | None = None  # nivel sesión — se almacena en la primera entrada
 
 
 class LNTResponse(BaseModel):
@@ -117,9 +119,15 @@ class LNTResponse(BaseModel):
     healing_energy_body: bool | None = None
     healing_spiritual_body: bool | None = None
     healing_physical_body: bool | None = None
+    peticiones: str | None = None
     deleted_at: datetime | None = None
 
     model_config = {"from_attributes": True}
+
+
+class LNTGetResponse(BaseModel):
+    entries: list[LNTResponse]
+    peticiones: str | None = None
 
 
 # ── Eventos de limpieza ───────────────────────────────────────
@@ -160,6 +168,25 @@ class CleaningEventResponse(BaseModel):
     deleted_at: datetime | None = None
 
     model_config = {"from_attributes": True}
+
+
+# ── Limpiezas con resumen de sesión ──────────────────────────
+
+class CleaningsUpdate(BaseModel):
+    """PUT /sessions/{id}/cleanings — eventos + campos resumen nivel sesión."""
+    events: list[CleaningEventItem] = Field(default_factory=list)
+    capas: int | None = Field(None, ge=0)
+    limpiezas_requeridas: int | None = Field(None, ge=0)
+    mesa_utilizada: str | None = None
+    beneficios: str | None = None
+
+
+class CleaningsGetResponse(BaseModel):
+    events: list[CleaningEventResponse]
+    capas: int | None = None
+    limpiezas_requeridas: int | None = None
+    mesa_utilizada: str | None = None
+    beneficios: str | None = None
 
 
 # ── Afectaciones por chakra ───────────────────────────────────
@@ -278,6 +305,11 @@ class SessionResponse(BaseModel):
     bud_chakra: str | None = None
     payment_notes: str | None = None
     notes: str | None = None  # PII — descifrado en router
+    # Resumen de limpiezas
+    capas: int | None = None
+    limpiezas_requeridas: int | None = None
+    mesa_utilizada: str | None = None
+    beneficios: str | None = None
     created_at: datetime
     updated_at: datetime
     deleted_at: datetime | None = None
@@ -290,6 +322,8 @@ class SessionResponse(BaseModel):
     cleaning_events: list[CleaningEventResponse] = []
     affectations: list[AffectationResponse] = []
     organs: list[OrganResponse] = []
+    ancestors: list[AncestorResponse] = []
+    ancestor_conciliation: AncestorConciliationResponse | None = None
 
     model_config = {"from_attributes": True}
 

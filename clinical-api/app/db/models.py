@@ -321,6 +321,12 @@ class Session(Base, UUIDPrimaryKeyMixin, TimestampMixin, SoftDeleteMixin):
     bud_chakra: Mapped[str | None] = mapped_column(String(200), nullable=True)        # 5 registros (animales)
     payment_notes: Mapped[str | None] = mapped_column(Text, nullable=True)            # 2 registros
 
+    # Resumen de limpiezas energéticas — confirmado en wizard paso limpieza
+    capas: Mapped[int | None] = mapped_column(SmallInteger, nullable=True)
+    limpiezas_requeridas: Mapped[int | None] = mapped_column(SmallInteger, nullable=True)
+    mesa_utilizada: Mapped[str | None] = mapped_column(Text, nullable=True)
+    beneficios: Mapped[str | None] = mapped_column(Text, nullable=True)
+
     # Notas clínicas cifradas con pgcrypto
     notes: Mapped[bytes | None] = mapped_column(LargeBinary, nullable=True)          # PII
 

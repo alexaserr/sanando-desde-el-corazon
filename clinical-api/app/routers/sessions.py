@@ -31,6 +31,8 @@ from app.db.models import (
     Client,
     Session,
     SessionAffectation,
+    SessionAncestor,
+    SessionAncestorConciliation,
     SessionChakraReading,
     SessionCleaningEvent,
     SessionEnergyReading,
@@ -43,6 +45,12 @@ from app.db.models import (
 )
 from app.db.session import get_db
 from app.dependencies import require_role
+from app.schemas.ancestors import (
+    AncestorConciliationResponse,
+    AncestorResponse,
+    AncestorsGetResponse,
+    AncestorsUpdate,
+)
 from app.schemas.sessions import (
     AffectationResponse,
     AffectationsUpdate,
@@ -51,9 +59,12 @@ from app.schemas.sessions import (
     ChakraReadingsUpdate,
     CleaningEventResponse,
     CleaningEventsUpdate,
+    CleaningsGetResponse,
+    CleaningsUpdate,
     EnergyReadingItem,
     EnergyReadingResponse,
     EnergyReadingsUpdate,
+    LNTGetResponse,
     LNTResponse,
     LNTUpdate,
     OrganResponse,
@@ -319,6 +330,8 @@ async def _build_session_response(session_id: UUID, db: AsyncSession) -> Session
                 selectinload(Session.cleaning_events),
                 selectinload(Session.affectations),
                 selectinload(Session.organs),
+                selectinload(Session.ancestors),
+                selectinload(Session.ancestor_conciliation),
             )
             .where(Session.id == session_id, Session.deleted_at.is_(None))
         )
@@ -358,6 +371,13 @@ async def _build_session_response(session_id: UUID, db: AsyncSession) -> Session
         for r in session.chakra_readings
     ]
 
+    active_lnt = [l for l in session.lnt_entries if l.deleted_at is None]
+    lnt_peticiones = active_lnt[0].peticiones if active_lnt else None
+
+    conciliation = session.ancestor_conciliation
+    if conciliation is not None and conciliation.deleted_at is not None:
+        conciliation = None
+
     return SessionResponse(
         id=session.id,
         client_id=session.client_id,
@@ -375,16 +395,22 @@ async def _build_session_response(session_id: UUID, db: AsyncSession) -> Session
         bud_chakra=session.bud_chakra,
         payment_notes=session.payment_notes,
         notes=notes_decrypted,
+        capas=session.capas,
+        limpiezas_requeridas=session.limpiezas_requeridas,
+        mesa_utilizada=session.mesa_utilizada,
+        beneficios=session.beneficios,
         created_at=session.created_at,
         updated_at=session.updated_at,
         deleted_at=session.deleted_at,
         energy_readings=energy_readings,
         chakra_readings=chakra_readings,
         topics=[TopicResponse.model_validate(t) for t in session.topics if t.deleted_at is None],
-        lnt_entries=[LNTResponse.model_validate(l) for l in session.lnt_entries if l.deleted_at is None],
+        lnt_entries=[LNTResponse.model_validate(l) for l in active_lnt],
         cleaning_events=[CleaningEventResponse.model_validate(e) for e in session.cleaning_events if e.deleted_at is None],
         affectations=[AffectationResponse.model_validate(a) for a in session.affectations if a.deleted_at is None],
         organs=[OrganResponse.model_validate(o) for o in session.organs if o.deleted_at is None],
+        ancestors=[AncestorResponse.model_validate(a) for a in session.ancestors if a.deleted_at is None],
+        ancestor_conciliation=AncestorConciliationResponse.model_validate(conciliation) if conciliation else None,
     )
 
 
@@ -769,6 +795,35 @@ async def save_affectations(
     return await _get_wizard_state(session_id, db)
 
 
+@router.get(
+    "/{session_id}/lnt",
+    response_model=LNTGetResponse,
+    summary="Obtener entradas LNT + peticiones de la sesión",
+)
+async def get_lnt(
+    session_id: UUID,
+    db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(require_role(UserRole.therapist, UserRole.admin)),
+) -> LNTGetResponse:
+    session = await _get_session_or_404(session_id, db)
+    if current_user.role == UserRole.therapist and session.therapist_id != current_user.id:
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="No tienes acceso a esta sesión")
+
+    entries = (
+        await db.execute(
+            select(SessionLnt)
+            .where(SessionLnt.session_id == session_id, SessionLnt.deleted_at.is_(None))
+            .order_by(SessionLnt.created_at)
+        )
+    ).scalars().all()
+
+    peticiones = entries[0].peticiones if entries else None
+    return LNTGetResponse(
+        entries=[LNTResponse.model_validate(e) for e in entries],
+        peticiones=peticiones,
+    )
+
+
 @router.put(
     "/{session_id}/lnt",
     response_model=WizardStepResponse,
@@ -782,11 +837,17 @@ async def save_lnt(
     current_user: User = Depends(require_role(UserRole.therapist, UserRole.admin)),
 ) -> WizardStepResponse:
     await _get_session_or_404(session_id, db)
-    await _replace_soft_delete(SessionLnt, session_id, [e.model_dump() for e in data.entries], db)
+
+    # peticiones es nivel-sesión — se almacena en la primera entrada
+    rows = [e.model_dump() for e in data.entries]
+    if rows:
+        rows[0]["peticiones"] = data.peticiones
+
+    await _replace_soft_delete(SessionLnt, session_id, rows, db)
 
     await write_audit_log(
         db, "session_lnt", session_id, AuditAction.UPDATE, current_user.id,
-        new_data={"count": len(data.entries)},
+        new_data={"count": len(data.entries), "has_peticiones": data.peticiones is not None},
         ip_address=request.client.host if request.client else None,
         user_agent=request.headers.get("user-agent"),
     )
@@ -821,6 +882,180 @@ async def save_cleaning_events(
 
     await db.commit()
     return await _get_wizard_state(session_id, db)
+
+
+@router.get(
+    "/{session_id}/cleanings",
+    response_model=CleaningsGetResponse,
+    summary="Obtener eventos de limpieza + resumen de la sesión",
+)
+async def get_cleanings(
+    session_id: UUID,
+    db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(require_role(UserRole.therapist, UserRole.admin)),
+) -> CleaningsGetResponse:
+    session = await _get_session_or_404(session_id, db)
+    if current_user.role == UserRole.therapist and session.therapist_id != current_user.id:
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="No tienes acceso a esta sesión")
+
+    events = (
+        await db.execute(
+            select(SessionCleaningEvent)
+            .where(
+                SessionCleaningEvent.session_id == session_id,
+                SessionCleaningEvent.deleted_at.is_(None),
+            )
+            .order_by(SessionCleaningEvent.created_at)
+        )
+    ).scalars().all()
+
+    return CleaningsGetResponse(
+        events=[CleaningEventResponse.model_validate(e) for e in events],
+        capas=session.capas,
+        limpiezas_requeridas=session.limpiezas_requeridas,
+        mesa_utilizada=session.mesa_utilizada,
+        beneficios=session.beneficios,
+    )
+
+
+@router.put(
+    "/{session_id}/cleanings",
+    response_model=WizardStepResponse,
+    summary="Guardar eventos de limpieza + resumen de la sesión (reemplaza existentes)",
+)
+async def save_cleanings(
+    session_id: UUID,
+    data: CleaningsUpdate,
+    request: Request,
+    db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(require_role(UserRole.therapist, UserRole.admin)),
+) -> WizardStepResponse:
+    await _get_session_or_404(session_id, db)
+
+    await _replace_soft_delete(
+        SessionCleaningEvent, session_id, [e.model_dump() for e in data.events], db
+    )
+
+    # Actualizar campos de resumen en la sesión
+    await db.execute(
+        update(Session)
+        .where(Session.id == session_id)
+        .values(
+            capas=data.capas,
+            limpiezas_requeridas=data.limpiezas_requeridas,
+            mesa_utilizada=data.mesa_utilizada,
+            beneficios=data.beneficios,
+            updated_at=func.now(),
+        )
+    )
+
+    await write_audit_log(
+        db, "session_cleaning_events", session_id, AuditAction.UPDATE, current_user.id,
+        new_data={"count": len(data.events), "capas": data.capas},
+        ip_address=request.client.host if request.client else None,
+        user_agent=request.headers.get("user-agent"),
+    )
+
+    await db.commit()
+    return await _get_wizard_state(session_id, db)
+
+
+@router.get(
+    "/{session_id}/ancestors",
+    response_model=AncestorsGetResponse,
+    summary="Obtener ancestros sistémicos + conciliación de la sesión",
+)
+async def get_ancestors(
+    session_id: UUID,
+    db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(require_role(UserRole.therapist, UserRole.admin)),
+) -> AncestorsGetResponse:
+    session = await _get_session_or_404(session_id, db)
+    if current_user.role == UserRole.therapist and session.therapist_id != current_user.id:
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="No tienes acceso a esta sesión")
+
+    ancestors = (
+        await db.execute(
+            select(SessionAncestor)
+            .where(
+                SessionAncestor.session_id == session_id,
+                SessionAncestor.deleted_at.is_(None),
+            )
+            .order_by(SessionAncestor.created_at)
+        )
+    ).scalars().all()
+
+    conciliation = (
+        await db.execute(
+            select(SessionAncestorConciliation)
+            .where(
+                SessionAncestorConciliation.session_id == session_id,
+                SessionAncestorConciliation.deleted_at.is_(None),
+            )
+        )
+    ).scalar_one_or_none()
+
+    return AncestorsGetResponse(
+        ancestors=[AncestorResponse.model_validate(a) for a in ancestors],
+        conciliation=AncestorConciliationResponse.model_validate(conciliation) if conciliation else None,
+    )
+
+
+@router.put(
+    "/{session_id}/ancestors",
+    response_model=AncestorsGetResponse,
+    summary="Guardar ancestros sistémicos + conciliación (reemplaza ancestros, upsert conciliación)",
+)
+async def save_ancestors(
+    session_id: UUID,
+    data: AncestorsUpdate,
+    request: Request,
+    db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(require_role(UserRole.therapist, UserRole.admin)),
+) -> AncestorsGetResponse:
+    await _get_session_or_404(session_id, db)
+
+    # Soft-delete ancestros existentes e insertar nuevos
+    await _replace_soft_delete(
+        SessionAncestor,
+        session_id,
+        [a.model_dump() for a in data.ancestors],
+        db,
+    )
+
+    # Upsert conciliación (1:1 por sesión)
+    if data.conciliation is not None:
+        existing_conciliation = (
+            await db.execute(
+                select(SessionAncestorConciliation)
+                .where(
+                    SessionAncestorConciliation.session_id == session_id,
+                    SessionAncestorConciliation.deleted_at.is_(None),
+                )
+            )
+        ).scalar_one_or_none()
+
+        if existing_conciliation:
+            for field, value in data.conciliation.model_dump().items():
+                setattr(existing_conciliation, field, value)
+            existing_conciliation.updated_at = datetime.now(timezone.utc)
+        else:
+            db.add(SessionAncestorConciliation(
+                session_id=session_id,
+                **data.conciliation.model_dump(),
+            ))
+
+    await write_audit_log(
+        db, "session_ancestors", session_id, AuditAction.UPDATE, current_user.id,
+        new_data={"ancestors_count": len(data.ancestors), "has_conciliation": data.conciliation is not None},
+        ip_address=request.client.host if request.client else None,
+        user_agent=request.headers.get("user-agent"),
+    )
+
+    await db.commit()
+
+    # Recargar para retornar estado actualizado
+    return await get_ancestors(session_id, db, current_user)
 
 
 @router.put(
