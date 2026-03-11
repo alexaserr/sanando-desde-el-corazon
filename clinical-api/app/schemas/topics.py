@@ -82,7 +82,7 @@ class TopicProgressUpdate(BaseModel):
 
 class ThemeEntriesPut(BaseModel):
     """Payload para PUT /sessions/{id}/theme-entries."""
-    entries: list[ThemeEntryItem] = Field(..., min_length=1)
+    entries: list[ThemeEntryItem] = Field(default_factory=list)
     topic_progress: list[TopicProgressUpdate] = Field(default_factory=list)
 
 
