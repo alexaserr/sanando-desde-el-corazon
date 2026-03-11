@@ -31,51 +31,70 @@ export default function PacientesPage() {
   const [query, setQuery] = useState("");
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const isFirstRender = useRef(true);
+  // Refs para debounce y cancelación de requests en vuelo
+  const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const abortRef = useRef<AbortController | null>(null);
 
-  // Debounce: actualiza query 400ms después de que el usuario deja de escribir
-  useEffect(() => {
-    if (isFirstRender.current) {
-      isFirstRender.current = false;
-      return;
-    }
-    const timer = setTimeout(() => {
-      setPage(1);
-      setQuery(search);
-    }, 400);
-    return () => clearTimeout(timer);
-  }, [search]);
+  const fetchClients = useCallback(async (searchQuery: string, pageNum: number) => {
+    // Cancelar request anterior si sigue en vuelo
+    if (abortRef.current) abortRef.current.abort();
+    const controller = new AbortController();
+    abortRef.current = controller;
 
-  const fetchClients = useCallback(async () => {
     setLoading(true);
     setError(null);
     try {
       const params = new URLSearchParams({
-        page: String(page),
+        page: String(pageNum),
         per_page: String(PAGE_SIZE),
       });
-      if (query) params.set("search", query);
+      if (searchQuery) params.set("search", searchQuery);
 
       const data = await apiClient.get<PaginatedResponse<Client>>(
         `/api/v1/clinical/clients?${params.toString()}`,
+        { signal: controller.signal },
       );
       setClients(data.items);
       setTotal(data.total);
     } catch (err) {
+      if ((err as Error).name === "AbortError") return;
       setError(err instanceof Error ? err.message : "Error al cargar los clientes.");
     } finally {
       setLoading(false);
     }
-  }, [page, query]);
+  }, []);
 
+  // Carga inicial
   useEffect(() => {
-    fetchClients();
-  }, [fetchClients]);
+    fetchClients("", 1);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  // Limpiar recursos al desmontar
+  useEffect(() => {
+    return () => {
+      if (debounceRef.current) clearTimeout(debounceRef.current);
+      if (abortRef.current) abortRef.current.abort();
+    };
+  }, []);
+
+  const handleSearchChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const val = e.target.value;
+    setSearch(val);
+    if (debounceRef.current) clearTimeout(debounceRef.current);
+    debounceRef.current = setTimeout(() => {
+      setQuery(val);
+      setPage(1);
+      fetchClients(val, 1);
+    }, 400);
+  };
 
   const handleSearch = (e: React.FormEvent) => {
     e.preventDefault();
-    setPage(1);
+    if (debounceRef.current) clearTimeout(debounceRef.current);
     setQuery(search);
+    setPage(1);
+    fetchClients(search, 1);
   };
 
   const from = total === 0 ? 0 : (page - 1) * PAGE_SIZE + 1;
@@ -94,7 +113,7 @@ export default function PacientesPage() {
         <Input
           placeholder="Buscar por nombre..."
           value={search}
-          onChange={(e) => setSearch(e.target.value)}
+          onChange={handleSearchChange}
         />
         <Button type="submit" variant="outline" size="icon" aria-label="Buscar">
           <Search className="h-4 w-4" />
@@ -159,7 +178,11 @@ export default function PacientesPage() {
             <Button
               variant="outline"
               size="sm"
-              onClick={() => setPage((p) => Math.max(1, p - 1))}
+              onClick={() => {
+                const prev = Math.max(1, page - 1);
+                setPage(prev);
+                fetchClients(query, prev);
+              }}
               disabled={page === 1}
             >
               <ChevronLeft className="h-4 w-4 mr-1" />
@@ -168,7 +191,11 @@ export default function PacientesPage() {
             <Button
               variant="outline"
               size="sm"
-              onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
+              onClick={() => {
+                const next = Math.min(totalPages, page + 1);
+                setPage(next);
+                fetchClients(query, next);
+              }}
               disabled={page >= totalPages}
             >
               Siguiente

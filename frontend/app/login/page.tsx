@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { Loader2 } from "lucide-react";
@@ -19,6 +19,7 @@ import {
 
 export default function LoginPage() {
   const router = useRouter();
+  const searchParams = useSearchParams();
   const [serverError, setServerError] = useState<string | null>(null);
 
   const {
@@ -33,7 +34,8 @@ export default function LoginPage() {
     setServerError(null);
     try {
       await loginUser(data.email, data.password);
-      router.replace("/clinica");
+      const returnUrl = searchParams.get("returnUrl");
+      router.replace(returnUrl ?? "/clinica");
     } catch (err: unknown) {
       if (err instanceof Error) {
         setServerError(err.message);

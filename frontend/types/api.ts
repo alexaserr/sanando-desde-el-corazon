@@ -111,6 +111,16 @@ export interface SessionDetail extends Session {
   payment_notes: string | null;
 }
 
+/** Item de sesión en el historial de un paciente */
+export interface ClientSessionItem {
+  id: string;
+  measured_at: string;
+  therapy_type_name: string | null;
+  cost: number | null;
+  notes: string | null;
+  general_energy_level: number | null;
+}
+
 export interface PaginatedResponse<T> {
   items: T[];
   total: number;

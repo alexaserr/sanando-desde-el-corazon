@@ -5,6 +5,10 @@ import { useAuthStore } from "@/store/auth";
 // impiden el envío de cookies HttpOnly.
 const BASE_URL = "";
 
+// Shared promise to prevent concurrent token-refresh races.
+// If multiple 401s fire simultaneously, all callers await the same promise.
+let refreshPromise: Promise<string> | null = null;
+
 // ---------------------------------------------------------------------------
 // Error types
 // ---------------------------------------------------------------------------
@@ -66,18 +70,30 @@ async function request<TResponse>(
   });
 
   if (response.status === 401 && !_retried) {
-    // Intentar renovar el access_token con la cookie refresh_token
+    // Intentar renovar el access_token con la cookie refresh_token.
+    // Usar refreshPromise compartido para evitar race conditions cuando
+    // múltiples requests fallan con 401 simultáneamente.
     try {
-      const refreshRes = await fetch(`${BASE_URL}/api/v1/auth/refresh`, {
-        method: "POST",
-        credentials: "include",
-      });
-      if (refreshRes.ok) {
-        const refreshData = (await refreshRes.json()) as { data: { access_token: string } };
-        useAuthStore.getState().setAccessToken(refreshData.data.access_token);
-        // Reintentar la request original una sola vez
-        return request<TResponse>(path, { body, formBody, headers: extraHeaders, ...rest }, true);
+      if (!refreshPromise) {
+        refreshPromise = fetch(`${BASE_URL}/api/v1/auth/refresh`, {
+          method: "POST",
+          credentials: "include",
+        })
+          .then((res) => {
+            if (!res.ok) throw new Error("Refresh failed");
+            return res.json() as Promise<{ data: { access_token: string } }>;
+          })
+          .then(({ data }) => {
+            useAuthStore.getState().setAccessToken(data.access_token);
+            return data.access_token;
+          })
+          .finally(() => {
+            refreshPromise = null;
+          });
       }
+      await refreshPromise;
+      // Reintentar la request original una sola vez
+      return request<TResponse>(path, { body, formBody, headers: extraHeaders, ...rest }, true);
     } catch {
       // refresh falló — continuar a logout
     }

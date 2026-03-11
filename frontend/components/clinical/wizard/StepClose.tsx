@@ -1,7 +1,22 @@
 'use client';
 
-import { useId } from 'react';
+import { useId, useEffect } from 'react';
 import type { CloseData, SessionSummary } from './types';
+
+// ─── Catálogo de precios por tipo de terapia ──────────────────────────────────
+
+const PRICE_CATALOG: Record<string, number> = {
+  'Sanación Energética':               1300,
+  'Sanación Energética a Distancia':   1300,
+  'Terapia LNT':                       1300,
+  'Limpieza Energética':               1300,
+  'Lectura de Aura':                   1300,
+  'Medicina Cuántica':                 1600,
+  'Extracción de Energías Densas':     2200,
+  'Armonización Energética y Mandala': 2300,
+  'Recuperación del Alma':             1700,
+  'Despacho':                          2500,
+};
 
 // ─── Fila del resumen ─────────────────────────────────────────────────────────
 
@@ -90,6 +105,17 @@ export function StepClose({
   const costId         = useId();
   const paymentNotesId = useId();
 
+  // Auto-rellenar el costo al entrar al paso 7 o al cambiar el tipo de terapia
+  const suggestedPrice = PRICE_CATALOG[summary.therapyTypeName];
+  useEffect(() => {
+    const price = PRICE_CATALOG[summary.therapyTypeName];
+    if (price !== undefined && (value.cost === '' || value.cost === '0')) {
+      onChange('cost', String(price));
+    }
+    // Solo ejecutar cuando cambia el tipo de terapia, no en cada cambio de costo
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [summary.therapyTypeName]);
+
   return (
     <section aria-labelledby="step-close-heading" className="space-y-6">
       <div>
@@ -130,6 +156,11 @@ export function StepClose({
               className="w-full rounded-md border border-gray-300 pl-7 pr-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#4A1810] disabled:opacity-50 disabled:cursor-not-allowed"
             />
           </div>
+          {suggestedPrice !== undefined && (
+            <p className="text-xs text-gray-400 mt-0.5">
+              Precio sugerido: ${suggestedPrice.toLocaleString('es-MX')} MXN
+            </p>
+          )}
         </div>
 
         {/* Notas de pago */}

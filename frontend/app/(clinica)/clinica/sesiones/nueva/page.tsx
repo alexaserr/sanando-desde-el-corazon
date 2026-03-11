@@ -268,6 +268,7 @@ export default function NuevaSessionPage() {
               chakra_position_id: b.chakra_position_id || null,
               organ_name: b.organ_name || null,
               initial_energy: b.energy,
+              final_energy: b.final_energy ?? null,
             };
           }).filter((r): r is NonNullable<typeof r> => r !== null);
 
@@ -277,6 +278,7 @@ export default function NuevaSessionPage() {
             chakra_position_id: t.resultant.chakra_position_id || null,
             organ_name: t.resultant.organ_name || null,
             initial_energy: t.resultant.energy,
+            final_energy: t.resultant.final_energy ?? null,
           }] : [];
 
           const secondaryRow = t.is_secondary ? [{
@@ -303,10 +305,13 @@ export default function NuevaSessionPage() {
 
           return [...blockageRows, ...resultantRow, ...secondaryRow, ...adultRow, ...childRow];
         });
-        const topicProgress = themes
-          .filter((t) => t.topic_id !== null)
-          .map((t) => ({ client_topic_id: t.topic_id as string, progress_pct: t.progress_pct }));
-        await saveThemeEntries(sessionId, { entries, topic_progress: topicProgress });
+        // Solo llamar al API si hay al menos una entrada; si no, avanzar sin guardar
+        if (entries.length > 0) {
+          const topicProgress = themes
+            .filter((t) => t.topic_id !== null)
+            .map((t) => ({ client_topic_id: t.topic_id as string, progress_pct: t.progress_pct }));
+          await saveThemeEntries(sessionId, { entries, topic_progress: topicProgress });
+        }
         markStepComplete(4);
         setStep(5);
 
@@ -366,6 +371,7 @@ export default function NuevaSessionPage() {
               chakra_position_id: b.chakra_position_id || null,
               organ_name: b.organ_name || null,
               initial_energy: b.energy,
+              final_energy: b.final_energy ?? null,
             };
           }).filter((r): r is NonNullable<typeof r> => r !== null);
 
@@ -375,6 +381,7 @@ export default function NuevaSessionPage() {
             chakra_position_id: t.resultant.chakra_position_id || null,
             organ_name: t.resultant.organ_name || null,
             initial_energy: t.resultant.energy,
+            final_energy: t.resultant.final_energy ?? null,
           }] : [];
 
           const secondaryRow = t.is_secondary ? [{
@@ -401,10 +408,12 @@ export default function NuevaSessionPage() {
 
           return [...blockageRows, ...resultantRow, ...secondaryRow, ...adultRow, ...childRow];
         });
-        const draftProgress = themes
-          .filter((t) => t.topic_id !== null)
-          .map((t) => ({ client_topic_id: t.topic_id as string, progress_pct: t.progress_pct }));
-        await saveThemeEntries(sessionId, { entries: draftEntries, topic_progress: draftProgress });
+        if (draftEntries.length > 0) {
+          const draftProgress = themes
+            .filter((t) => t.topic_id !== null)
+            .map((t) => ({ client_topic_id: t.topic_id as string, progress_pct: t.progress_pct }));
+          await saveThemeEntries(sessionId, { entries: draftEntries, topic_progress: draftProgress });
+        }
       } else if (currentStep === 5) {
         await saveEnergyReadings(sessionId, 'final', energyFinal);
       } else if (currentStep === 6) {

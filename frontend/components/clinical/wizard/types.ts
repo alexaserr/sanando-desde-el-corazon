@@ -89,6 +89,7 @@ export interface BlockageData {
   chakra_position_id: string;
   organ_name: string;
   energy: number; // 0-100
+  final_energy?: number;
 }
 
 /** Tema trabajado con el nuevo modelo (rediseño paso 4). */

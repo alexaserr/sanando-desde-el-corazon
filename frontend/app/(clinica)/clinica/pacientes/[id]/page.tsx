@@ -26,6 +26,7 @@ import type {
   Client,
   Session,
   SessionDetail,
+  ClientSessionItem,
   MaritalStatus,
   SleepQuality,
   ClientTopic,
@@ -442,7 +443,7 @@ export default function PacienteDetailPage() {
 
   const [tab, setTab] = useState<Tab>("datos");
   const [client, setClient] = useState<Client | null>(null);
-  const [sessions, setSessions] = useState<Session[]>([]);
+  const [sessions, setSessions] = useState<ClientSessionItem[]>([]);
   const [topics, setTopics] = useState<ClientTopic[]>([]);
   const [selectedSession, setSelectedSession] = useState<Session | null>(null);
   const [loading, setLoading] = useState(true);
@@ -476,8 +477,8 @@ export default function PacienteDetailPage() {
     const fetchSessions = async () => {
       setSessionsLoading(true);
       try {
-        const res = await apiClient.get<{ data: Session[]; total: number }>(
-          `/api/v1/clinical/clients/${params.id}/sessions?page=1&size=50`,
+        const res = await apiClient.get<{ data: ClientSessionItem[]; total: number }>(
+          `/api/v1/clinical/clients/${params.id}/sessions?page=1&per_page=50`,
         );
         setSessions(res.data);
       } catch {
@@ -764,8 +765,8 @@ export default function PacienteDetailPage() {
                     <th className="px-5 py-3 text-left font-medium hidden sm:table-cell">
                       Tipo de terapia
                     </th>
-                    <th className="px-5 py-3 text-left font-medium hidden sm:table-cell">
-                      Estado
+                    <th className="px-5 py-3 text-center font-medium hidden sm:table-cell">
+                      Energía
                     </th>
                     <th className="px-5 py-3 text-left font-medium">
                       Costo
@@ -776,18 +777,18 @@ export default function PacienteDetailPage() {
                   {sessions.map((session, idx) => (
                     <tr
                       key={session.id}
-                      onClick={() => setSelectedSession(session)}
+                      onClick={() => router.push(`/clinica/sesiones/${session.id}`)}
                       className={`border-b border-terra-100/40 cursor-pointer hover:bg-terra-50/40 transition-colors duration-150 text-terra-800 ${
                         idx % 2 === 0 ? "bg-white" : "bg-terra-50/20"
                       }`}
                     >
                       <td className="px-5 py-4 font-medium">
-                        {formatDate(session.measured_at ?? session.created_at)}
+                        {formatDate(session.measured_at)}
                       </td>
                       <td className="px-5 py-4 hidden sm:table-cell">
-                        {session.session_type ? (
+                        {session.therapy_type_name ? (
                           <span className="bg-terra-50 text-terra-600 text-xs px-2 py-0.5 rounded-full border border-terra-100">
-                            {session.session_type}
+                            {session.therapy_type_name}
                           </span>
                         ) : (
                           <span className="text-terra-300 italic text-xs">
@@ -795,11 +796,13 @@ export default function PacienteDetailPage() {
                           </span>
                         )}
                       </td>
-                      <td className="px-5 py-4 text-terra-500 hidden sm:table-cell">
-                        {session.status ?? (
-                          <span className="text-terra-300 italic text-xs">
-                            Sin registrar
+                      <td className="px-5 py-4 text-center hidden sm:table-cell">
+                        {session.general_energy_level != null ? (
+                          <span className="text-terra-700 font-medium">
+                            {session.general_energy_level}
                           </span>
+                        ) : (
+                          <span className="text-terra-300 italic text-xs">—</span>
                         )}
                       </td>
                       <td className="px-5 py-4 text-terra-700">
