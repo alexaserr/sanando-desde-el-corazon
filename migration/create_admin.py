@@ -12,16 +12,16 @@ el auth router para pgp_sym_decrypt en el login.
 Idempotente: no inserta si ya existe un usuario con ese email.
 Uso: python create_admin.py
 """
+
 import sys
 
 import bcrypt
 import psycopg
-
 from config import settings
 
-ADMIN_EMAIL     = "admin@sdc.dev"
+ADMIN_EMAIL = "admin@sdc.dev"
 ADMIN_FULL_NAME = "Admin SDC"
-ADMIN_PASSWORD  = "SdcAdmin2026!"
+ADMIN_PASSWORD = "SdcAdmin2026!"
 
 
 def admin_exists(conn: psycopg.Connection, pgkey: str) -> bool:  # type: ignore[type-arg]
@@ -41,7 +41,9 @@ def admin_exists(conn: psycopg.Connection, pgkey: str) -> bool:  # type: ignore[
 
 def create_admin(conn: psycopg.Connection, pgkey: str) -> None:
     """Inserta el usuario admin con PII cifrado y password hasheado."""
-    hashed_pw = bcrypt.hashpw(ADMIN_PASSWORD.encode("utf-8"), bcrypt.gensalt(rounds=12)).decode("utf-8")
+    hashed_pw = bcrypt.hashpw(
+        ADMIN_PASSWORD.encode("utf-8"), bcrypt.gensalt(rounds=12)
+    ).decode("utf-8")
 
     with conn.cursor() as cur:
         cur.execute(
@@ -67,16 +69,20 @@ def create_admin(conn: psycopg.Connection, pgkey: str) -> None:
             )
             """,
             (
-                ADMIN_EMAIL,     pgkey,
-                ADMIN_FULL_NAME, pgkey,
+                ADMIN_EMAIL,
+                pgkey,
+                ADMIN_FULL_NAME,
+                pgkey,
                 hashed_pw,
             ),
         )
 
 
 def main() -> None:
-    db_url = settings.CLINICAL_DATABASE_URL.replace("postgresql+psycopg://", "postgresql://")
-    pgkey  = settings.CLINICAL_DB_PGCRYPTO_KEY
+    db_url = settings.CLINICAL_DATABASE_URL.replace(
+        "postgresql+psycopg://", "postgresql://"
+    )
+    pgkey = settings.CLINICAL_DB_PGCRYPTO_KEY
 
     print("Conectando a clinical_db…")
     with psycopg.connect(db_url) as conn:
@@ -89,12 +95,12 @@ def main() -> None:
 
     print(f"✓ Admin creado: {ADMIN_EMAIL}")
     print(f"  full_name : {ADMIN_FULL_NAME}")
-    print(f"  role      : admin")
-    print(f"  totp      : deshabilitado")
-    print(f"\nPrueba el login:")
-    print(f"  curl -X POST http://localhost:8001/api/v1/auth/login \\")
-    print(f"    -H 'Content-Type: application/json' \\")
-    print(f"    -d '{{\"email\": \"{ADMIN_EMAIL}\", \"password\": \"{ADMIN_PASSWORD}\"}}'")
+    print("  role      : admin")
+    print("  totp      : deshabilitado")
+    print("\nPrueba el login:")
+    print("  curl -X POST http://localhost:8001/api/v1/auth/login \\")
+    print("    -H 'Content-Type: application/json' \\")
+    print(f'    -d \'{{"email": "{ADMIN_EMAIL}", "password": "{ADMIN_PASSWORD}"}}\'')
 
 
 if __name__ == "__main__":
