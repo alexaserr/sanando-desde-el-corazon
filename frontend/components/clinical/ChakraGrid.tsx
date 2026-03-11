@@ -55,7 +55,7 @@ function DeltaBadge({ delta }: { delta: number }) {
     <span
       role="status"
       aria-label="sin diferencia"
-      className="inline-flex items-center px-1.5 py-0.5 rounded text-xs font-semibold bg-gray-100 text-gray-500 select-none"
+      className="inline-flex items-center px-1.5 py-0.5 rounded text-xs font-semibold bg-terra-100 text-terra-500 select-none"
     >
       0
     </span>
@@ -75,11 +75,11 @@ interface SimpleCardProps {
 function SimpleCard({ reading, color, onChange, phase, disabled }: SimpleCardProps) {
   return (
     <div
-      className="bg-white rounded-lg p-4 shadow-sm border border-gray-100"
-      style={{ borderTopWidth: 2, borderTopColor: color }}
+      className="bg-white rounded-xl p-5 shadow-sm border border-terra-100"
+      style={{ borderTopWidth: 3, borderTopColor: color }}
     >
       <p
-        className="text-sm font-semibold mb-3"
+        className="text-base font-semibold mb-3"
         style={{ color, opacity: 0.8 }}
       >
         {reading.name}
@@ -127,12 +127,12 @@ function CompareCard({
 
   return (
     <div
-      className="bg-white rounded-lg p-4 shadow-sm border border-gray-100"
-      style={{ borderTopWidth: 2, borderTopColor: color }}
+      className="bg-white rounded-xl p-5 shadow-sm border border-terra-100"
+      style={{ borderTopWidth: 3, borderTopColor: color }}
     >
       {/* Cabecera: nombre + delta */}
       <div className="flex items-center justify-between gap-2 mb-3">
-        <p className="text-sm font-semibold" style={{ color, opacity: 0.8 }}>
+        <p className="text-base font-semibold" style={{ color, opacity: 0.8 }}>
           {reading.name}
         </p>
         <DeltaBadge delta={delta} />
@@ -145,7 +145,7 @@ function CompareCard({
       <div className="grid grid-cols-[1fr_auto_1fr] items-start gap-x-2">
         {/* Inicial */}
         <div>
-          <p className="text-xs font-medium text-gray-400 mb-1 select-none">
+          <p className="text-xs font-medium text-terra-400 mb-1 select-none">
             Inicial
           </p>
           <EnergySlider
@@ -167,7 +167,7 @@ function CompareCard({
         <div className="flex items-center justify-center pt-6">
           <span
             aria-hidden="true"
-            className="text-gray-300 text-base select-none"
+            className="text-terra-300 text-base select-none"
           >
             ↔
           </span>
@@ -175,7 +175,7 @@ function CompareCard({
 
         {/* Final */}
         <div>
-          <p className="text-xs font-medium text-gray-400 mb-1 select-none">
+          <p className="text-xs font-medium text-terra-400 mb-1 select-none">
             Final
           </p>
           <EnergySlider
@@ -232,7 +232,7 @@ export function ChakraGrid({
 
   if (sorted.length === 0) {
     return (
-      <p className="text-sm text-gray-400 text-center py-6">
+      <p className="text-sm text-terra-400 text-center py-6">
         No hay lecturas de chakras registradas.
       </p>
     );

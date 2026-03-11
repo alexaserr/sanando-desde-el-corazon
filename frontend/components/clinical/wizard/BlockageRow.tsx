@@ -96,13 +96,14 @@ export function BlockageRow({
         </div>
       </div>
 
-      {/* Slider de energía 0-100 */}
+      {/* Slider de energía 0-14 (misma escala que chakras) */}
       <EnergySlider
         label="Energía del órgano"
         value={value.energy}
         onChange={handleEnergyChange}
         phase="initial"
-        max={100}
+        max={14}
+        step={0.5}
         disabled={disabled}
         showLabel={false}
       />

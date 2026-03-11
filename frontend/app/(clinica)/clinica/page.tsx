@@ -45,19 +45,19 @@ interface StatCardProps {
 function StatCard({ title, value, description, icon: Icon, iconBg, iconColor, href }: StatCardProps) {
   const card = (
     <Card
-      className={`bg-white border border-gray-100 rounded-card shadow-card transition-shadow ${
+      className={`bg-white border border-terra-100 rounded-card shadow-card transition-shadow ${
         href ? "cursor-pointer hover:shadow-card-hover" : "cursor-default"
       }`}
     >
-      <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+      <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-3 p-6">
         <CardTitle className="text-sm font-medium text-muted-foreground">
           {title}
         </CardTitle>
-        <div className={`h-8 w-8 rounded-full flex items-center justify-center flex-shrink-0 ${iconBg}`}>
-          <Icon className={`h-4 w-4 ${iconColor}`} />
+        <div className={`h-12 w-12 rounded-full flex items-center justify-center flex-shrink-0 ${iconBg}`}>
+          <Icon className={`h-5 w-5 ${iconColor}`} />
         </div>
       </CardHeader>
-      <CardContent>
+      <CardContent className="px-6 pb-6 pt-0">
         <div className="text-2xl font-bold text-terra-900">{value}</div>
         <p className="text-xs text-muted-foreground mt-1">{description}</p>
       </CardContent>
@@ -116,8 +116,8 @@ export default function ClinicaDashboardPage() {
       value: stats?.total_clients ?? "—",
       description: "Expedientes registrados",
       icon: Users,
-      iconBg: "bg-terra-200/50",
-      iconColor: "text-terra-700",
+      iconBg: "bg-terra-100",
+      iconColor: "text-terra-600",
       href: "/clinica/pacientes",
     },
     {
@@ -125,8 +125,8 @@ export default function ClinicaDashboardPage() {
       value: stats?.sessions_this_month ?? "—",
       description: "Mes actual",
       icon: CalendarDays,
-      iconBg: "bg-blue-50",
-      iconColor: "text-blue-600",
+      iconBg: "bg-blue-50/80",
+      iconColor: "text-blue-500",
       href: "/clinica/sesiones",
     },
     {
@@ -134,8 +134,8 @@ export default function ClinicaDashboardPage() {
       value: stats?.total_sessions ?? "—",
       description: "Histórico",
       icon: Activity,
-      iconBg: "bg-green-50",
-      iconColor: "text-green-600",
+      iconBg: "bg-emerald-50/80",
+      iconColor: "text-emerald-500",
       href: "/clinica/sesiones",
     },
     {
@@ -143,15 +143,15 @@ export default function ClinicaDashboardPage() {
       value: stats?.average_energy != null ? stats.average_energy.toFixed(1) : "—",
       description: "Últimas sesiones",
       icon: Zap,
-      iconBg: "bg-amber-50",
-      iconColor: "text-amber-600",
+      iconBg: "bg-amber-50/80",
+      iconColor: "text-amber-500",
     },
   ];
 
   return (
     <div className="space-y-8">
       <div>
-        <h1 className="text-2xl font-bold tracking-tight text-terra-900">
+        <h1 className="font-display text-2xl font-bold text-terra-900">
           Dashboard
         </h1>
         <p className="text-muted-foreground">
@@ -167,7 +167,7 @@ export default function ClinicaDashboardPage() {
       )}
 
       {/* Stat cards */}
-      <div className="grid gap-4 grid-cols-1 sm:grid-cols-2 lg:grid-cols-4">
+      <div className="grid gap-5 grid-cols-1 sm:grid-cols-2 lg:grid-cols-4">
         {loading
           ? Array.from({ length: 4 }).map((_, i) => <StatCardSkeleton key={i} />)
           : statCards.map((card) => <StatCard key={card.title} {...card} />)}
@@ -188,7 +188,7 @@ export default function ClinicaDashboardPage() {
           </button>
         </div>
 
-        <div className="rounded-lg border overflow-hidden bg-white">
+        <div className="rounded-xl border border-terra-100 overflow-hidden bg-white">
           {loading ? (
             <ul className="divide-y">
               {Array.from({ length: 5 }).map((_, i) => (

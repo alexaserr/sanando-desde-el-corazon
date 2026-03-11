@@ -105,6 +105,12 @@ export interface Session {
   deleted_at: string | null;
 }
 
+/** Detalle extendido de sesión — superset de Session */
+export interface SessionDetail extends Session {
+  general_energy_level: number | null;
+  payment_notes: string | null;
+}
+
 export interface PaginatedResponse<T> {
   items: T[];
   total: number;

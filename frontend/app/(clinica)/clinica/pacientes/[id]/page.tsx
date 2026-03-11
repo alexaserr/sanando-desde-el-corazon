@@ -14,6 +14,8 @@ import {
   Moon,
   Stethoscope,
   PlusCircle,
+  X,
+  Zap,
 } from "lucide-react";
 import { apiClient } from "@/lib/api/client";
 import { getClientTopics, completeClientTopic } from "@/lib/api/clinical";
@@ -23,7 +25,7 @@ import { formatDate, formatPhone, formatCurrency } from "@/lib/utils/formatters"
 import type {
   Client,
   Session,
-  PaginatedResponse,
+  SessionDetail,
   MaritalStatus,
   SleepQuality,
   ClientTopic,
@@ -104,7 +106,7 @@ function SectionHeader({
 }) {
   return (
     <div className="flex items-center gap-2 mb-3">
-      <Icon className="h-5 w-5 text-terra-500 shrink-0" />
+      <Icon className="h-5 w-5 text-terra-400 shrink-0" />
       <h2 className="text-base font-semibold text-terra-900">{title}</h2>
     </div>
   );
@@ -113,7 +115,7 @@ function SectionHeader({
 /** Contenedor de sección */
 function Section({ children }: { children: React.ReactNode }) {
   return (
-    <div className="bg-white rounded-lg border border-gray-100 p-5">
+    <div className="bg-white rounded-xl border border-terra-100 p-6">
       {children}
     </div>
   );
@@ -141,6 +143,193 @@ function TagList({
         </span>
       ))}
     </div>
+  );
+}
+
+// ─── Session Drawer ───────────────────────────────────────────────────────────
+
+function DrawerField({
+  label,
+  value,
+}: {
+  label: string;
+  value: string | number | null | undefined;
+}) {
+  return (
+    <div>
+      <p className="text-xs uppercase tracking-wide text-terra-400 mb-1 font-medium">
+        {label}
+      </p>
+      {value != null ? (
+        <p className="text-sm text-terra-900">{value}</p>
+      ) : (
+        <p className="text-sm text-terra-300 italic">Sin registrar</p>
+      )}
+    </div>
+  );
+}
+
+function SessionDrawer({
+  session,
+  onClose,
+}: {
+  session: Session | null;
+  onClose: () => void;
+}) {
+  const [detail, setDetail] = useState<SessionDetail | null>(null);
+  const [detailLoading, setDetailLoading] = useState(false);
+
+  // Cerrar con ESC
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === "Escape") onClose();
+    };
+    document.addEventListener("keydown", onKey);
+    return () => document.removeEventListener("keydown", onKey);
+  }, [onClose]);
+
+  // Fetch detalle cuando se abre
+  useEffect(() => {
+    if (!session) return;
+    setDetail(null);
+    setDetailLoading(true);
+    apiClient
+      .get<SessionDetail>(`/api/v1/clinical/sessions/${session.id}`)
+      .then((d) => setDetail(d))
+      .catch(() => setDetail(null))
+      .finally(() => setDetailLoading(false));
+  }, [session?.id]);
+
+  // Prevenir scroll del body cuando está abierto
+  useEffect(() => {
+    if (session) {
+      document.body.style.overflow = "hidden";
+    } else {
+      document.body.style.overflow = "";
+    }
+    return () => {
+      document.body.style.overflow = "";
+    };
+  }, [session]);
+
+  if (!session) return null;
+
+  // Datos de pantalla: preferir detalle si está disponible
+  const src = detail ?? session;
+  const sessionDate = formatDate(session.measured_at ?? session.session_date ?? session.created_at);
+
+  return (
+    <>
+      {/* Overlay */}
+      <div
+        className="fixed inset-0 bg-terra-900/30 backdrop-blur-[2px] z-40"
+        onClick={onClose}
+        aria-hidden="true"
+      />
+
+      {/* Panel lateral */}
+      <div
+        role="dialog"
+        aria-modal="true"
+        aria-label="Detalle de sesión"
+        className="fixed right-0 top-0 h-full w-full max-w-md bg-white z-50 shadow-[−4px_0_24px_rgba(61,26,15,0.10)] flex flex-col"
+      >
+        {/* Header */}
+        <div className="flex items-start justify-between gap-4 px-6 py-5 border-b border-terra-100">
+          <div>
+            <p className="text-xs uppercase tracking-wide text-terra-400 font-medium mb-0.5">
+              Sesión
+            </p>
+            <h2 className="font-display text-lg font-bold text-terra-900 leading-tight">
+              {sessionDate}
+            </h2>
+            {session.session_type && (
+              <span className="inline-block mt-1 text-xs bg-terra-100 text-terra-600 px-2 py-0.5 rounded-full">
+                {session.session_type}
+              </span>
+            )}
+          </div>
+          <button
+            onClick={onClose}
+            className="min-h-[44px] min-w-[44px] flex items-center justify-center rounded-lg text-terra-400 hover:text-terra-700 hover:bg-terra-50 transition-colors"
+            aria-label="Cerrar"
+          >
+            <X className="h-5 w-5" />
+          </button>
+        </div>
+
+        {/* Contenido */}
+        <div className="flex-1 overflow-y-auto px-6 py-5 space-y-5">
+          {detailLoading && (
+            <div className="space-y-3">
+              {[60, 45, 70, 50].map((w, i) => (
+                <div
+                  key={i}
+                  className="h-4 bg-terra-100 rounded animate-pulse"
+                  style={{ width: `${w}%` }}
+                />
+              ))}
+            </div>
+          )}
+
+          {!detailLoading && (
+            <>
+              <div className="grid grid-cols-2 gap-4">
+                <DrawerField
+                  label="Estado"
+                  value={src.status}
+                />
+                <DrawerField
+                  label="Costo"
+                  value={src.cost != null ? formatCurrency(src.cost) : null}
+                />
+              </div>
+
+              {detail?.general_energy_level != null && (
+                <div className="flex items-center gap-3 bg-terra-50 rounded-xl px-4 py-3">
+                  <Zap className="h-4 w-4 text-terra-500 shrink-0" />
+                  <div>
+                    <p className="text-xs uppercase tracking-wide text-terra-400 font-medium">
+                      Energía general
+                    </p>
+                    <p className="text-sm font-semibold text-terra-900">
+                      {detail.general_energy_level}
+                    </p>
+                  </div>
+                </div>
+              )}
+
+              {src.notes && (
+                <div>
+                  <p className="text-xs uppercase tracking-wide text-terra-400 mb-2 font-medium">
+                    Notas
+                  </p>
+                  <div className="bg-amber-50/60 border-l-4 border-amber-300 rounded-r-xl p-4">
+                    <p className="text-sm text-amber-900 leading-relaxed whitespace-pre-wrap">
+                      {src.notes}
+                    </p>
+                  </div>
+                </div>
+              )}
+
+              {detail?.payment_notes && (
+                <DrawerField
+                  label="Notas de pago"
+                  value={detail.payment_notes}
+                />
+              )}
+
+              <div className="border-t border-terra-100 pt-4 space-y-3">
+                <DrawerField
+                  label="Creada el"
+                  value={formatDate(session.created_at)}
+                />
+              </div>
+            </>
+          )}
+        </div>
+      </div>
+    </>
   );
 }
 
@@ -255,6 +444,7 @@ export default function PacienteDetailPage() {
   const [client, setClient] = useState<Client | null>(null);
   const [sessions, setSessions] = useState<Session[]>([]);
   const [topics, setTopics] = useState<ClientTopic[]>([]);
+  const [selectedSession, setSelectedSession] = useState<Session | null>(null);
   const [loading, setLoading] = useState(true);
   const [sessionsLoading, setSessionsLoading] = useState(false);
   const [topicsLoading, setTopicsLoading] = useState(false);
@@ -286,10 +476,10 @@ export default function PacienteDetailPage() {
     const fetchSessions = async () => {
       setSessionsLoading(true);
       try {
-        const data = await apiClient.get<PaginatedResponse<Session>>(
+        const res = await apiClient.get<{ data: Session[]; total: number }>(
           `/api/v1/clinical/clients/${params.id}/sessions?page=1&size=50`,
         );
-        setSessions(data.items);
+        setSessions(res.data);
       } catch {
         setSessions([]);
       } finally {
@@ -536,7 +726,7 @@ export default function PacienteDetailPage() {
               {client.important_notes && (
                 <Section>
                   <SectionHeader icon={FileText} title="Notas" />
-                  <div className="bg-amber-50 border-l-4 border-amber-400 rounded-r-lg p-4">
+                  <div className="bg-amber-50/60 border-l-4 border-amber-300 rounded-r-xl p-4">
                     <p className="text-sm text-amber-900 leading-relaxed">
                       {client.important_notes}
                     </p>
@@ -564,20 +754,20 @@ export default function PacienteDetailPage() {
               </CardContent>
             </Card>
           ) : (
-            <div className="rounded-lg border border-gray-200 overflow-hidden">
+            <div className="rounded-xl border border-terra-100 overflow-hidden">
               <table className="w-full text-sm">
                 <thead>
-                  <tr className="bg-terra-50 border-b border-gray-200 text-terra-900">
-                    <th className="px-4 py-3 text-left font-semibold">
+                  <tr className="bg-terra-50 border-b border-terra-100 text-terra-600 text-xs uppercase tracking-wider">
+                    <th className="px-5 py-3 text-left font-medium">
                       Fecha
                     </th>
-                    <th className="px-4 py-3 text-left font-semibold hidden sm:table-cell">
+                    <th className="px-5 py-3 text-left font-medium hidden sm:table-cell">
                       Tipo de terapia
                     </th>
-                    <th className="px-4 py-3 text-left font-semibold hidden sm:table-cell">
+                    <th className="px-5 py-3 text-left font-medium hidden sm:table-cell">
                       Estado
                     </th>
-                    <th className="px-4 py-3 text-left font-semibold">
+                    <th className="px-5 py-3 text-left font-medium">
                       Costo
                     </th>
                   </tr>
@@ -586,36 +776,37 @@ export default function PacienteDetailPage() {
                   {sessions.map((session, idx) => (
                     <tr
                       key={session.id}
-                      className={`border-b border-gray-100 cursor-pointer hover:bg-terra-50/50 transition-colors text-gray-900 ${
-                        idx % 2 === 0 ? "bg-white" : "bg-gray-50/30"
+                      onClick={() => setSelectedSession(session)}
+                      className={`border-b border-terra-100/40 cursor-pointer hover:bg-terra-50/40 transition-colors duration-150 text-terra-800 ${
+                        idx % 2 === 0 ? "bg-white" : "bg-terra-50/20"
                       }`}
                     >
-                      <td className="px-4 py-3 font-medium">
+                      <td className="px-5 py-4 font-medium">
                         {formatDate(session.measured_at ?? session.created_at)}
                       </td>
-                      <td className="px-4 py-3 hidden sm:table-cell">
+                      <td className="px-5 py-4 hidden sm:table-cell">
                         {session.session_type ? (
-                          <span className="bg-gray-100 text-gray-700 text-xs px-2 py-0.5 rounded">
+                          <span className="bg-terra-50 text-terra-600 text-xs px-2 py-0.5 rounded-full border border-terra-100">
                             {session.session_type}
                           </span>
                         ) : (
-                          <span className="text-gray-300 italic text-xs">
+                          <span className="text-terra-300 italic text-xs">
                             Sin registrar
                           </span>
                         )}
                       </td>
-                      <td className="px-4 py-3 text-gray-500 hidden sm:table-cell">
+                      <td className="px-5 py-4 text-terra-500 hidden sm:table-cell">
                         {session.status ?? (
-                          <span className="text-gray-300 italic text-xs">
+                          <span className="text-terra-300 italic text-xs">
                             Sin registrar
                           </span>
                         )}
                       </td>
-                      <td className="px-4 py-3 text-gray-700">
+                      <td className="px-5 py-4 text-terra-700">
                         {session.cost != null
                           ? formatCurrency(session.cost)
                           : (
-                            <span className="text-gray-300 italic text-xs">
+                            <span className="text-terra-300 italic text-xs">
                               Sin registrar
                             </span>
                           )}
@@ -763,6 +954,12 @@ export default function PacienteDetailPage() {
           ) : null}
         </>
       )}
+
+      {/* ─── Session Drawer ─── */}
+      <SessionDrawer
+        session={selectedSession}
+        onClose={() => setSelectedSession(null)}
+      />
     </div>
   );
 }

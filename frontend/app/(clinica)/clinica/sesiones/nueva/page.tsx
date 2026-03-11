@@ -71,7 +71,9 @@ function initEnergyReadings(dimensions: EnergyDimension[]): EnergyReading[] {
 }
 
 function initChakraReadings(chakras: ChakraPosition[]): WizardChakraReading[] {
-  return chakras.map((c) => ({ chakra_position_id: c.id, name: c.name, value: 7 }));
+  return [...chakras]
+    .sort((a, b) => a.position - b.position)
+    .map((c) => ({ chakra_position_id: c.id, name: c.name, value: 7 }));
 }
 
 // ─── Página ────────────────────────────────────────────────────────────────────

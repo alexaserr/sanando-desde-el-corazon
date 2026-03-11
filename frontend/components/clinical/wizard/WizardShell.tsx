@@ -32,11 +32,11 @@ function StepDot({ step, isCurrent, isCompleted, onClick }: StepDotProps) {
 
   let circleClass: string;
   if (isCurrent) {
-    circleClass = `${base} bg-[#4A1810] border-[#4A1810] text-white`;
+    circleClass = `${base} bg-terra-700 border-terra-700 text-white ring-2 ring-terra-300 ring-offset-1`;
   } else if (isCompleted) {
-    circleClass = `${base} bg-[#1E5631] border-[#1E5631] text-white cursor-pointer hover:opacity-80`;
+    circleClass = `${base} bg-terra-700 border-terra-700 text-white cursor-pointer hover:opacity-80`;
   } else {
-    circleClass = `${base} bg-white border-gray-300 text-gray-400 cursor-default`;
+    circleClass = `${base} bg-white border-terra-200 text-terra-300 cursor-default`;
   }
 
   return (
@@ -76,9 +76,9 @@ function Stepper({ currentStep, completedSteps, onStepClick }: StepperProps) {
     <nav aria-label="Progreso del wizard" className="w-full">
       {/* Barra de progreso */}
       <div className="relative mb-4">
-        <div className="h-1.5 bg-gray-200 rounded-full overflow-hidden">
+        <div className="h-1.5 bg-terra-100 rounded-full overflow-hidden">
           <div
-            className="h-full bg-[#1E5631] rounded-full transition-all duration-500"
+            className="h-full bg-terra-400 rounded-full transition-all duration-500"
             style={{
               width: `${Math.max(0, ((currentStep - 1) / (TOTAL_STEPS - 1)) * 100)}%`,
             }}
@@ -112,10 +112,10 @@ function Stepper({ currentStep, completedSteps, onStepClick }: StepperProps) {
               <span
                 className={`text-[10px] text-center leading-tight select-none hidden sm:block ${
                   isCurrent
-                    ? 'text-[#4A1810] font-semibold'
+                    ? 'text-terra-700 font-semibold'
                     : isCompleted
-                    ? 'text-[#1E5631]'
-                    : 'text-gray-400'
+                    ? 'text-terra-500'
+                    : 'text-terra-300'
                 }`}
               >
                 {step.shortLabel}
@@ -181,11 +181,11 @@ export function WizardShell({
 
       {/* Chip del paso actual */}
       <div className="flex items-center gap-2">
-        <span className="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-medium bg-amber-100 text-[#4A1810]">
+        <span className="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-medium bg-terra-100 text-terra-700">
           Paso {currentStep} de {TOTAL_STEPS}
         </span>
         {currentStepMeta && (
-          <h1 className="text-sm font-semibold text-gray-700">
+          <h1 className="text-sm font-semibold text-terra-700">
             {currentStepMeta.label}
           </h1>
         )}
@@ -197,13 +197,13 @@ export function WizardShell({
       </main>
 
       {/* Barra de acciones */}
-      <footer className="flex flex-wrap items-center justify-between gap-3 pt-4 border-t border-gray-100">
+      <footer className="flex flex-wrap items-center justify-between gap-3 pt-4 border-t border-terra-100">
         {/* Guardar borrador */}
         <button
           type="button"
           onClick={onSaveDraft}
           disabled={isSaving}
-          className="inline-flex items-center gap-1.5 rounded-md border border-gray-300 bg-white px-3 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-[#4A1810] focus:ring-offset-1 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+          className="inline-flex items-center gap-1.5 rounded-lg border border-terra-200 bg-white px-3 py-2 text-sm font-medium text-terra-600 hover:bg-terra-50 focus:outline-none focus:ring-2 focus:ring-terra-700 focus:ring-offset-1 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
         >
           {isSaving ? (
             <>
@@ -258,7 +258,7 @@ export function WizardShell({
               type="button"
               onClick={onPrev}
               disabled={isSaving}
-              className="inline-flex items-center gap-1 rounded-md border border-gray-300 bg-white px-3 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-[#4A1810] focus:ring-offset-1 disabled:opacity-50 transition-colors"
+              className="inline-flex items-center gap-1 rounded-lg border border-terra-200 bg-white px-3 py-2 text-sm font-medium text-terra-600 hover:bg-terra-50 focus:outline-none focus:ring-2 focus:ring-terra-700 focus:ring-offset-1 disabled:opacity-50 transition-colors"
             >
               <svg
                 aria-hidden="true"
@@ -304,7 +304,7 @@ export function WizardShell({
               type="button"
               onClick={onNext}
               disabled={isNextDisabled || isSaving}
-              className="inline-flex items-center gap-1 rounded-md bg-[#4A1810] px-4 py-2 text-sm font-semibold text-white hover:bg-[#6A2015] focus:outline-none focus:ring-2 focus:ring-[#4A1810] focus:ring-offset-1 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+              className="inline-flex items-center gap-1 rounded-lg bg-terra-700 px-4 py-2 text-sm font-semibold text-white hover:bg-terra-600 focus:outline-none focus:ring-2 focus:ring-terra-700 focus:ring-offset-1 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
             >
               Siguiente
               <svg

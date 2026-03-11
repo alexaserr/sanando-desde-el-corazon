@@ -45,8 +45,8 @@ export default function LoginPage() {
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-terra-50 p-4">
-      <Card className="w-full max-w-md shadow-card rounded-card border border-gray-100">
-        <CardHeader className="space-y-1 text-center pb-6">
+      <Card className="w-full max-w-lg shadow-[0_4px_24px_rgba(61,26,15,0.08)] rounded-2xl border border-terra-100">
+        <CardHeader className="space-y-1 text-center pb-6 pt-10 px-10">
           <div className="flex justify-center mb-4">
             <img
               src="/images/sdc-logo.png"
@@ -54,14 +54,14 @@ export default function LoginPage() {
               className="h-20 w-auto mx-auto"
             />
           </div>
-          <CardDescription className="text-gray-600">
+          <CardDescription className="text-terra-500">
             Ingresa tus credenciales para continuar
           </CardDescription>
         </CardHeader>
-        <CardContent>
-          <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
+        <CardContent className="px-10 pb-10">
+          <form onSubmit={handleSubmit(onSubmit)} className="space-y-5">
             <div className="space-y-2">
-              <Label htmlFor="email" className="text-sm font-medium text-gray-900">
+              <Label htmlFor="email" className="text-sm font-medium text-terra-800">
                 Correo electrónico
               </Label>
               <Input
@@ -69,7 +69,7 @@ export default function LoginPage() {
                 type="email"
                 autoComplete="email"
                 placeholder="correo@ejemplo.com"
-                className="h-11 rounded border-gray-200 focus:border-terra-500 focus:ring-terra-500/20"
+                className="h-12 rounded-lg border-terra-200 focus:border-terra-400 focus:ring-terra-400/20"
                 {...register("email")}
               />
               {errors.email && (
@@ -80,14 +80,14 @@ export default function LoginPage() {
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="password" className="text-sm font-medium text-gray-900">
+              <Label htmlFor="password" className="text-sm font-medium text-terra-800">
                 Contraseña
               </Label>
               <Input
                 id="password"
                 type="password"
                 autoComplete="current-password"
-                className="h-11 rounded border-gray-200 focus:border-terra-500 focus:ring-terra-500/20"
+                className="h-12 rounded-lg border-terra-200 focus:border-terra-400 focus:ring-terra-400/20"
                 {...register("password")}
               />
               {errors.password && (
@@ -105,7 +105,7 @@ export default function LoginPage() {
 
             <Button
               type="submit"
-              className="w-full h-11 min-h-[44px] bg-terra-700 hover:bg-terra-500 text-white rounded transition-colors"
+              className="w-full h-11 min-h-[44px] bg-terra-700 hover:bg-terra-600 text-white rounded-lg font-medium transition-all duration-200 hover:shadow-sm active:scale-[0.98]"
               disabled={isSubmitting}
             >
               {isSubmitting ? (

@@ -35,12 +35,16 @@ export function StepEnergyInitial({
     [catalogDimensions],
   );
 
-  // Cuando cambia masculina, auto-balancear femenina = 100 - masculina
+  // Sincronización bidireccional: masculina ↔ femenina siempre suman 100
   const handleChange = useCallback(
     (dimensionId: string, value: number) => {
       onChange(dimensionId, value);
-      if (masculinaDim && femeninaDim && dimensionId === masculinaDim.id) {
-        onChange(femeninaDim.id, Math.max(0, Math.min(100, 100 - value)));
+      if (masculinaDim && femeninaDim) {
+        if (dimensionId === masculinaDim.id) {
+          onChange(femeninaDim.id, Math.max(0, Math.min(100, 100 - value)));
+        } else if (dimensionId === femeninaDim.id) {
+          onChange(masculinaDim.id, Math.max(0, Math.min(100, 100 - value)));
+        }
       }
     },
     [onChange, masculinaDim, femeninaDim],

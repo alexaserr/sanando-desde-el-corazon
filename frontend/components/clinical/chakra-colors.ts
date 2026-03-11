@@ -18,8 +18,10 @@ type ChakraEntry = [normalized: string, key: ChakraKey, color: string];
 
 const CHAKRA_REGISTRY: ChakraEntry[] = [
   ['raiz',         'root',      CHAKRA_COLORS.root],
-  ['sacral',       'sacral',    CHAKRA_COLORS.sacral],
+  ['sacro',        'sacral',    CHAKRA_COLORS.sacral],  // nombre español del catálogo
+  ['sacral',       'sacral',    CHAKRA_COLORS.sacral],  // alias inglés/alternativo
   ['plexo solar',  'plexo',     CHAKRA_COLORS.plexo],
+  ['plexo',        'plexo',     CHAKRA_COLORS.plexo],   // alias abreviado
   ['corazon',      'heart',     CHAKRA_COLORS.heart],
   ['garganta',     'throat',    CHAKRA_COLORS.throat],
   ['tercer ojo',   'third_eye', CHAKRA_COLORS.third_eye],
