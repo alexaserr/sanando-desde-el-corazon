@@ -132,19 +132,40 @@ export async function completeClientTopic(
 
 // ─── Entradas de temas de sesión ──────────────────────────────────────────────
 
-interface TopicProgressUpdate {
-  topic_id: string;
+export interface TopicProgressUpdate {
+  client_topic_id: string;
   progress_pct: number;
 }
 
+export type ThemeEntryType = 'bloqueo_1' | 'bloqueo_2' | 'bloqueo_3' | 'resultante' | 'secundario';
+
+export interface ThemeEntryRow {
+  client_topic_id: string | null;
+  entry_type: ThemeEntryType;
+  chakra_position_id?: string | null;
+  organ_name?: string | null;
+  initial_energy?: number | null;
+  final_energy?: number | null;
+  childhood_place?: string | null;
+  childhood_people?: string | null;
+  childhood_situation?: string | null;
+  childhood_description?: string | null;
+  childhood_emotions?: string | null;
+  adulthood_place?: string | null;
+  adulthood_people?: string | null;
+  adulthood_situation?: string | null;
+  adulthood_description?: string | null;
+  adulthood_emotions?: string | null;
+}
+
 interface SaveThemeEntriesPayload {
-  entries: Omit<SessionThemeEntry, 'id' | 'session_id' | 'created_at' | 'updated_at'>[];
+  entries: ThemeEntryRow[];
   topic_progress: TopicProgressUpdate[];
 }
 
 export async function saveThemeEntries(
   sessionId: string,
-  entries: SaveThemeEntriesPayload['entries'],
+  entries: ThemeEntryRow[],
   topicProgress: TopicProgressUpdate[],
 ): Promise<unknown> {
   return apiClient.put<unknown, SaveThemeEntriesPayload>(

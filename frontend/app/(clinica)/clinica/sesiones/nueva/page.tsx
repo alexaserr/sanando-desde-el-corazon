@@ -257,39 +257,52 @@ export default function NuevaSessionPage() {
 
       } else if (currentStep === 4) {
         if (!sessionId) throw new Error('Sesión no iniciada');
-        const entries = themes.map((t) => ({
-          topic_id:                   t.topic_id,
-          topic_name:                 t.name,
-          is_secondary:               t.is_secondary,
-          blockage_1_chakra_id:       t.blockages[0]?.chakra_position_id || null,
-          blockage_1_organ:           t.blockages[0]?.organ_name || null,
-          blockage_1_energy:          t.blockages[0]?.energy ?? null,
-          blockage_2_chakra_id:       t.blockages[1]?.chakra_position_id || null,
-          blockage_2_organ:           t.blockages[1]?.organ_name || null,
-          blockage_2_energy:          t.blockages[1]?.energy ?? null,
-          blockage_3_chakra_id:       t.blockages[2]?.chakra_position_id || null,
-          blockage_3_organ:           t.blockages[2]?.organ_name || null,
-          blockage_3_energy:          t.blockages[2]?.energy ?? null,
-          resultant_chakra_id:        t.resultant.chakra_position_id || null,
-          resultant_organ:            t.resultant.organ_name || null,
-          resultant_energy:           t.resultant.energy,
-          secondary_energy_initial:   t.is_secondary ? t.secondary_energy_initial : null,
-          secondary_energy_final:     t.is_secondary ? t.secondary_energy_final : null,
-          childhood_place:            t.childhood.place || null,
-          childhood_people:           t.childhood.people || null,
-          childhood_situation:        t.childhood.situation || null,
-          childhood_description:      t.childhood.description || null,
-          childhood_emotions:         t.childhood.emotions || null,
-          adulthood_place:            t.adulthood.place || null,
-          adulthood_people:           t.adulthood.people || null,
-          adulthood_situation:        t.adulthood.situation || null,
-          adulthood_description:      t.adulthood.description || null,
-          adulthood_emotions:         t.adulthood.emotions || null,
-          progress_pct:               t.progress_pct,
-        }));
+        const entries = themes.flatMap((t) => {
+          const blockageRows = (['bloqueo_1', 'bloqueo_2', 'bloqueo_3'] as const).map((et, i) => {
+            const b = t.blockages[i];
+            if (!b.chakra_position_id && !b.organ_name) return null;
+            return {
+              client_topic_id: t.topic_id,
+              entry_type: et,
+              chakra_position_id: b.chakra_position_id || null,
+              organ_name: b.organ_name || null,
+              initial_energy: b.energy,
+              // Ages solo en bloqueo_1
+              ...(i === 0 ? {
+                childhood_place: t.childhood.place || null,
+                childhood_people: t.childhood.people || null,
+                childhood_situation: t.childhood.situation || null,
+                childhood_description: t.childhood.description || null,
+                childhood_emotions: t.childhood.emotions || null,
+                adulthood_place: t.adulthood.place || null,
+                adulthood_people: t.adulthood.people || null,
+                adulthood_situation: t.adulthood.situation || null,
+                adulthood_description: t.adulthood.description || null,
+                adulthood_emotions: t.adulthood.emotions || null,
+              } : {}),
+            };
+          }).filter((r): r is NonNullable<typeof r> => r !== null);
+
+          const resultantRow = (t.resultant.chakra_position_id || t.resultant.organ_name) ? [{
+            client_topic_id: t.topic_id,
+            entry_type: 'resultante' as const,
+            chakra_position_id: t.resultant.chakra_position_id || null,
+            organ_name: t.resultant.organ_name || null,
+            initial_energy: t.resultant.energy,
+          }] : [];
+
+          const secondaryRow = t.is_secondary ? [{
+            client_topic_id: t.topic_id,
+            entry_type: 'secundario' as const,
+            initial_energy: t.secondary_energy_initial,
+            final_energy: t.secondary_energy_final,
+          }] : [];
+
+          return [...blockageRows, ...resultantRow, ...secondaryRow];
+        });
         const topicProgress = themes
           .filter((t) => t.topic_id !== null)
-          .map((t) => ({ topic_id: t.topic_id as string, progress_pct: t.progress_pct }));
+          .map((t) => ({ client_topic_id: t.topic_id as string, progress_pct: t.progress_pct }));
         await saveThemeEntries(sessionId, entries, topicProgress);
         markStepComplete(4);
         setStep(5);
@@ -340,35 +353,51 @@ export default function NuevaSessionPage() {
           chakraInitial.map((r) => ({ chakra_position_id: r.chakra_position_id, value: r.value })),
         );
       } else if (currentStep === 4) {
-        const draftEntries = themes.map((t) => ({
-          topic_id: t.topic_id, topic_name: t.name, is_secondary: t.is_secondary,
-          blockage_1_chakra_id: t.blockages[0]?.chakra_position_id || null,
-          blockage_1_organ: t.blockages[0]?.organ_name || null,
-          blockage_1_energy: t.blockages[0]?.energy ?? null,
-          blockage_2_chakra_id: t.blockages[1]?.chakra_position_id || null,
-          blockage_2_organ: t.blockages[1]?.organ_name || null,
-          blockage_2_energy: t.blockages[1]?.energy ?? null,
-          blockage_3_chakra_id: t.blockages[2]?.chakra_position_id || null,
-          blockage_3_organ: t.blockages[2]?.organ_name || null,
-          blockage_3_energy: t.blockages[2]?.energy ?? null,
-          resultant_chakra_id: t.resultant.chakra_position_id || null,
-          resultant_organ: t.resultant.organ_name || null,
-          resultant_energy: t.resultant.energy,
-          secondary_energy_initial: t.is_secondary ? t.secondary_energy_initial : null,
-          secondary_energy_final: t.is_secondary ? t.secondary_energy_final : null,
-          childhood_place: t.childhood.place || null, childhood_people: t.childhood.people || null,
-          childhood_situation: t.childhood.situation || null,
-          childhood_description: t.childhood.description || null,
-          childhood_emotions: t.childhood.emotions || null,
-          adulthood_place: t.adulthood.place || null, adulthood_people: t.adulthood.people || null,
-          adulthood_situation: t.adulthood.situation || null,
-          adulthood_description: t.adulthood.description || null,
-          adulthood_emotions: t.adulthood.emotions || null,
-          progress_pct: t.progress_pct,
-        }));
+        const draftEntries = themes.flatMap((t) => {
+          const blockageRows = (['bloqueo_1', 'bloqueo_2', 'bloqueo_3'] as const).map((et, i) => {
+            const b = t.blockages[i];
+            if (!b.chakra_position_id && !b.organ_name) return null;
+            return {
+              client_topic_id: t.topic_id,
+              entry_type: et,
+              chakra_position_id: b.chakra_position_id || null,
+              organ_name: b.organ_name || null,
+              initial_energy: b.energy,
+              ...(i === 0 ? {
+                childhood_place: t.childhood.place || null,
+                childhood_people: t.childhood.people || null,
+                childhood_situation: t.childhood.situation || null,
+                childhood_description: t.childhood.description || null,
+                childhood_emotions: t.childhood.emotions || null,
+                adulthood_place: t.adulthood.place || null,
+                adulthood_people: t.adulthood.people || null,
+                adulthood_situation: t.adulthood.situation || null,
+                adulthood_description: t.adulthood.description || null,
+                adulthood_emotions: t.adulthood.emotions || null,
+              } : {}),
+            };
+          }).filter((r): r is NonNullable<typeof r> => r !== null);
+
+          const resultantRow = (t.resultant.chakra_position_id || t.resultant.organ_name) ? [{
+            client_topic_id: t.topic_id,
+            entry_type: 'resultante' as const,
+            chakra_position_id: t.resultant.chakra_position_id || null,
+            organ_name: t.resultant.organ_name || null,
+            initial_energy: t.resultant.energy,
+          }] : [];
+
+          const secondaryRow = t.is_secondary ? [{
+            client_topic_id: t.topic_id,
+            entry_type: 'secundario' as const,
+            initial_energy: t.secondary_energy_initial,
+            final_energy: t.secondary_energy_final,
+          }] : [];
+
+          return [...blockageRows, ...resultantRow, ...secondaryRow];
+        });
         const draftProgress = themes
           .filter((t) => t.topic_id !== null)
-          .map((t) => ({ topic_id: t.topic_id as string, progress_pct: t.progress_pct }));
+          .map((t) => ({ client_topic_id: t.topic_id as string, progress_pct: t.progress_pct }));
         await saveThemeEntries(sessionId, draftEntries, draftProgress);
       } else if (currentStep === 5) {
         await saveEnergyReadings(sessionId, 'final', energyFinal);
