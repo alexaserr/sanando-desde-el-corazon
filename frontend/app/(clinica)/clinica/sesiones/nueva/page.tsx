@@ -11,6 +11,8 @@ import { StepTopics }         from '@/components/clinical/wizard/StepTopics';
 import { StepEnergyFinal }    from '@/components/clinical/wizard/StepEnergyFinal';
 import { StepChakrasFinal }   from '@/components/clinical/wizard/StepChakrasFinal';
 import { StepClose }          from '@/components/clinical/wizard/StepClose';
+import { StepCleaning }      from '@/components/clinical/wizard/StepCleaning';
+import { StepLNT }           from '@/components/clinical/wizard/StepLNT';
 
 import { useWizardStore } from '@/lib/stores/wizardStore';
 import { getWizardConfig } from '@/lib/data/wizard-config';
@@ -27,6 +29,7 @@ import {
   closeSession,
   getClientTopics,
   saveThemeEntries,
+  saveLntEntries,
 } from '@/lib/api/clinical';
 
 import type { TherapyType, ChakraPosition, EnergyDimension, ClientListItem, ClientTopic } from '@/types/api';
@@ -37,6 +40,11 @@ import type {
   ThemeEntry,
   CloseData,
   SessionSummary,
+  CleaningRow,
+  CleaningSummary,
+  LntEntry,
+  AncestorEntry,
+  AncestorConciliation,
 } from '@/components/clinical/wizard/types';
 
 // ─── Tipos internos de catálogos cargados ─────────────────────────────────────
@@ -104,6 +112,16 @@ export default function NuevaSessionPage() {
   const [energyFinal, setEnergyFinal]               = useState<EnergyReading[]>([]);
   const [chakraFinal, setChakraFinal]               = useState<WizardChakraReading[]>([]);
   const [closeData, setCloseData]                   = useState<CloseData>(defaultCloseData);
+  const [cleaningRows, setCleaningRows]             = useState<CleaningRow[]>([]);
+  const [cleaningSummary, setCleaningSummary]       = useState<CleaningSummary>({
+    capas: 0, limpiezas_requeridas: 0, mesa_utilizada: '', beneficios: '',
+  });
+  const [lntEntries, setLntEntries]                 = useState<LntEntry[]>([]);
+  const [lntPeticiones, setLntPeticiones]           = useState('');
+  const [ancestors, setAncestors]                   = useState<AncestorEntry[]>([]);
+  const [ancestorConciliation, setAncestorConciliation] = useState<AncestorConciliation>({
+    healing_phrases: '', conciliation_acts: '', life_aspects_affected: '', session_relationship: '',
+  });
 
   // Estado de UI
   const [isSaving, setIsSaving] = useState(false);
@@ -242,6 +260,8 @@ export default function NuevaSessionPage() {
           organ_name: b.organ_name || null,
           initial_energy: b.energy,
           final_energy: b.final_energy ?? null,
+          significado: b.significado || null,
+          interpretacion_tema: b.interpretacion_tema || null,
         };
       }).filter((r): r is NonNullable<typeof r> => r !== null);
 
@@ -344,8 +364,25 @@ export default function NuevaSessionPage() {
         markStepComplete(currentStep);
         setStep(currentStep + 1);
 
-      } else if (stepComponent === 'StepLNT' || stepComponent === 'StepCleaning') {
-        // Placeholder — los componentes reales se implementarán después
+      } else if (stepComponent === 'StepLNT') {
+        if (!sessionId) throw new Error('Sesión no iniciada');
+        if (lntEntries.length > 0) {
+          await saveLntEntries(sessionId, {
+            entries: lntEntries.map((e) => ({
+              theme_organ: e.theme_organ || null,
+              initial_energy: e.initial_energy,
+              final_energy: e.final_energy,
+              healing_energy_body: e.healing_energy_body,
+              healing_spiritual_body: e.healing_spiritual_body,
+              healing_physical_body: e.healing_physical_body,
+            })),
+          });
+        }
+        markStepComplete(currentStep);
+        setStep(currentStep + 1);
+
+      } else if (stepComponent === 'StepCleaning') {
+        // StepCleaning — se implementará con su propio endpoint
         markStepComplete(currentStep);
         setStep(currentStep + 1);
 
@@ -372,7 +409,7 @@ export default function NuevaSessionPage() {
     }
   }, [
     currentStep, activeSteps, sessionId, generalData, energyInitial, chakraInitial,
-    themes, energyFinal, chakraFinal,
+    themes, energyFinal, chakraFinal, lntEntries,
     setSessionId, markStepComplete, setStep,
   ]);
 
@@ -406,14 +443,27 @@ export default function NuevaSessionPage() {
           sessionId, 'final',
           chakraFinal.map((r) => ({ chakra_position_id: r.chakra_position_id, value: r.value })),
         );
+      } else if (stepComponent === 'StepLNT') {
+        if (lntEntries.length > 0) {
+          await saveLntEntries(sessionId, {
+            entries: lntEntries.map((e) => ({
+              theme_organ: e.theme_organ || null,
+              initial_energy: e.initial_energy,
+              final_energy: e.final_energy,
+              healing_energy_body: e.healing_energy_body,
+              healing_spiritual_body: e.healing_spiritual_body,
+              healing_physical_body: e.healing_physical_body,
+            })),
+          });
+        }
       }
-      // StepLNT, StepCleaning — sin datos que guardar aún
+      // StepCleaning — se implementará con su propio endpoint
     } catch (err) {
       setStepError(err instanceof Error ? err.message : 'Error al guardar borrador.');
     } finally {
       setIsSaving(false);
     }
-  }, [sessionId, currentStep, activeSteps, energyInitial, chakraInitial, themes, energyFinal, chakraFinal]);
+  }, [sessionId, currentStep, activeSteps, energyInitial, chakraInitial, themes, energyFinal, chakraFinal, lntEntries]);
 
   const handleCloseSession = useCallback(async () => {
     if (!sessionId) return;
@@ -516,6 +566,10 @@ export default function NuevaSessionPage() {
             readings={energyInitial}
             onChange={(id, val) => updateEnergyReading(setEnergyInitial, id, val)}
             disabled={isSaving}
+            ancestors={ancestors}
+            onAncestorsChange={setAncestors}
+            conciliation={ancestorConciliation}
+            onConciliationChange={setAncestorConciliation}
           />
         )}
 
@@ -539,15 +593,23 @@ export default function NuevaSessionPage() {
         )}
 
         {currentComponent === 'StepLNT' && (
-          <div className="p-6 text-sm text-gray-500 bg-gray-50 rounded-lg border border-gray-200">
-            StepLNT — próximamente
-          </div>
+          <StepLNT
+            entries={lntEntries}
+            onChange={setLntEntries}
+            peticiones={lntPeticiones}
+            onPeticionesChange={setLntPeticiones}
+            disabled={isSaving}
+          />
         )}
 
         {currentComponent === 'StepCleaning' && (
-          <div className="p-6 text-sm text-gray-500 bg-gray-50 rounded-lg border border-gray-200">
-            StepCleaning — próximamente
-          </div>
+          <StepCleaning
+            rows={cleaningRows}
+            onChange={setCleaningRows}
+            summary={cleaningSummary}
+            onSummaryChange={setCleaningSummary}
+            disabled={isSaving}
+          />
         )}
 
         {currentComponent === 'StepEnergyFinal' && (

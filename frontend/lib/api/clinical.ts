@@ -175,6 +175,9 @@ export interface ThemeEntryRow {
   child_age?: number | null;
   // Compartido entre edades
   emotions?: string | null;
+  // Bloqueos — Reporte de órganos
+  significado?: string | null;
+  interpretacion_tema?: string | null;
 }
 
 export interface SaveThemeEntriesPayload {
@@ -188,6 +191,31 @@ export async function saveThemeEntries(
 ): Promise<unknown> {
   return apiClient.put<unknown, SaveThemeEntriesPayload>(
     `/api/v1/clinical/sessions/${sessionId}/theme-entries`,
+    payload,
+  );
+}
+
+// ─── LNT ─────────────────────────────────────────────────────────────────────
+
+interface LntItemPayload {
+  theme_organ: string | null;
+  initial_energy: number | null;
+  final_energy: number | null;
+  healing_energy_body: boolean | null;
+  healing_spiritual_body: boolean | null;
+  healing_physical_body: boolean | null;
+}
+
+export interface SaveLntPayload {
+  entries: LntItemPayload[];
+}
+
+export async function saveLntEntries(
+  sessionId: string,
+  payload: SaveLntPayload,
+): Promise<unknown> {
+  return apiClient.put<unknown, SaveLntPayload>(
+    `/api/v1/clinical/sessions/${sessionId}/lnt`,
     payload,
   );
 }
