@@ -70,6 +70,7 @@ export function StepTopics({
   const [newTopicName, setNewTopicName]        = useState('');
   const [isAdding, setIsAdding]               = useState(false);
   const [addError, setAddError]               = useState<string | null>(null);
+  const [lastAddedId, setLastAddedId]          = useState<string | null>(null);
 
   const modeGroupId      = useId();
   const existingSelectId = useId();
@@ -103,6 +104,7 @@ export function StepTopics({
       onChange(next);
       setThemeCount(next.length);
       setSelectedTopicId('');
+      setLastAddedId(entry._localId);
     } else {
       // Crear el topic en el backend primero para obtener su UUID real
       const name = newTopicName.trim() || `Tema ${themes.length + 1}`;
@@ -114,6 +116,7 @@ export function StepTopics({
         onChange(next);
         setThemeCount(next.length);
         setNewTopicName('');
+        setLastAddedId(entry._localId);
       } catch {
         setAddError('No se pudo crear el tema. Intenta de nuevo.');
       } finally {
@@ -352,6 +355,7 @@ export function StepTopics({
               onChange={(updates) => handleThemeChange(theme._localId, updates)}
               onDelete={() => void handleDeleteTheme(theme._localId)}
               disabled={disabled}
+              isNew={theme._localId === lastAddedId}
             />
           ))}
         </div>

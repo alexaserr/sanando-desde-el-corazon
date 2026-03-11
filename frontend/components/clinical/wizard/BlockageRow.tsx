@@ -39,7 +39,18 @@ export function BlockageRow({
     onChange({ ...value, energy });
   }
 
+  function handleSignificadoChange(significado: string) {
+    onChange({ ...value, significado });
+  }
+
+  function handleInterpretacionChange(interpretacion_tema: string) {
+    onChange({ ...value, interpretacion_tema });
+  }
+
+  const showTextFields = !!value.chakra_position_id && !!value.organ_name;
+
   return (
+    <div className="flex flex-col gap-2">
     <div className="flex flex-wrap items-center gap-2">
       {/* Label */}
       <span className="shrink-0 text-xs font-semibold text-terra-700 uppercase tracking-wide select-none w-[72px]">
@@ -96,6 +107,28 @@ export function BlockageRow({
           showLabel={false}
         />
       </div>
+    </div>
+
+    {showTextFields && (
+      <div className="flex flex-col sm:flex-row gap-2 pl-[80px]">
+        <input
+          type="text"
+          value={value.significado ?? ''}
+          onChange={(e) => handleSignificadoChange(e.target.value)}
+          placeholder="Significado"
+          disabled={disabled}
+          className="flex-1 min-h-[32px] rounded border-0 bg-[#F6EDEA] px-3 py-1 text-sm placeholder:text-gray-400 focus:outline-none focus:ring-1 focus:ring-terra-700 disabled:opacity-50 disabled:cursor-not-allowed"
+        />
+        <input
+          type="text"
+          value={value.interpretacion_tema ?? ''}
+          onChange={(e) => handleInterpretacionChange(e.target.value)}
+          placeholder="Interpretación al tema"
+          disabled={disabled}
+          className="flex-1 min-h-[32px] rounded border-0 bg-[#F6EDEA] px-3 py-1 text-sm placeholder:text-gray-400 focus:outline-none focus:ring-1 focus:ring-terra-700 disabled:opacity-50 disabled:cursor-not-allowed"
+        />
+      </div>
+    )}
     </div>
   );
 }

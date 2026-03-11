@@ -2,31 +2,26 @@
 
 import { useWizardStore } from '@/lib/stores/wizardStore';
 
-// ─── Definición de los 7 pasos del wizard ─────────────────────────────────────
-// SESSION_STEPS tiene 8 entradas (LNT y Limpieza se unifican en "Cierre" por ahora)
+// ─── Tipos ────────────────────────────────────────────────────────────────────
 
-const WIZARD_STEPS = [
-  { number: 1, label: 'Datos de sesión',   shortLabel: 'Datos' },
-  { number: 2, label: 'Energía inicial',   shortLabel: 'E. inicial' },
-  { number: 3, label: 'Chakras iniciales', shortLabel: 'Chakras ini.' },
-  { number: 4, label: 'Temas',             shortLabel: 'Temas' },
-  { number: 5, label: 'Energía final',     shortLabel: 'E. final' },
-  { number: 6, label: 'Chakras finales',   shortLabel: 'Chakras fin.' },
-  { number: 7, label: 'Cierre',            shortLabel: 'Cierre' },
-] as const;
-
-const TOTAL_STEPS = WIZARD_STEPS.length;
+export interface WizardStep {
+  key: string;
+  label: string;
+  shortLabel: string;
+}
 
 // ─── Stepper indicator ────────────────────────────────────────────────────────
 
 interface StepDotProps {
-  step: (typeof WIZARD_STEPS)[number];
+  position: number;
+  label: string;
+  shortLabel: string;
   isCurrent: boolean;
   isCompleted: boolean;
   onClick: () => void;
 }
 
-function StepDot({ step, isCurrent, isCompleted, onClick }: StepDotProps) {
+function StepDot({ position, label, isCurrent, isCompleted, onClick }: StepDotProps) {
   const base =
     'flex items-center justify-center w-8 h-8 rounded-full text-xs font-semibold border-2 transition-colors focus:outline-none focus:ring-2 focus:ring-offset-1';
 
@@ -45,7 +40,7 @@ function StepDot({ step, isCurrent, isCompleted, onClick }: StepDotProps) {
       onClick={isCompleted && !isCurrent ? onClick : undefined}
       disabled={!isCompleted || isCurrent}
       aria-current={isCurrent ? 'step' : undefined}
-      aria-label={`Paso ${step.number}: ${step.label}${isCompleted ? ' (completado)' : ''}`}
+      aria-label={`Paso ${position}: ${label}${isCompleted ? ' (completado)' : ''}`}
       className={circleClass}
     >
       {isCompleted && !isCurrent ? (
@@ -57,7 +52,7 @@ function StepDot({ step, isCurrent, isCompleted, onClick }: StepDotProps) {
           />
         </svg>
       ) : (
-        step.number
+        position
       )}
     </button>
   );
@@ -66,12 +61,15 @@ function StepDot({ step, isCurrent, isCompleted, onClick }: StepDotProps) {
 // ─── Stepper barra ────────────────────────────────────────────────────────────
 
 interface StepperProps {
+  steps: WizardStep[];
   currentStep: number;
   completedSteps: number[];
   onStepClick: (step: number) => void;
 }
 
-function Stepper({ currentStep, completedSteps, onStepClick }: StepperProps) {
+function Stepper({ steps, currentStep, completedSteps, onStepClick }: StepperProps) {
+  const totalSteps = steps.length;
+
   return (
     <nav aria-label="Progreso del wizard" className="w-full">
       {/* Barra de progreso */}
@@ -80,33 +78,36 @@ function Stepper({ currentStep, completedSteps, onStepClick }: StepperProps) {
           <div
             className="h-full bg-terra-400 rounded-full transition-all duration-500"
             style={{
-              width: `${Math.max(0, ((currentStep - 1) / (TOTAL_STEPS - 1)) * 100)}%`,
+              width: `${Math.max(0, ((currentStep - 1) / Math.max(1, totalSteps - 1)) * 100)}%`,
             }}
             role="progressbar"
             aria-valuenow={currentStep}
             aria-valuemin={1}
-            aria-valuemax={TOTAL_STEPS}
-            aria-label={`Paso ${currentStep} de ${TOTAL_STEPS}`}
+            aria-valuemax={totalSteps}
+            aria-label={`Paso ${currentStep} de ${totalSteps}`}
           />
         </div>
       </div>
 
       {/* Dots de los pasos */}
       <ol className="flex items-start justify-between gap-1">
-        {WIZARD_STEPS.map((step) => {
-          const isCurrent   = step.number === currentStep;
-          const isCompleted = completedSteps.includes(step.number);
+        {steps.map((step, i) => {
+          const position  = i + 1;
+          const isCurrent   = position === currentStep;
+          const isCompleted = completedSteps.includes(position);
 
           return (
             <li
-              key={step.number}
+              key={step.key}
               className="flex flex-col items-center gap-1 flex-1 min-w-0"
             >
               <StepDot
-                step={step}
+                position={position}
+                label={step.label}
+                shortLabel={step.shortLabel}
                 isCurrent={isCurrent}
                 isCompleted={isCompleted}
-                onClick={() => onStepClick(step.number)}
+                onClick={() => onStepClick(position)}
               />
               {/* Label — oculto en móvil muy pequeño */}
               <span
@@ -131,6 +132,8 @@ function Stepper({ currentStep, completedSteps, onStepClick }: StepperProps) {
 // ─── WizardShell ──────────────────────────────────────────────────────────────
 
 export interface WizardShellProps {
+  /** Pasos activos según la terapia seleccionada. */
+  steps: WizardStep[];
   /** Contenido del paso actual — la página padre decide qué componente mostrar. */
   children: React.ReactNode;
   /** Avanzar al paso siguiente (puede ser async para enviar datos al API). */
@@ -139,7 +142,7 @@ export interface WizardShellProps {
   onPrev: () => void;
   /** Guardar borrador sin avanzar. */
   onSaveDraft: () => void | Promise<void>;
-  /** Cerrar sesión — solo habilitado en el último paso (7). */
+  /** Cerrar sesión — solo habilitado en el último paso. */
   onCloseSession: () => void | Promise<void>;
   /** Deshabilita el botón "Siguiente" (validación pendiente, etc.). */
   isNextDisabled?: boolean;
@@ -150,11 +153,13 @@ export interface WizardShellProps {
 /**
  * WizardShell — contenedor del wizard de sesión clínica.
  *
+ * - Recibe `steps` del padre (config-driven según terapia).
  * - Lee currentStep y completedSteps del useWizardStore.
  * - Renderiza el stepper y los botones de navegación.
  * - NO hace fetch — los callbacks onNext/onSaveDraft los implementa la página.
  */
 export function WizardShell({
+  steps,
   children,
   onNext,
   onPrev,
@@ -165,15 +170,17 @@ export function WizardShell({
 }: WizardShellProps) {
   const { currentStep, completedSteps, setStep } = useWizardStore();
 
+  const totalSteps  = steps.length;
   const isFirstStep = currentStep === 1;
-  const isLastStep  = currentStep === TOTAL_STEPS;
+  const isLastStep  = currentStep === totalSteps;
 
-  const currentStepMeta = WIZARD_STEPS.find((s) => s.number === currentStep);
+  const currentStepMeta = steps[currentStep - 1];
 
   return (
     <div className="flex flex-col min-h-0 gap-6">
       {/* Stepper */}
       <Stepper
+        steps={steps}
         currentStep={currentStep}
         completedSteps={completedSteps}
         onStepClick={setStep}
@@ -182,7 +189,7 @@ export function WizardShell({
       {/* Chip del paso actual */}
       <div className="flex items-center gap-2">
         <span className="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-medium bg-terra-100 text-terra-700">
-          Paso {currentStep} de {TOTAL_STEPS}
+          Paso {currentStep} de {totalSteps}
         </span>
         {currentStepMeta && (
           <h1 className="text-sm font-semibold text-terra-700">
@@ -274,7 +281,7 @@ export function WizardShell({
             </button>
           )}
 
-          {/* Cerrar sesión — solo en paso 7 */}
+          {/* Cerrar sesión — solo en el último paso */}
           {isLastStep ? (
             <button
               type="button"

@@ -90,6 +90,8 @@ export interface BlockageData {
   organ_name: string;
   energy: number; // 0-100
   final_energy?: number;
+  significado?: string;
+  interpretacion_tema?: string;
 }
 
 /** Tema trabajado con el nuevo modelo (rediseño paso 4). */
@@ -102,15 +104,67 @@ export interface ThemeEntry {
   _isCreatedLocally?: boolean;
   name: string;
   is_secondary: boolean;
+  /** Solo relevante si is_secondary = true. */
+  secondary_name?: string;
   /** Siempre 3 bloqueos. */
   blockages: [BlockageData, BlockageData, BlockageData];
   resultant: BlockageData;
   /** Solo relevante si is_secondary = true. */
   secondary_energy_initial: number;
   secondary_energy_final: number;
+  /** Emociones predominantes del tema (array de strings). */
+  emotions?: string[];
   childhood: AgeData;
   adulthood: AgeData;
   progress_pct: number;
+}
+
+/** Una fila del reporte de limpieza energética. */
+export interface CleaningRow {
+  _localId: string;
+  manifestation: string;
+  work: string;
+  materials: string[];
+  origin: string;
+}
+
+/** Campos de resumen del paso de limpieza. */
+export interface CleaningSummary {
+  capas: number;
+  limpiezas_requeridas: number;
+  mesa_utilizada: string;
+  beneficios: string;
+}
+
+// ─── Tipos para el Reporte de Ancestros ──────────────────────────────────────
+
+export interface AncestorEntry {
+  _localId: string;
+  member: string;
+  lineage: 'materno' | 'paterno' | 'ambos' | '';
+  bond_energy: string[];
+  ancestor_roles: string[];
+  consultant_roles: string[];
+  energy_expressions: { number: number; expression: string }[];
+  family_traumas: { number: number; trauma: string }[];
+}
+
+export interface AncestorConciliation {
+  healing_phrases: string;
+  conciliation_acts: string;
+  life_aspects_affected: string;
+  session_relationship: string;
+}
+
+/** Entrada de tema LNT para el paso StepLNT. */
+export interface LntEntry {
+  _localId: string;
+  theme_organ: string;
+  initial_energy: number;   // 0-100
+  final_energy: number;     // 0-100
+  healing_energy_body: boolean;
+  healing_spiritual_body: boolean;
+  healing_physical_body: boolean;
 }
 
 /** Datos del paso 7 — Cierre de la sesión. */
