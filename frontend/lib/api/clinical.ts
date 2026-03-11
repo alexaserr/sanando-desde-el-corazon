@@ -38,6 +38,14 @@ export async function getClientsList(): Promise<ClientListItem[]> {
   return res.items;
 }
 
+export async function searchClients(query: string): Promise<ClientListItem[]> {
+  const params = new URLSearchParams({ search: query, per_page: '20', page: '1' });
+  const res = await apiClient.get<{ items: ClientListItem[] }>(
+    `/api/v1/clinical/clients?${params.toString()}`,
+  );
+  return res.items;
+}
+
 // ─── Wizard de sesión ──────────────────────────────────────────────────────────
 
 export async function createSession(data: CreateSessionPayload): Promise<Session> {
@@ -128,6 +136,15 @@ export async function completeClientTopic(
   topicId: string,
 ): Promise<ClientTopic> {
   return updateClientTopic(clientId, topicId, { is_completed: true });
+}
+
+export async function deleteClientTopic(
+  clientId: string,
+  topicId: string,
+): Promise<void> {
+  return apiClient.delete<void>(
+    `/api/v1/clinical/clients/${clientId}/topics/${topicId}`,
+  );
 }
 
 // ─── Entradas de temas de sesión ──────────────────────────────────────────────

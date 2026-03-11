@@ -18,6 +18,7 @@ import {
   getChakraPositions,
   getEnergyDimensions,
   getClientsList,
+  searchClients,
   createSession,
   updateSessionGeneral,
   saveEnergyReadings,
@@ -507,6 +508,7 @@ export default function NuevaSessionPage() {
             therapyTypes={catalogs.therapyTypes}
             value={generalData}
             onChange={setGeneralData}
+            onSearchClients={(q) => searchClients(q)}
             disabled={isSaving}
           />
         )}
@@ -532,6 +534,7 @@ export default function NuevaSessionPage() {
           <StepTopics
             themes={themes}
             clientTopics={clientTopics}
+            clientId={generalData.client_id}
             chakras={catalogs.chakras}
             onChange={handleThemesChange}
             disabled={isSaving}

@@ -26,9 +26,9 @@ const PHASE_COLOR: Record<'initial' | 'final', string> = {
   final: '#2D7A4F',   // success
 };
 
-// Gradiente energético — rojo → ámbar → verde
+// Gradiente energético — crema → terra primary (monocromático, alineado con la marca)
 const TRACK_GRADIENT =
-  'linear-gradient(to right, #C0392B 0%, #F1C40F 50%, #1E5631 100%)';
+  'linear-gradient(to right, #E8DDD5 0%, #D4B5A0 30%, #C4937A 60%, #B1481E 100%)';
 
 // ─── Delta badge ─────────────────────────────────────────────────────────────
 
@@ -163,23 +163,25 @@ export function EnergySlider({
         }
         #${sliderId}::-webkit-slider-runnable-track {
           background: transparent;
-          height: 6px;
+          height: 5px;
         }
         #${sliderId}::-moz-range-track {
           background: transparent;
-          height: 6px;
+          height: 5px;
           border: none;
         }
         #${sliderId}::-webkit-slider-thumb {
           -webkit-appearance: none;
           appearance: none;
-          width: 20px;
-          height: 20px;
+          position: relative;
+          z-index: 20;
+          width: 18px;
+          height: 18px;
           border-radius: 50%;
           background: ${THUMB_COLOR};
           border: 2px solid #ffffff;
-          box-shadow: 0 2px 6px rgba(54,32,23,0.30);
-          margin-top: -7px;
+          box-shadow: 0 1px 4px rgba(54,32,23,0.25);
+          margin-top: -6.5px;
           cursor: ${disabled ? 'not-allowed' : 'pointer'};
           transition: transform 0.15s ease, box-shadow 0.15s ease;
         }
@@ -188,12 +190,14 @@ export function EnergySlider({
           box-shadow: 0 3px 10px rgba(54,32,23,0.40);
         }
         #${sliderId}::-moz-range-thumb {
-          width: 20px;
-          height: 20px;
+          position: relative;
+          z-index: 20;
+          width: 18px;
+          height: 18px;
           border-radius: 50%;
           background: ${THUMB_COLOR};
           border: 2px solid #ffffff;
-          box-shadow: 0 2px 6px rgba(54,32,23,0.30);
+          box-shadow: 0 1px 4px rgba(54,32,23,0.25);
           cursor: ${disabled ? 'not-allowed' : 'pointer'};
         }
         #${sliderId}:focus-visible {
@@ -242,12 +246,12 @@ export function EnergySlider({
         className="relative flex items-center"
         style={{ minHeight: 44 }}
       >
-        {/* Track visual — solo decorativo */}
+        {/* Track visual — solo decorativo, sin pointer-events para no bloquear el thumb */}
         <div
           aria-hidden="true"
-          className="absolute inset-x-0 rounded-full pointer-events-none"
+          className="absolute inset-x-0 rounded-full pointer-events-none z-0"
           style={{
-            height: 6,
+            height: 5,
             top: '50%',
             transform: 'translateY(-50%)',
             background: TRACK_GRADIENT,
@@ -258,6 +262,7 @@ export function EnergySlider({
         <input
           id={sliderId}
           type="range"
+          className="relative z-10"
           min={min}
           max={max}
           step={effectiveStep}

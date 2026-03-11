@@ -165,6 +165,7 @@ async def list_clients(
     per_page: int = 20,
     sort_by: str = "created_at",
     sort_order: str = "desc",
+    search: str | None = None,
     include_deleted: bool = False,
     db: AsyncSession = Depends(get_db),
     current_user: User = Depends(require_role(UserRole.therapist, UserRole.admin)),
@@ -186,6 +187,12 @@ async def list_clients(
     order_expr = sort_col.desc() if sort_order == "desc" else sort_col.asc()
 
     base_filter = [] if include_deleted else [Client.deleted_at.is_(None)]
+
+    # Búsqueda por nombre (descifra PII antes de comparar)
+    if search and search.strip():
+        base_filter.append(
+            func.pgp_sym_decrypt(cast(Client.full_name, LargeBinary), key).ilike(f"%{search.strip()}%")
+        )
 
     # Total
     total = (

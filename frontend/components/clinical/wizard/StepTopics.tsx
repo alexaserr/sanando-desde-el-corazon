@@ -4,10 +4,11 @@ import { useState, useId } from 'react';
 import { ThemeCard } from './ThemeCard';
 import type { ThemeEntry, BlockageData, AgeData } from './types';
 import type { ChakraPosition, ClientTopic } from '@/types/api';
+import { createClientTopic, deleteClientTopic } from '@/lib/api/clinical';
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
-const EMPTY_BLOCKAGE: BlockageData = { chakra_position_id: '', organ_name: '', energy: 50 };
+const EMPTY_BLOCKAGE: BlockageData = { chakra_position_id: '', organ_name: '', energy: 0 };
 
 const EMPTY_AGE_DATA: AgeData = {
   place: '',
@@ -17,10 +18,15 @@ const EMPTY_AGE_DATA: AgeData = {
   emotions: '',
 };
 
-function newThemeEntry(name = '', topicId: string | null = null): ThemeEntry {
+function newThemeEntry(
+  name = '',
+  topicId: string | null = null,
+  isCreatedLocally = false,
+): ThemeEntry {
   return {
     _localId: crypto.randomUUID(),
     topic_id: topicId,
+    _isCreatedLocally: isCreatedLocally,
     name,
     is_secondary: false,
     blockages: [
@@ -42,6 +48,7 @@ function newThemeEntry(name = '', topicId: string | null = null): ThemeEntry {
 export interface StepTopicsProps {
   themes: ThemeEntry[];
   clientTopics: ClientTopic[];
+  clientId: string;
   chakras: ChakraPosition[];
   onChange: (themes: ThemeEntry[]) => void;
   disabled?: boolean;
@@ -52,18 +59,17 @@ export interface StepTopicsProps {
 export function StepTopics({
   themes,
   clientTopics,
+  clientId,
   chakras,
   onChange,
   disabled = false,
 }: StepTopicsProps) {
-  // Modo de selección: 'existing' | 'new'
   const [mode, setMode]               = useState<'existing' | 'new'>('new');
-  // Cuántos temas mostrar (1-5)
   const [themeCount, setThemeCount]   = useState(1);
-  // Tema existente seleccionado del selector
   const [selectedTopicId, setSelectedTopicId] = useState('');
-  // Nombre para tema nuevo
   const [newTopicName, setNewTopicName]        = useState('');
+  const [isAdding, setIsAdding]               = useState(false);
+  const [addError, setAddError]               = useState<string | null>(null);
 
   const modeGroupId      = useId();
   const existingSelectId = useId();
@@ -75,7 +81,6 @@ export function StepTopics({
   function handleCountChange(count: number) {
     setThemeCount(count);
     if (count > themes.length) {
-      // Agregar temas vacíos hasta llegar al count
       const extras = Array.from({ length: count - themes.length }, () =>
         newThemeEntry(),
       );
@@ -85,25 +90,56 @@ export function StepTopics({
     }
   }
 
-  // ── Agregar tema desde el selector/input ──────────────────────────────────
+  // ── Agregar tema ──────────────────────────────────────────────────────────
 
-  function handleAddTheme() {
+  async function handleAddTheme() {
+    setAddError(null);
+
     if (mode === 'existing') {
       const existing = clientTopics.find((t) => t.id === selectedTopicId);
       if (!existing) return;
-      const entry = newThemeEntry(existing.name, existing.id);
-      // Marcar progreso actual del tema
-      const updated = { ...entry, progress_pct: existing.progress_pct };
-      const next = [...themes, updated];
-      onChange(next);
-      setThemeCount(next.length);
-    } else {
-      const name = newTopicName.trim();
-      const entry = newThemeEntry(name || `Tema ${themes.length + 1}`, null);
+      const entry = { ...newThemeEntry(existing.name, existing.id, false), progress_pct: existing.progress_pct };
       const next = [...themes, entry];
       onChange(next);
       setThemeCount(next.length);
-      setNewTopicName('');
+      setSelectedTopicId('');
+    } else {
+      // Crear el topic en el backend primero para obtener su UUID real
+      const name = newTopicName.trim() || `Tema ${themes.length + 1}`;
+      setIsAdding(true);
+      try {
+        const created = await createClientTopic(clientId, name);
+        const entry = newThemeEntry(created.name, created.id, true);
+        const next = [...themes, entry];
+        onChange(next);
+        setThemeCount(next.length);
+        setNewTopicName('');
+      } catch {
+        setAddError('No se pudo crear el tema. Intenta de nuevo.');
+      } finally {
+        setIsAdding(false);
+      }
+    }
+  }
+
+  // ── Eliminar un tema ──────────────────────────────────────────────────────
+
+  async function handleDeleteTheme(localId: string) {
+    const theme = themes.find((t) => t._localId === localId);
+    if (!theme) return;
+
+    // Eliminar del estado local inmediatamente
+    const next = themes.filter((t) => t._localId !== localId);
+    onChange(next);
+    setThemeCount(next.length);
+
+    // Si el topic fue creado en esta sesión, eliminarlo del backend también
+    if (theme._isCreatedLocally && theme.topic_id) {
+      try {
+        await deleteClientTopic(clientId, theme.topic_id);
+      } catch {
+        // No revertir — el topic huérfano se limpiará eventualmente
+      }
     }
   }
 
@@ -118,8 +154,14 @@ export function StepTopics({
   // ── Counter (1-5) ─────────────────────────────────────────────────────────
 
   const counterValue = Math.min(5, Math.max(1, themeCount));
-
   const tooManyTopics = themes.length >= 5;
+
+  const isAddDisabled =
+    disabled ||
+    isAdding ||
+    tooManyTopics ||
+    (mode === 'existing' && !selectedTopicId) ||
+    (mode === 'new' && !clientId);
 
   return (
     <section aria-labelledby="step-topics-heading" className="space-y-6">
@@ -198,8 +240,14 @@ export function StepTopics({
               id={newNameId}
               type="text"
               value={newTopicName}
-              disabled={disabled || tooManyTopics}
+              disabled={disabled || tooManyTopics || isAdding}
               onChange={(e) => setNewTopicName(e.target.value)}
+              onKeyDown={(e) => {
+                if (e.key === 'Enter' && !isAddDisabled) {
+                  e.preventDefault();
+                  void handleAddTheme();
+                }
+              }}
               placeholder="Ej: Miedo al abandono"
               className="min-h-[44px] rounded border border-gray-300 px-2.5 py-1.5 text-sm focus:outline-none focus:ring-1 focus:ring-terra-700 disabled:opacity-50"
             />
@@ -209,30 +257,46 @@ export function StepTopics({
         {/* Botón agregar */}
         <button
           type="button"
-          onClick={handleAddTheme}
-          disabled={
-            disabled ||
-            tooManyTopics ||
-            (mode === 'existing' && !selectedTopicId)
-          }
+          onClick={() => void handleAddTheme()}
+          disabled={isAddDisabled}
           className="inline-flex items-center gap-1.5 rounded-md bg-terra-700 px-4 py-2.5 text-sm font-medium text-white hover:bg-terra-800 focus:outline-none focus:ring-2 focus:ring-terra-700 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
           style={{ minHeight: 44 }}
         >
-          <svg
-            aria-hidden="true"
-            className="w-4 h-4"
-            fill="none"
-            viewBox="0 0 24 24"
-            stroke="currentColor"
-            strokeWidth={2}
-          >
-            <path strokeLinecap="round" strokeLinejoin="round" d="M12 4v16m8-8H4" />
-          </svg>
-          Agregar tema
+          {isAdding ? (
+            <>
+              <svg
+                aria-hidden="true"
+                className="w-4 h-4 animate-spin"
+                fill="none"
+                viewBox="0 0 24 24"
+              >
+                <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+                <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v4a4 4 0 00-4 4H4z" />
+              </svg>
+              Creando…
+            </>
+          ) : (
+            <>
+              <svg
+                aria-hidden="true"
+                className="w-4 h-4"
+                fill="none"
+                viewBox="0 0 24 24"
+                stroke="currentColor"
+                strokeWidth={2}
+              >
+                <path strokeLinecap="round" strokeLinejoin="round" d="M12 4v16m8-8H4" />
+              </svg>
+              Agregar tema
+            </>
+          )}
         </button>
 
         {tooManyTopics && (
           <p className="text-xs text-amber-600">Máximo 5 temas por sesión.</p>
+        )}
+        {addError && (
+          <p className="text-xs text-red-600">{addError}</p>
         )}
       </div>
 
@@ -286,6 +350,7 @@ export function StepTopics({
               index={index}
               chakras={chakras}
               onChange={(updates) => handleThemeChange(theme._localId, updates)}
+              onDelete={() => void handleDeleteTheme(theme._localId)}
               disabled={disabled}
             />
           ))}

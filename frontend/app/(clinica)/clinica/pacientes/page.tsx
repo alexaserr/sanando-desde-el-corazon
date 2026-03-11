@@ -52,7 +52,7 @@ export default function PacientesPage() {
     try {
       const params = new URLSearchParams({
         page: String(page),
-        size: String(PAGE_SIZE),
+        per_page: String(PAGE_SIZE),
       });
       if (query) params.set("search", query);
 

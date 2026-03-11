@@ -94,8 +94,11 @@ export interface BlockageData {
 /** Tema trabajado con el nuevo modelo (rediseño paso 4). */
 export interface ThemeEntry {
   _localId: string;
-  /** ID del ClientTopic existente, o null si es nuevo. */
+  /** ID del ClientTopic existente, o null si aún no se persistió. */
   topic_id: string | null;
+  /** true si el topic fue creado en esta sesión mediante POST y debe
+   *  eliminarse del backend al borrar el tema del listado. */
+  _isCreatedLocally?: boolean;
   name: string;
   is_secondary: boolean;
   /** Siempre 3 bloqueos. */

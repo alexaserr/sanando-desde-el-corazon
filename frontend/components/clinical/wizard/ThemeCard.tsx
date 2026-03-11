@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useId } from 'react';
+import { useState, useId, useRef } from 'react';
 import { BlockageRow } from './BlockageRow';
 import { AgesSection } from './AgesSection';
 import { EnergySlider } from '../EnergySlider';
@@ -12,17 +12,22 @@ export interface ThemeCardProps {
   index: number;
   chakras: ChakraPosition[];
   onChange: (updates: Partial<ThemeEntry>) => void;
+  onDelete?: () => void;
   disabled?: boolean;
 }
 
 const EMPTY_BLOCKAGE: BlockageData = {
   chakra_position_id: '',
   organ_name: '',
-  energy: 50,
+  energy: 0,
 };
 
-export function ThemeCard({ theme, index, chakras, onChange, disabled = false }: ThemeCardProps) {
-  const [expanded, setExpanded] = useState(true);
+export function ThemeCard({ theme, index, chakras, onChange, onDelete, disabled = false }: ThemeCardProps) {
+  const [expanded, setExpanded]           = useState(true);
+  const [isEditingName, setIsEditingName] = useState(false);
+  const [nameInput, setNameInput]         = useState(theme.name);
+  const [blockageCount, setBlockageCount] = useState<1 | 2 | 3>(1);
+  const nameInputRef                      = useRef<HTMLInputElement>(null);
   const headingId      = useId();
   const secondaryTogId = useId();
 
@@ -30,6 +35,21 @@ export function ThemeCard({ theme, index, chakras, onChange, disabled = false }:
     const next: [BlockageData, BlockageData, BlockageData] = [...theme.blockages] as [BlockageData, BlockageData, BlockageData];
     next[slot] = val;
     onChange({ blockages: next });
+  }
+
+  function startEditingName() {
+    if (disabled) return;
+    setNameInput(theme.name);
+    setIsEditingName(true);
+    setTimeout(() => nameInputRef.current?.focus(), 0);
+  }
+
+  function commitNameEdit() {
+    const trimmed = nameInput.trim();
+    if (trimmed && trimmed !== theme.name) {
+      onChange({ name: trimmed });
+    }
+    setIsEditingName(false);
   }
 
   const progressPct = Math.round(theme.progress_pct);
@@ -40,11 +60,49 @@ export function ThemeCard({ theme, index, chakras, onChange, disabled = false }:
       className="bg-white rounded-xl border border-gray-200 shadow-sm overflow-hidden"
     >
       {/* ── Cabecera colapsable ─────────────────────────────────────────────── */}
-      <div className="flex items-center gap-3 px-4 py-3 bg-terra-50 border-b border-gray-100">
+      <div className="flex items-center gap-2 px-4 py-3 bg-terra-50 border-b border-gray-100">
+        {/* Título / editor inline */}
         <div className="flex-1 min-w-0">
-          <h3 id={headingId} className="text-sm font-semibold text-terra-700 truncate">
-            Tema {index + 1}{theme.name ? `: ${theme.name}` : ''}
-          </h3>
+          {isEditingName ? (
+            <input
+              ref={nameInputRef}
+              type="text"
+              value={nameInput}
+              onChange={(e) => setNameInput(e.target.value)}
+              onBlur={commitNameEdit}
+              onKeyDown={(e) => {
+                if (e.key === 'Enter') { e.preventDefault(); commitNameEdit(); }
+                if (e.key === 'Escape') { setIsEditingName(false); }
+              }}
+              aria-label="Nombre del tema"
+              className="w-full rounded border border-terra-300 bg-white px-2 py-0.5 text-sm font-semibold text-terra-700 focus:outline-none focus:ring-1 focus:ring-terra-700"
+            />
+          ) : (
+            <button
+              type="button"
+              id={headingId}
+              onClick={startEditingName}
+              disabled={disabled}
+              title="Clic para editar nombre"
+              className="flex items-center gap-1 text-left w-full text-sm font-semibold text-terra-700 truncate hover:underline focus:outline-none focus:ring-1 focus:ring-terra-700 rounded disabled:cursor-default disabled:no-underline"
+            >
+              <span className="truncate">
+                Tema {index + 1}{theme.name ? `: ${theme.name}` : ''}
+              </span>
+              {!disabled && (
+                <svg
+                  aria-hidden="true"
+                  className="w-3.5 h-3.5 shrink-0 text-terra-400"
+                  fill="none"
+                  viewBox="0 0 24 24"
+                  stroke="currentColor"
+                  strokeWidth={2}
+                >
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M15.232 5.232l3.536 3.536M9 13l6.364-6.364a2 2 0 012.828 2.828L11.828 15.828a2 2 0 01-1.414.586H9v-2.414a2 2 0 01.586-1.414z" />
+                </svg>
+              )}
+            </button>
+          )}
         </div>
 
         {/* Badge progreso */}
@@ -54,6 +112,30 @@ export function ThemeCard({ theme, index, chakras, onChange, disabled = false }:
         >
           {progressPct}%
         </span>
+
+        {/* Botón eliminar */}
+        {onDelete && (
+          <button
+            type="button"
+            onClick={onDelete}
+            disabled={disabled}
+            aria-label={`Eliminar tema ${index + 1}`}
+            title="Eliminar tema"
+            className="shrink-0 p-1.5 rounded text-gray-400 hover:text-red-600 hover:bg-red-50 focus:outline-none focus:ring-2 focus:ring-red-500 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
+            style={{ minWidth: 44, minHeight: 44 }}
+          >
+            <svg
+              aria-hidden="true"
+              className="w-4 h-4"
+              fill="none"
+              viewBox="0 0 24 24"
+              stroke="currentColor"
+              strokeWidth={2}
+            >
+              <path strokeLinecap="round" strokeLinejoin="round" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+            </svg>
+          </button>
+        )}
 
         {/* Botón expandir/colapsar */}
         <button
@@ -82,29 +164,43 @@ export function ThemeCard({ theme, index, chakras, onChange, disabled = false }:
       {expanded && (
         <div id={`theme-body-${theme._localId}`} className="p-4 space-y-6">
 
-          {/* 4 filas de bloqueos */}
-          <section aria-label="Bloqueos y resultante" className="space-y-5">
-            <BlockageRow
-              label="Bloqueo 1"
-              chakras={chakras}
-              value={theme.blockages[0] ?? EMPTY_BLOCKAGE}
-              onChange={(v) => updateBlockage(0, v)}
-              disabled={disabled}
-            />
-            <BlockageRow
-              label="Bloqueo 2"
-              chakras={chakras}
-              value={theme.blockages[1] ?? EMPTY_BLOCKAGE}
-              onChange={(v) => updateBlockage(1, v)}
-              disabled={disabled}
-            />
-            <BlockageRow
-              label="Bloqueo 3"
-              chakras={chakras}
-              value={theme.blockages[2] ?? EMPTY_BLOCKAGE}
-              onChange={(v) => updateBlockage(2, v)}
-              disabled={disabled}
-            />
+          {/* Bloqueos + Resultante */}
+          <section aria-label="Bloqueos y resultante" className="space-y-3">
+            {/* Selector de cantidad de bloqueos */}
+            <div className="flex items-center gap-2">
+              <span className="text-xs font-medium text-gray-600 select-none">Bloqueos:</span>
+              {([1, 2, 3] as const).map((n) => (
+                <button
+                  key={n}
+                  type="button"
+                  onClick={() => setBlockageCount(n)}
+                  disabled={disabled}
+                  aria-pressed={blockageCount === n}
+                  className={`w-8 h-7 rounded-full text-xs font-semibold transition-colors focus:outline-none focus:ring-2 focus:ring-terra-700 disabled:cursor-not-allowed ${
+                    blockageCount === n
+                      ? 'bg-terra-700 text-white'
+                      : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+                  }`}
+                >
+                  {n}
+                </button>
+              ))}
+            </div>
+
+            {/* Solo renderizar los bloqueos activos (datos se conservan al reducir) */}
+            {([0, 1, 2] as const).map((slot) =>
+              slot < blockageCount ? (
+                <BlockageRow
+                  key={slot}
+                  label={`Bloqueo ${slot + 1}`}
+                  chakras={chakras}
+                  value={theme.blockages[slot] ?? EMPTY_BLOCKAGE}
+                  onChange={(v) => updateBlockage(slot, v)}
+                  disabled={disabled}
+                />
+              ) : null,
+            )}
+
             <BlockageRow
               label="Resultante"
               chakras={chakras}

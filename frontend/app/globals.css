@@ -58,13 +58,44 @@
     font-size: 15px;
     line-height: 1.6;
   }
-  h1, h2 {
-    font-family: 'Playfair Display', Georgia, serif;
+  h1, h2, .font-display {
+    font-family: 'Playfair Display', Georgia, serif !important;
+    font-weight: 700;
+    color: #362017;
   }
-  .font-display,
-  h1.font-display,
-  h2.font-display,
-  h3.font-display {
+  h1 {
+    font-size: clamp(2rem, 5vw, 2.5rem); /* 32–40px */
+  }
+  h2 {
+    font-size: clamp(1.5rem, 3vw, 1.75rem); /* 24–28px */
+  }
+  h3 {
+    font-family: 'Almarai', system-ui, sans-serif;
+    font-weight: 700;
+    font-size: clamp(1.125rem, 2vw, 1.25rem); /* 18–20px */
+    color: #362017;
+  }
+  .font-display {
     letter-spacing: -0.02em;
+  }
+
+  /* Fix 5: Checkboxes y radios con paleta terra */
+  input[type="checkbox"]:checked {
+    accent-color: #B1481E;
+  }
+  input[type="radio"]:checked {
+    accent-color: #B1481E;
+  }
+
+  /* Fix 6: Select dropdown con estética Squarespace */
+  select {
+    background-color: #F6EDEA;
+    border: none;
+    border-radius: 0;
+    padding: 10px 12px;
+  }
+  option:checked {
+    background-color: #F6EDEA;
+    color: #362017;
   }
 }

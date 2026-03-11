@@ -1,6 +1,6 @@
 'use client';
 
-import { useMemo } from 'react';
+import { useMemo, useCallback } from 'react';
 import { EnergySlider } from '../EnergySlider';
 import type { EnergyDimension, EnergyReading } from './types';
 
@@ -47,6 +47,42 @@ export function StepEnergyFinal({
 
   const avgDelta =
     finalAvg !== null && initialAvg !== null ? finalAvg - initialAvg : null;
+
+  // Detectar dimensiones masculina y femenina por nombre (insensible a mayúsculas)
+  const masculinaDim = useMemo(
+    () => catalogDimensions.find((d) => d.name.toLowerCase().includes('masculin')),
+    [catalogDimensions],
+  );
+  const femeninaDim = useMemo(
+    () => catalogDimensions.find((d) => d.name.toLowerCase().includes('femenin')),
+    [catalogDimensions],
+  );
+
+  // Sincronización bidireccional: masculina ↔ femenina siempre suman 100
+  const handleChange = useCallback(
+    (dimensionId: string, value: number) => {
+      onChange(dimensionId, value);
+      if (masculinaDim && femeninaDim) {
+        if (dimensionId === masculinaDim.id) {
+          onChange(femeninaDim.id, Math.max(0, Math.min(100, 100 - value)));
+        } else if (dimensionId === femeninaDim.id) {
+          onChange(masculinaDim.id, Math.max(0, Math.min(100, 100 - value)));
+        }
+      }
+    },
+    [onChange, masculinaDim, femeninaDim],
+  );
+
+  // Valores actuales de M y F para el indicador de balance
+  const masculinaValue =
+    masculinaDim !== undefined ? (readingMap.get(masculinaDim.id) ?? 0) : null;
+  const femeninaValue =
+    femeninaDim !== undefined ? (readingMap.get(femeninaDim.id) ?? 0) : null;
+  const sumMF =
+    masculinaValue !== null && femeninaValue !== null
+      ? masculinaValue + femeninaValue
+      : null;
+  const mfBalanced = sumMF === 100;
 
   return (
     <section aria-labelledby="step-energy-final-heading" className="space-y-5">
@@ -112,7 +148,7 @@ export function StepEnergyFinal({
                   label={dim.name}
                   value={finalValue}
                   compareValue={initialValue}
-                  onChange={(v) => onChange(dim.id, v)}
+                  onChange={(v) => handleChange(dim.id, v)}
                   phase="final"
                   max={100}
                   disabled={disabled}
@@ -121,6 +157,18 @@ export function StepEnergyFinal({
             );
           })}
         </div>
+      )}
+
+      {/* Indicador de balance Masculina + Femenina */}
+      {sumMF !== null && (
+        <p
+          className={`text-xs ${mfBalanced ? 'text-gray-400' : 'text-amber-600'}`}
+          role={mfBalanced ? undefined : 'alert'}
+        >
+          {mfBalanced
+            ? `Masculina (${masculinaValue}) + Femenina (${femeninaValue}) = 100 ✓`
+            : `⚠ Masculina (${masculinaValue}) + Femenina (${femeninaValue}) = ${sumMF} — debe sumar 100`}
+        </p>
       )}
     </section>
   );

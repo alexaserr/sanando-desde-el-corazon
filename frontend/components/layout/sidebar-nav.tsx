@@ -43,25 +43,20 @@ export function SidebarNav() {
       )}
     >
       {/* ── Logo ──────────────────────────────────────────────────────────── */}
-      <div
+      <Link
+        href="/clinica"
         className={cn(
-          "flex items-center border-b border-terra-100 shrink-0",
-          sidebarCollapsed ? "justify-center pt-5 pb-4" : "gap-2 px-6 pt-6 pb-4",
+          "flex items-center border-b border-terra-100 shrink-0 justify-center",
+          sidebarCollapsed ? "pt-5 pb-4" : "pt-6 pb-4",
         )}
+        title="Ir al dashboard"
       >
         <img
           src="/images/sdc-icon.png"
           alt="SDC"
           className="h-8 w-8 object-contain shrink-0"
         />
-        {!sidebarCollapsed && (
-          <span className="font-display font-semibold text-sm leading-tight text-terra-900 whitespace-nowrap">
-            Sanando desde
-            <br />
-            el Corazón
-          </span>
-        )}
-      </div>
+      </Link>
 
       {/* ── Nav items ─────────────────────────────────────────────────────── */}
       <nav className="flex-1 py-4 px-2 space-y-1" aria-label="Navegación principal">

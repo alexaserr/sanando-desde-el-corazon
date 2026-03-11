@@ -1,6 +1,7 @@
 "use client";
 
 import { useRouter } from "next/navigation";
+import Link from "next/link";
 import { Users, PlusCircle } from "lucide-react";
 
 export default function SessionsPage() {
@@ -40,12 +41,12 @@ export default function SessionsPage() {
             Selecciona una clienta para ver su historial de sesiones completo.
           </p>
         </div>
-        <button
-          onClick={() => router.push("/clinica/pacientes")}
+        <Link
+          href="/clinica/pacientes"
           className="text-sm text-terra-700 hover:text-terra-900 font-medium underline underline-offset-2 transition-colors"
         >
           Ir a Clientes
-        </button>
+        </Link>
       </div>
     </div>
   );

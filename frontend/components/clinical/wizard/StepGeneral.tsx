@@ -19,6 +19,10 @@ interface ComboboxProps {
   onChange: (value: string) => void;
   placeholder?: string;
   disabled?: boolean;
+  /** Si se provee, la búsqueda se hace contra el servidor (debounce 300ms). */
+  onSearch?: (query: string) => Promise<ComboboxOption[]>;
+  emptyMessage?: string;
+  loadingMessage?: string;
 }
 
 function Combobox({
@@ -29,19 +33,47 @@ function Combobox({
   onChange,
   placeholder = 'Buscar…',
   disabled = false,
+  onSearch,
+  emptyMessage = 'Sin resultados',
+  loadingMessage = 'Buscando...',
 }: ComboboxProps) {
   const [open, setOpen] = useState(false);
   const [query, setQuery] = useState('');
+  const [asyncOptions, setAsyncOptions] = useState<ComboboxOption[]>([]);
+  const [isSearching, setIsSearching] = useState(false);
+  // Cache the label of a server-side selected option so the button can display it
+  const [cachedLabel, setCachedLabel] = useState<string | null>(null);
   const containerRef = useRef<HTMLDivElement>(null);
+  const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
-  const selected = options.find((o) => o.value === value);
+  // Display label: check static options first, then async results, then cache
+  const selected =
+    options.find((o) => o.value === value) ??
+    asyncOptions.find((o) => o.value === value) ??
+    (cachedLabel && value ? { value, label: cachedLabel } : undefined);
 
-  const filtered =
-    query.trim() === ''
-      ? options
-      : options.filter((o) =>
-          o.label.toLowerCase().includes(query.toLowerCase()),
-        );
+  // Debounced server-side search
+  useEffect(() => {
+    if (!onSearch || !open) return;
+    if (debounceRef.current) clearTimeout(debounceRef.current);
+    if (query.trim() === '') {
+      setAsyncOptions([]);
+      setIsSearching(false);
+      return;
+    }
+    setIsSearching(true);
+    debounceRef.current = setTimeout(() => {
+      onSearch(query)
+        .then((res) => { setAsyncOptions(res); setIsSearching(false); })
+        .catch(() => { setAsyncOptions([]); setIsSearching(false); });
+    }, 300);
+    return () => { if (debounceRef.current) clearTimeout(debounceRef.current); };
+  }, [query, onSearch, open]);
+
+  // Options to render: server results when async active and query non-empty; else filter static
+  const visibleOptions: ComboboxOption[] = onSearch
+    ? (query.trim() === '' ? options : asyncOptions)
+    : options.filter((o) => o.label.toLowerCase().includes(query.toLowerCase()));
 
   // Cerrar al hacer click fuera del combobox
   useEffect(() => {
@@ -105,16 +137,19 @@ function Combobox({
               />
             </div>
             <ul className="max-h-52 overflow-y-auto py-1">
-              {filtered.length === 0 ? (
-                <li className="px-3 py-2 text-sm text-gray-400">Sin resultados</li>
+              {isSearching ? (
+                <li className="px-3 py-2 text-sm text-gray-400">{loadingMessage}</li>
+              ) : visibleOptions.length === 0 ? (
+                <li className="px-3 py-2 text-sm text-gray-400">{emptyMessage}</li>
               ) : (
-                filtered.map((opt) => (
+                visibleOptions.map((opt) => (
                   <li
                     key={opt.value}
                     role="option"
                     aria-selected={opt.value === value}
                     onClick={() => {
                       onChange(opt.value);
+                      setCachedLabel(opt.label);
                       setOpen(false);
                       setQuery('');
                     }}
@@ -172,6 +207,8 @@ export interface StepGeneralProps {
   value: GeneralData;
   onChange: (value: GeneralData) => void;
   disabled?: boolean;
+  /** Búsqueda server-side de clientes (debounce 300ms). */
+  onSearchClients?: (query: string) => Promise<ClientOption[]>;
 }
 
 export function StepGeneral({
@@ -180,6 +217,7 @@ export function StepGeneral({
   value,
   onChange,
   disabled = false,
+  onSearchClients,
 }: StepGeneralProps) {
   const clientSelectId   = useId();
   const therapySelectId  = useId();
@@ -212,6 +250,13 @@ export function StepGeneral({
           onChange={(v) => update('client_id', v)}
           placeholder="Seleccionar cliente…"
           disabled={disabled}
+          onSearch={
+            onSearchClients
+              ? (q) => onSearchClients(q).then((items) => items.map((c) => ({ value: c.id, label: c.full_name })))
+              : undefined
+          }
+          emptyMessage="No se encontraron clientes"
+          loadingMessage="Buscando..."
         />
 
         {/* Tipo de terapia */}

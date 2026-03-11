@@ -1,6 +1,6 @@
 'use client';
 
-import { ChakraGrid, type CompareReading } from '../ChakraGrid';
+import { ChakraGrid } from '../ChakraGrid';
 import type { WizardChakraReading } from './types';
 
 export interface StepChakrasFinalProps {
@@ -20,12 +20,6 @@ export function StepChakrasFinal({
   disabled = false,
   showAnimal = false,
 }: StepChakrasFinalProps) {
-  // ChakraGrid.compareReadings solo necesita id + value (sin name)
-  const compareForGrid: CompareReading[] = compareReadings.map((r) => ({
-    chakra_position_id: r.chakra_position_id,
-    value: r.value,
-  }));
-
   return (
     <section aria-labelledby="step-chakras-final-heading" className="space-y-5">
       <div>
@@ -37,7 +31,7 @@ export function StepChakrasFinal({
         </h2>
         <p className="text-sm text-gray-500 mt-0.5">
           Estado de cada chakra al cierre de la sesión. Escala 0 – 14.
-          Se muestra la comparativa con los valores iniciales.
+          El badge "Inicial" muestra el valor registrado al inicio.
         </p>
       </div>
 
@@ -45,7 +39,7 @@ export function StepChakrasFinal({
         readings={readings}
         onChange={onChange}
         phase="final"
-        compareReadings={compareForGrid}
+        compareReadings={compareReadings}
         disabled={disabled}
         showAnimal={showAnimal}
       />
