@@ -31,6 +31,36 @@ export type MaritalStatus =
   | "common_law"
   | "other";
 
+// ─── Subtipos embebidos en Client ─────────────────────────────────────────────
+
+export interface ClientCondition {
+  id: string;
+  client_id: string;
+  condition_type: string;
+  description: string;
+  created_at: string;
+  deleted_at: string | null;
+}
+
+export interface ClientMedication {
+  id: string;
+  client_id: string;
+  name: string;
+  notes: string | null;
+  created_at: string;
+  deleted_at: string | null;
+}
+
+export type SleepQuality = "bad" | "regular" | "good" | "excellent";
+
+export interface ClientSleep {
+  id: string;
+  client_id: string;
+  avg_hours: number;
+  quality: SleepQuality;
+  created_at: string;
+}
+
 export interface Client {
   id: string;
   full_name: string;
@@ -47,9 +77,15 @@ export interface Client {
   num_siblings: number | null;
   birth_order: number | null;
   predominant_emotions: string[] | null;
-  family_abortions: string | null;
+  family_abortions: number | null;
   deaths_before_41: string | null;
   important_notes: string | null;
+  // Relaciones embebidas
+  conditions: ClientCondition[];
+  pains: ClientCondition[];
+  medications: ClientMedication[];
+  sleep: ClientSleep | null;
+  family_members: ClientCondition[];
   created_at: string;
   updated_at: string;
   deleted_at: string | null;
@@ -89,11 +125,13 @@ export interface ChakraPosition {
   id: string;
   name: string;
   position: number;
+  color: string;
 }
 
 export interface EnergyDimension {
   id: string;
   name: string;
+  display_order: number;
   is_active: boolean;
 }
 

@@ -1,7 +1,7 @@
 'use client';
 
-import { useEffect, useState, useMemo, useCallback } from 'react';
-import { useRouter } from 'next/navigation';
+import { useEffect, useState, useMemo, useCallback, useRef } from 'react';
+import { useRouter, useSearchParams } from 'next/navigation';
 
 import { WizardShell }        from '@/components/clinical/wizard/WizardShell';
 import { StepGeneral }        from '@/components/clinical/wizard/StepGeneral';
@@ -86,6 +86,8 @@ function newTopic(): Topic {
 
 export default function NuevaSessionPage() {
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const clientIdParam = searchParams.get('client_id');
 
   // Wizard store
   const { currentStep, sessionId, setStep, markStepComplete, setSessionId, reset } =
@@ -112,6 +114,15 @@ export default function NuevaSessionPage() {
   useEffect(() => {
     reset();
   }, [reset]);
+
+  // Pre-seleccionar cliente si viene por query param ?client_id=
+  const clientParamApplied = useRef(false);
+  useEffect(() => {
+    if (clientIdParam && !clientParamApplied.current) {
+      clientParamApplied.current = true;
+      setGeneralData((prev) => ({ ...prev, client_id: clientIdParam }));
+    }
+  }, [clientIdParam]);
 
   // Cargar catálogos
   useEffect(() => {
