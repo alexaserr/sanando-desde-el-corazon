@@ -15,7 +15,7 @@ from pydantic import BaseModel, Field
 
 # ── Tipos literales ────────────────────────────────────────────────────────────
 
-EntryType = Literal["bloqueo_1", "bloqueo_2", "bloqueo_3", "resultante", "secundario"]
+EntryType = Literal["bloqueo_1", "bloqueo_2", "bloqueo_3", "resultante", "secundario", "edad_adulta", "edad_infancia"]
 
 
 # ══════════════════════════════════════════════════════════════
