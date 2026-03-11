@@ -20,6 +20,7 @@ from sqlalchemy import (
     ForeignKey,
     Index,
     Integer,
+    LargeBinary,
     Numeric,
     SmallInteger,
     String,
@@ -319,6 +320,9 @@ class Session(Base, UUIDPrimaryKeyMixin, TimestampMixin, SoftDeleteMixin):
     bud: Mapped[str | None] = mapped_column(String(200), nullable=True)               # 17 registros
     bud_chakra: Mapped[str | None] = mapped_column(String(200), nullable=True)        # 5 registros (animales)
     payment_notes: Mapped[str | None] = mapped_column(Text, nullable=True)            # 2 registros
+
+    # Notas clínicas cifradas con pgcrypto
+    notes: Mapped[bytes | None] = mapped_column(LargeBinary, nullable=True)          # PII
 
     # Trazabilidad de migración Notion
     notion_page_id: Mapped[str | None] = mapped_column(String(100), nullable=True, unique=True)

@@ -38,6 +38,7 @@ from app.db.models import (
     User,
     UserRole,
 )
+from app.config import get_settings
 from app.db.session import get_db
 from app.dependencies import require_role
 from app.schemas.sessions import (
@@ -66,6 +67,8 @@ from app.schemas.sessions import (
 from app.utils.audit import write_audit_log
 
 router = APIRouter(prefix="/api/v1/clinical/sessions", tags=["sessions"])
+
+_settings = get_settings()
 
 
 # ── Helpers ───────────────────────────────────────────────────
@@ -319,6 +322,14 @@ async def _build_session_response(session_id: UUID, db: AsyncSession) -> Session
     if session is None:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Sesión no encontrada")
 
+    # Descifrar notes (PII — columna bytea cifrada con pgp_sym_encrypt)
+    notes_decrypted: str | None = None
+    if session.notes is not None:
+        notes_decrypted = await db.scalar(
+            select(func.pgp_sym_decrypt(Session.notes, _settings.CLINICAL_DB_PGCRYPTO_KEY))
+            .where(Session.id == session_id)
+        )
+
     energy_readings = [
         EnergyReadingResponse(
             id=r.id,
@@ -357,6 +368,7 @@ async def _build_session_response(session_id: UUID, db: AsyncSession) -> Session
         bud=session.bud,
         bud_chakra=session.bud_chakra,
         payment_notes=session.payment_notes,
+        notes=notes_decrypted,
         created_at=session.created_at,
         updated_at=session.updated_at,
         deleted_at=session.deleted_at,
@@ -446,8 +458,23 @@ async def update_general(
     if not update_data:
         raise HTTPException(status_code=status.HTTP_422_UNPROCESSABLE_ENTITY, detail="Sin campos para actualizar")
 
+    # Cifrar notes antes de guardar (PII)
+    if "notes" in update_data and update_data["notes"] is not None:
+        update_data["notes"] = func.pgp_sym_encrypt(
+            update_data["notes"], _settings.CLINICAL_DB_PGCRYPTO_KEY
+        )
+
     update_data["updated_at"] = func.now()
     await db.execute(update(Session).where(Session.id == session_id).values(**update_data))
+
+    # Excluir notes del audit log — es PII cifrado
+    audit_fields = {
+        k: str(v) if v is not None else None
+        for k, v in data.model_dump(exclude_unset=True).items()
+        if k != "notes"
+    }
+    if "notes" in data.model_dump(exclude_unset=True):
+        audit_fields["notes"] = "<cifrado>"
 
     await write_audit_log(
         db,
@@ -455,7 +482,7 @@ async def update_general(
         record_id=session_id,
         action=AuditAction.UPDATE,
         changed_by=current_user.id,
-        new_data={k: str(v) if v is not None else None for k, v in data.model_dump(exclude_unset=True).items()},
+        new_data=audit_fields,
         ip_address=request.client.host if request.client else None,
         user_agent=request.headers.get("user-agent"),
     )

@@ -252,6 +252,7 @@ class SessionGeneralUpdate(BaseModel):
     bud: str | None = Field(None, max_length=200)
     bud_chakra: str | None = Field(None, max_length=200)
     payment_notes: str | None = None
+    notes: str | None = None  # PII — se cifra con pgp_sym_encrypt al escribir
 
 
 class SessionCloseRequest(BaseModel):
@@ -275,6 +276,7 @@ class SessionResponse(BaseModel):
     bud: str | None = None
     bud_chakra: str | None = None
     payment_notes: str | None = None
+    notes: str | None = None  # PII — descifrado en router
     created_at: datetime
     updated_at: datetime
     deleted_at: datetime | None = None

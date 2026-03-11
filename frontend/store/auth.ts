@@ -14,7 +14,12 @@ interface AuthState {
   logout: () => void;
 }
 
-// Token solo en memoria — nunca en localStorage ni sessionStorage
+/**
+ * ⚠️  SECURITY: NEVER add persist middleware to this store.
+ * Access tokens must live in memory only — never localStorage/sessionStorage.
+ * Refresh tokens are handled via HttpOnly cookies (never in JS).
+ * Mandated by: CRS §2 (OWASP A07), LFPDPPP Art. 19, NOM-004.
+ */
 export const useAuthStore = create<AuthState>((set) => ({
   user: null,
   accessToken: null,
