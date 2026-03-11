@@ -17,18 +17,18 @@ export interface EnergySliderProps {
   showLabel?: boolean;
 }
 
-// terra-700 — color de relleno del thumb (design system SDC actualizado)
-const THUMB_COLOR = '#7A4535';
+// terra-700 — color de relleno del thumb (alineado con Squarespace)
+const THUMB_COLOR = '#B1481E';
 
 // Acentos por fase
 const PHASE_COLOR: Record<'initial' | 'final', string> = {
-  initial: '#3D1A0F', // terra-900
+  initial: '#362017', // terra-900
   final: '#2D7A4F',   // success
 };
 
-// Gradiente energético — tonos cálidos (nuevo diseño premium)
+// Gradiente energético — rojo → ámbar → verde
 const TRACK_GRADIENT =
-  'linear-gradient(to right, #DBC4B8 0%, #C4A192 30%, #B8A898 50%, #92B89A 70%, #6BAF7B 100%)';
+  'linear-gradient(to right, #C0392B 0%, #F1C40F 50%, #1E5631 100%)';
 
 // ─── Delta badge ─────────────────────────────────────────────────────────────
 
@@ -163,37 +163,37 @@ export function EnergySlider({
         }
         #${sliderId}::-webkit-slider-runnable-track {
           background: transparent;
-          height: 4px;
+          height: 6px;
         }
         #${sliderId}::-moz-range-track {
           background: transparent;
-          height: 4px;
+          height: 6px;
           border: none;
         }
         #${sliderId}::-webkit-slider-thumb {
           -webkit-appearance: none;
           appearance: none;
-          width: 24px;
-          height: 24px;
+          width: 20px;
+          height: 20px;
           border-radius: 50%;
           background: ${THUMB_COLOR};
-          border: 3px solid #ffffff;
-          box-shadow: 0 2px 8px rgba(61,26,15,0.15);
-          margin-top: -10px;
+          border: 2px solid #ffffff;
+          box-shadow: 0 2px 6px rgba(54,32,23,0.30);
+          margin-top: -7px;
           cursor: ${disabled ? 'not-allowed' : 'pointer'};
           transition: transform 0.15s ease, box-shadow 0.15s ease;
         }
         #${sliderId}:not(:disabled)::-webkit-slider-thumb:hover {
           transform: scale(1.1);
-          box-shadow: 0 3px 10px rgba(61,26,15,0.22);
+          box-shadow: 0 3px 10px rgba(54,32,23,0.40);
         }
         #${sliderId}::-moz-range-thumb {
-          width: 24px;
-          height: 24px;
+          width: 20px;
+          height: 20px;
           border-radius: 50%;
           background: ${THUMB_COLOR};
-          border: 3px solid #ffffff;
-          box-shadow: 0 2px 8px rgba(61,26,15,0.15);
+          border: 2px solid #ffffff;
+          box-shadow: 0 2px 6px rgba(54,32,23,0.30);
           cursor: ${disabled ? 'not-allowed' : 'pointer'};
         }
         #${sliderId}:focus-visible {
@@ -231,7 +231,7 @@ export function EnergySlider({
             onBlur={handleInputBlur}
             disabled={disabled}
             aria-label={`${label} valor numérico`}
-            className="w-16 h-8 text-center text-sm border border-gray-200 rounded tabular-nums disabled:opacity-50 disabled:cursor-not-allowed focus:outline-none focus:border-terra-500 focus:ring-1 focus:ring-terra-500/20"
+            className="w-16 h-8 text-center text-sm border border-terra-200 rounded-md tabular-nums disabled:opacity-50 disabled:cursor-not-allowed focus:outline-none focus:border-terra-700 focus:ring-1 focus:ring-terra-700/20"
           />
           {shouldShowDelta && <DeltaBadge delta={delta} />}
         </div>
@@ -247,7 +247,7 @@ export function EnergySlider({
           aria-hidden="true"
           className="absolute inset-x-0 rounded-full pointer-events-none"
           style={{
-            height: 4,
+            height: 6,
             top: '50%',
             transform: 'translateY(-50%)',
             background: TRACK_GRADIENT,

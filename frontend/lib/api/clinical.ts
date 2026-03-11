@@ -137,40 +137,41 @@ export interface TopicProgressUpdate {
   progress_pct: number;
 }
 
-export type ThemeEntryType = 'bloqueo_1' | 'bloqueo_2' | 'bloqueo_3' | 'resultante' | 'secundario';
+export type ThemeEntryType =
+  | 'bloqueo_1' | 'bloqueo_2' | 'bloqueo_3'
+  | 'resultante' | 'secundario'
+  | 'edad_adulta' | 'edad_infancia';
 
 export interface ThemeEntryRow {
   client_topic_id: string | null;
   entry_type: ThemeEntryType;
+  // Bloqueos, resultante, secundario
   chakra_position_id?: string | null;
   organ_name?: string | null;
   initial_energy?: number | null;
   final_energy?: number | null;
-  childhood_place?: string | null;
-  childhood_people?: string | null;
-  childhood_situation?: string | null;
-  childhood_description?: string | null;
-  childhood_emotions?: string | null;
-  adulthood_place?: string | null;
-  adulthood_people?: string | null;
-  adulthood_situation?: string | null;
-  adulthood_description?: string | null;
-  adulthood_emotions?: string | null;
+  // Edad adulta
+  adult_theme?: string | null;
+  adult_age?: number | null;
+  // Edad infancia
+  child_theme?: string | null;
+  child_age?: number | null;
+  // Compartido entre edades
+  emotions?: string | null;
 }
 
-interface SaveThemeEntriesPayload {
+export interface SaveThemeEntriesPayload {
   entries: ThemeEntryRow[];
   topic_progress: TopicProgressUpdate[];
 }
 
 export async function saveThemeEntries(
   sessionId: string,
-  entries: ThemeEntryRow[],
-  topicProgress: TopicProgressUpdate[],
+  payload: SaveThemeEntriesPayload,
 ): Promise<unknown> {
   return apiClient.put<unknown, SaveThemeEntriesPayload>(
     `/api/v1/clinical/sessions/${sessionId}/theme-entries`,
-    { entries, topic_progress: topicProgress },
+    payload,
   );
 }
 

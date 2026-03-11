@@ -1,18 +1,15 @@
 import type { Metadata } from "next";
-import { Libre_Baskerville, Almarai, JetBrains_Mono } from "next/font/google";
+import { Playfair_Display, JetBrains_Mono } from "next/font/google";
+import "@fontsource/almarai/300.css";
+import "@fontsource/almarai/400.css";
+import "@fontsource/almarai/700.css";
+import "@fontsource/almarai/800.css";
 import "./globals.css";
 
-const libreBaskerville = Libre_Baskerville({
+const playfairDisplay = Playfair_Display({
   subsets: ["latin"],
-  weight: ["400", "700"],
+  weight: ["600", "700"],
   variable: "--font-display",
-  display: "swap",
-});
-
-const almarai = Almarai({
-  subsets: ["arabic"],
-  weight: ["300", "400", "700", "800"],
-  variable: "--font-body",
   display: "swap",
 });
 
@@ -35,7 +32,7 @@ export default function RootLayout({
   return (
     <html lang="es" suppressHydrationWarning>
       <body
-        className={`${libreBaskerville.variable} ${almarai.variable} ${jetbrainsMono.variable} font-body antialiased`}
+        className={`${playfairDisplay.variable} ${jetbrainsMono.variable} font-sans antialiased`}
       >
         {children}
       </body>

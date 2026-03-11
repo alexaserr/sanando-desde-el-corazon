@@ -180,7 +180,7 @@ export default function NuevoPacientePage() {
       predominant_emotions: emotions.length > 0 ? emotions : undefined,
       motivation_visit: motivations.length > 0 ? motivations : undefined,
       motivation_general: data.motivation_general || undefined,
-      family_abortions: data.family_abortions || undefined,
+      family_abortions: toInt(data.family_abortions),
       deaths_before_41: data.deaths_before_41 || undefined,
       important_notes: data.important_notes || undefined,
     };
@@ -433,15 +433,15 @@ export default function NuevoPacientePage() {
             </div>
 
             {/* Abortos en sistema familiar */}
-            <div className="md:col-span-2">
+            <div>
               <label className="block text-sm font-medium text-gray-700 mb-1.5">
                 Abortos en sistema familiar
               </label>
-              <textarea
+              <input
+                type="number"
+                min={0}
                 {...register("family_abortions")}
-                rows={2}
-                placeholder="Descripción si aplica…"
-                className="w-full rounded border border-gray-200 px-3 py-2.5 text-sm text-gray-900 resize-none focus:outline-none focus:ring-2 focus:ring-terra-500/20 focus:border-terra-500 disabled:opacity-50"
+                className={inputClass()}
                 disabled={isSubmitting}
               />
             </div>
