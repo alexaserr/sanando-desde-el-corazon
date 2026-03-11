@@ -1,7 +1,9 @@
 """
-Utilidades de seguridad: JWT RS256, bcrypt, TOTP.
+Utilidades de seguridad: JWT RS256, bcrypt, TOTP, refresh tokens opacos.
 Las claves PEM se leen desde config.settings (cacheadas en disco una sola vez).
 """
+import hashlib
+import secrets
 from datetime import datetime, timedelta, timezone
 from typing import Any
 from uuid import UUID
@@ -61,6 +63,16 @@ def decode_token(token: str) -> dict[str, Any]:
         )
     except JWTError as exc:
         raise ValueError("Token inválido o expirado") from exc
+
+
+def create_opaque_refresh_token() -> str:
+    """Genera un token opaco de 64 bytes URL-safe para uso como refresh token."""
+    return secrets.token_urlsafe(64)
+
+
+def hash_token(token: str) -> str:
+    """SHA-256 hex del token — se almacena en Redis, nunca el token en claro."""
+    return hashlib.sha256(token.encode("utf-8")).hexdigest()
 
 
 def hash_password(plain: str) -> str:

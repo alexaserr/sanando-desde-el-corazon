@@ -5,6 +5,7 @@ PII (full_name, email, phone) viaja en plaintext en la API;
 el cifrado/descifrado con pgcrypto ocurre en la capa de routers.
 """
 from datetime import date, datetime
+from decimal import Decimal
 from typing import Any
 from uuid import UUID
 
@@ -97,13 +98,13 @@ class ClientCreate(BaseModel):
     num_children: int | None = Field(None, ge=0, le=30)
     num_siblings: int | None = Field(None, ge=0, le=30)
     birth_order: int | None = Field(None, ge=1, le=30)
-    predominant_emotions: dict[str, Any] | None = None
+    predominant_emotions: list[str] | None = None
     family_abortions: int | None = Field(None, ge=0)
     deaths_before_41: str | None = None
     important_notes: str | None = None
 
     # Motivación de consulta
-    motivation_visit: dict[str, Any] | None = None
+    motivation_visit: list[str] | None = None
     motivation_general: str | None = None
 
     # Sub-recursos opcionales en creación (conditions incluye dolores con condition_type=pain)
@@ -142,13 +143,13 @@ class ClientUpdate(BaseModel):
     num_children: int | None = Field(None, ge=0, le=30)
     num_siblings: int | None = Field(None, ge=0, le=30)
     birth_order: int | None = Field(None, ge=1, le=30)
-    predominant_emotions: dict[str, Any] | None = None
+    predominant_emotions: list[str] | None = None
     family_abortions: int | None = Field(None, ge=0)
     deaths_before_41: str | None = None
     important_notes: str | None = None
 
     # Motivación
-    motivation_visit: dict[str, Any] | None = None
+    motivation_visit: list[str] | None = None
     motivation_general: str | None = None
 
     # Soft delete: enviar timestamp para marcar como eliminado, null para restaurar
@@ -184,13 +185,13 @@ class ClientResponse(BaseModel):
     num_children: int | None = None
     num_siblings: int | None = None
     birth_order: int | None = None
-    predominant_emotions: dict[str, Any] | None = None
+    predominant_emotions: list[str] | None = None
     family_abortions: int | None = None
     deaths_before_41: str | None = None
     important_notes: str | None = None
 
     # Motivación
-    motivation_visit: dict[str, Any] | None = None
+    motivation_visit: list[str] | None = None
     motivation_general: str | None = None
 
     # Timestamps
@@ -226,3 +227,23 @@ class ClientListResponse(BaseModel):
     page: int
     per_page: int
     pages: int
+
+
+# ── Sesiones del cliente ───────────────────────────────────────
+
+class ClientSessionItem(BaseModel):
+    """Resumen de sesión para el listado de sesiones de un cliente."""
+
+    id: UUID
+    measured_at: datetime
+    therapy_type_name: str | None = None
+    cost: Decimal | None = None
+    notes: str | None = None           # payment_notes truncado a 100 chars
+    general_energy_level: int | None = None
+
+
+class ClientSessionsResponse(BaseModel):
+    data: list[ClientSessionItem]
+    total: int
+    page: int
+    per_page: int
