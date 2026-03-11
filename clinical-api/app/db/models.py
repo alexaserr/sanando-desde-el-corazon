@@ -134,6 +134,7 @@ class ChakraPosition(Base, UUIDPrimaryKeyMixin, TimestampMixin):
 
     chakra_readings: Mapped[list["SessionChakraReading"]] = relationship(back_populates="chakra")
     affectations: Mapped[list["SessionAffectation"]] = relationship(back_populates="chakra")
+    organs: Mapped[list["ChakraOrgan"]] = relationship(back_populates="chakra_position")
 
 
 # ══════════════════════════════════════════════════════════════
@@ -208,6 +209,7 @@ class Client(Base, UUIDPrimaryKeyMixin, TimestampMixin, SoftDeleteMixin):
     sleep_record: Mapped["ClientSleep | None"] = relationship(back_populates="client", uselist=False)
     family_members: Mapped[list["FamilyMember"]] = relationship(back_populates="client")
     cleaning_materials: Mapped[list["CleaningMaterial"]] = relationship(back_populates="client")
+    topics: Mapped[list["ClientTopic"]] = relationship(back_populates="client")
 
     __table_args__ = (
         Index("ix_clients_notion_page_id", "notion_page_id"),
@@ -334,6 +336,7 @@ class Session(Base, UUIDPrimaryKeyMixin, TimestampMixin, SoftDeleteMixin):
     cleaning_events: Mapped[list["SessionCleaningEvent"]] = relationship(back_populates="session")
     organs: Mapped[list["SessionOrgan"]] = relationship(back_populates="session")
     cleaning_materials: Mapped[list["CleaningMaterial"]] = relationship(back_populates="session")
+    theme_entries: Mapped[list["SessionThemeEntry"]] = relationship(back_populates="session")
 
     __table_args__ = (
         Index("ix_sessions_client_id", "client_id"),
@@ -562,6 +565,108 @@ class CleaningMaterial(Base, UUIDPrimaryKeyMixin, TimestampMixin, SoftDeleteMixi
     __table_args__ = (
         Index("ix_cleaning_materials_client_id", "client_id"),
         Index("ix_cleaning_materials_session_id", "session_id"),
+    )
+
+
+# ══════════════════════════════════════════════════════════════
+# TEMAS CLÍNICOS PERSISTENTES (nuevo modelo — paso 4 wizard)
+# ══════════════════════════════════════════════════════════════
+
+class ChakraOrgan(Base, UUIDPrimaryKeyMixin):
+    """
+    Catálogo estático de órganos agrupados por chakra.
+    Usado en BlockageRow del wizard: chakra → órgano → energía.
+    """
+    __tablename__ = "chakra_organs"
+
+    chakra_position_id: Mapped[UUID] = mapped_column(
+        PG_UUID(as_uuid=True), ForeignKey("chakra_positions.id", ondelete="CASCADE"), nullable=False
+    )
+    organ_name: Mapped[str] = mapped_column(String(200), nullable=False)
+    system_name: Mapped[str | None] = mapped_column(String(100), nullable=True)
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), server_default=func.now(), nullable=False
+    )
+
+    chakra_position: Mapped["ChakraPosition"] = relationship(back_populates="organs")
+
+    __table_args__ = (Index("ix_chakra_organs_chakra_id", "chakra_position_id"),)
+
+
+class ClientTopic(Base, UUIDPrimaryKeyMixin, TimestampMixin, SoftDeleteMixin):
+    """
+    Tema de trabajo persistente a nivel de paciente.
+    Un tema puede trabajarse a lo largo de múltiples sesiones.
+    Progreso 0-100%, se marca como completado cuando se resuelve.
+    """
+    __tablename__ = "client_topics"
+
+    client_id: Mapped[UUID] = mapped_column(
+        PG_UUID(as_uuid=True), ForeignKey("clients.id", ondelete="CASCADE"), nullable=False
+    )
+    name: Mapped[str] = mapped_column(sa.Text(), nullable=False)
+    progress_pct: Mapped[int] = mapped_column(SmallInteger, nullable=False, default=0)
+    is_completed: Mapped[bool] = mapped_column(Boolean, nullable=False, default=False)
+    completed_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
+
+    client: Mapped["Client"] = relationship(back_populates="topics")
+    theme_entries: Mapped[list["SessionThemeEntry"]] = relationship(back_populates="client_topic")
+
+    __table_args__ = (
+        sa.CheckConstraint("progress_pct BETWEEN 0 AND 100", name="ck_client_topics_progress_pct"),
+        Index("ix_client_topics_client_id", "client_id"),
+    )
+
+
+class SessionThemeEntry(Base, UUIDPrimaryKeyMixin, TimestampMixin, SoftDeleteMixin):
+    """
+    Entrada de trabajo dentro de un tema en una sesión.
+    Tipos: bloqueo_1/2/3 (chakra→órgano→energía), resultante, secundario.
+    Las edades (infancia/adultez) típicamente solo se llenan en bloqueo_1.
+    Hasta 25 filas por sesión (5 temas × 5 tipos).
+    """
+    __tablename__ = "session_theme_entries"
+
+    session_id: Mapped[UUID] = mapped_column(
+        PG_UUID(as_uuid=True), ForeignKey("sessions.id", ondelete="CASCADE"), nullable=False
+    )
+    client_topic_id: Mapped[UUID] = mapped_column(
+        PG_UUID(as_uuid=True), ForeignKey("client_topics.id", ondelete="CASCADE"), nullable=False
+    )
+    entry_type: Mapped[str] = mapped_column(String(20), nullable=False)
+
+    # Bloqueo / Resultante: chakra → órgano → energía
+    chakra_position_id: Mapped[UUID | None] = mapped_column(
+        PG_UUID(as_uuid=True), ForeignKey("chakra_positions.id", ondelete="SET NULL"), nullable=True
+    )
+    organ_name: Mapped[str | None] = mapped_column(String(200), nullable=True)
+    initial_energy: Mapped[Decimal | None] = mapped_column(Numeric(5, 2), nullable=True)  # 0-100
+    final_energy: Mapped[Decimal | None] = mapped_column(Numeric(5, 2), nullable=True)    # 0-100
+
+    # Edades — infancia (se llenan solo en una fila por tema, típicamente bloqueo_1)
+    childhood_place: Mapped[str | None] = mapped_column(Text, nullable=True)
+    childhood_people: Mapped[str | None] = mapped_column(Text, nullable=True)
+    childhood_situation: Mapped[str | None] = mapped_column(Text, nullable=True)
+    childhood_description: Mapped[str | None] = mapped_column(Text, nullable=True)
+    childhood_emotions: Mapped[str | None] = mapped_column(Text, nullable=True)
+
+    # Edades — adultez
+    adulthood_place: Mapped[str | None] = mapped_column(Text, nullable=True)
+    adulthood_people: Mapped[str | None] = mapped_column(Text, nullable=True)
+    adulthood_situation: Mapped[str | None] = mapped_column(Text, nullable=True)
+    adulthood_description: Mapped[str | None] = mapped_column(Text, nullable=True)
+    adulthood_emotions: Mapped[str | None] = mapped_column(Text, nullable=True)
+
+    session: Mapped["Session"] = relationship(back_populates="theme_entries")
+    client_topic: Mapped["ClientTopic"] = relationship(back_populates="theme_entries")
+
+    __table_args__ = (
+        sa.CheckConstraint(
+            "entry_type IN ('bloqueo_1','bloqueo_2','bloqueo_3','resultante','secundario')",
+            name="ck_session_theme_entries_entry_type",
+        ),
+        Index("ix_session_theme_entries_session_id", "session_id"),
+        Index("ix_session_theme_entries_topic_id", "client_topic_id"),
     )
 
 

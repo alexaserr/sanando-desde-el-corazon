@@ -95,12 +95,16 @@ def create_app() -> FastAPI:
     from app.routers.sessions import router as sessions_router
     from app.routers.catalogs import router as catalogs_router
     from app.routers.dashboard import router as dashboard_router
+    from app.routers.topics import router_clinical as topics_clinical_router
+    from app.routers.topics import router_catalogs as topics_catalogs_router
 
     app.include_router(auth_router)
     app.include_router(clients_router)
     app.include_router(sessions_router)
     app.include_router(catalogs_router)
     app.include_router(dashboard_router)
+    app.include_router(topics_clinical_router)
+    app.include_router(topics_catalogs_router)
 
     return app
 
