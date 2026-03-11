@@ -2,12 +2,13 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { LayoutDashboard, Users, CalendarDays, PlusCircle } from "lucide-react";
+import { LayoutDashboard, Users, UserPlus, CalendarDays, PlusCircle } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 const navItems = [
   { href: "/clinica", label: "Dashboard", icon: LayoutDashboard, exact: true },
   { href: "/clinica/pacientes", label: "Clientes", icon: Users, exact: false },
+  { href: "/clinica/pacientes/nuevo", label: "Nuevo paciente", icon: UserPlus, exact: true },
   { href: "/clinica/sesiones", label: "Sesiones", icon: CalendarDays, exact: true },
   { href: "/clinica/sesiones/nueva", label: "Nueva sesión", icon: PlusCircle, exact: false },
 ];

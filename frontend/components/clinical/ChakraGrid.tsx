@@ -76,16 +76,17 @@ function SimpleCard({ reading, color, onChange, phase, disabled }: SimpleCardPro
   return (
     <div
       className="bg-white rounded-lg p-4 shadow-sm border border-gray-100"
-      style={{ borderLeftWidth: 4, borderLeftColor: color }}
+      style={{ borderTopWidth: 2, borderTopColor: color }}
     >
       <p
         className="text-sm font-semibold mb-3"
-        style={{ color }}
+        style={{ color, opacity: 0.8 }}
       >
         {reading.name}
       </p>
       <EnergySlider
         label={reading.name}
+        showLabel={false}
         value={reading.value}
         onChange={(v) => onChange(reading.chakra_position_id, v)}
         phase={phase}
@@ -127,11 +128,11 @@ function CompareCard({
   return (
     <div
       className="bg-white rounded-lg p-4 shadow-sm border border-gray-100"
-      style={{ borderLeftWidth: 4, borderLeftColor: color }}
+      style={{ borderTopWidth: 2, borderTopColor: color }}
     >
       {/* Cabecera: nombre + delta */}
       <div className="flex items-center justify-between gap-2 mb-3">
-        <p className="text-sm font-semibold" style={{ color }}>
+        <p className="text-sm font-semibold" style={{ color, opacity: 0.8 }}>
           {reading.name}
         </p>
         <DeltaBadge delta={delta} />

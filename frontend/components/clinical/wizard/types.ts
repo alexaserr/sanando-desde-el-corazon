@@ -62,14 +62,21 @@ export interface GeneralData {
   measured_at: string;    // valor de input[type=datetime-local]  → ISO 8601
   general_energy: number; // 0-100
   notes: string;
+  // Limpieza y Entidades (registrados en el paso 1)
+  has_entities: boolean | null;
+  entities_count: number;
+  has_capas: boolean | null;
+  capas_count: number;
+  has_implants: boolean | null;
+  implants_count: number;
+  requires_cleanings: boolean | null;
+  total_cleanings: number;
 }
 
 /** Datos del paso 7 — Cierre de la sesión. */
 export interface CloseData {
   cost: string;           // string para manejar campo vacío en input
   payment_notes: string;
-  entities: string;       // string para manejar campo vacío
-  implants: string;       // string para manejar campo vacío
 }
 
 /** Resumen visible en el panel de cierre (StepClose). */

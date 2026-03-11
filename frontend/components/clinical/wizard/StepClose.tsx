@@ -89,8 +89,6 @@ export function StepClose({
 }: StepCloseProps) {
   const costId         = useId();
   const paymentNotesId = useId();
-  const entitiesId     = useId();
-  const implantsId     = useId();
 
   return (
     <section aria-labelledby="step-close-heading" className="space-y-6">
@@ -147,42 +145,6 @@ export function StepClose({
             onChange={(e) => onChange('payment_notes', e.target.value)}
             placeholder="Método de pago, referencia…"
             className="rounded-md border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#4A1810] disabled:opacity-50 disabled:cursor-not-allowed"
-          />
-        </div>
-
-        {/* Entidades */}
-        <div className="flex flex-col gap-1">
-          <label htmlFor={entitiesId} className="text-sm font-medium text-gray-700">
-            Entidades encontradas
-          </label>
-          <input
-            id={entitiesId}
-            type="number"
-            min={0}
-            step={1}
-            value={value.entities}
-            disabled={disabled || isClosing}
-            onChange={(e) => onChange('entities', e.target.value)}
-            placeholder="0"
-            className="rounded-md border border-gray-300 px-3 py-2 text-sm text-center focus:outline-none focus:ring-2 focus:ring-[#4A1810] disabled:opacity-50 disabled:cursor-not-allowed"
-          />
-        </div>
-
-        {/* Implantes */}
-        <div className="flex flex-col gap-1">
-          <label htmlFor={implantsId} className="text-sm font-medium text-gray-700">
-            Implantes encontrados
-          </label>
-          <input
-            id={implantsId}
-            type="number"
-            min={0}
-            step={1}
-            value={value.implants}
-            disabled={disabled || isClosing}
-            onChange={(e) => onChange('implants', e.target.value)}
-            placeholder="0"
-            className="rounded-md border border-gray-300 px-3 py-2 text-sm text-center focus:outline-none focus:ring-2 focus:ring-[#4A1810] disabled:opacity-50 disabled:cursor-not-allowed"
           />
         </div>
       </div>

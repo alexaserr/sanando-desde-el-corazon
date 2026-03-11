@@ -52,11 +52,17 @@ function defaultGeneralData(): GeneralData {
   // datetime-local espera "YYYY-MM-DDTHH:mm"
   const pad = (n: number) => String(n).padStart(2, '0');
   const measured_at = `${now.getFullYear()}-${pad(now.getMonth() + 1)}-${pad(now.getDate())}T${pad(now.getHours())}:${pad(now.getMinutes())}`;
-  return { client_id: '', therapy_type_id: '', measured_at, general_energy: 50, notes: '' };
+  return {
+    client_id: '', therapy_type_id: '', measured_at, general_energy: 50, notes: '',
+    has_entities: null, entities_count: 0,
+    has_capas: null, capas_count: 0,
+    has_implants: null, implants_count: 0,
+    requires_cleanings: null, total_cleanings: 0,
+  };
 }
 
 function defaultCloseData(): CloseData {
-  return { cost: '', payment_notes: '', entities: '', implants: '' };
+  return { cost: '', payment_notes: '' };
 }
 
 function initEnergyReadings(dimensions: EnergyDimension[]): EnergyReading[] {
@@ -230,6 +236,9 @@ export default function NuevaSessionPage() {
         await updateSessionGeneral(session.id, {
           general_energy_level: generalData.general_energy,
           notes: generalData.notes || undefined,
+          entities_count: generalData.has_entities === true ? generalData.entities_count : null,
+          implants_count: generalData.has_implants === true ? generalData.implants_count : null,
+          total_cleanings: generalData.requires_cleanings === true ? generalData.total_cleanings : null,
         });
 
         markStepComplete(1);

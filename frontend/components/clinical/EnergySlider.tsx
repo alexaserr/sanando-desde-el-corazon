@@ -1,6 +1,6 @@
 'use client';
 
-import { useCallback, useId } from 'react';
+import { useState, useEffect, useCallback, useId } from 'react';
 
 export interface EnergySliderProps {
   value: number;
@@ -13,6 +13,8 @@ export interface EnergySliderProps {
   compareValue?: number;
   disabled?: boolean;
   showDelta?: boolean;
+  /** Mostrar u ocultar visualmente el label (sigue presente para accesibilidad). */
+  showLabel?: boolean;
 }
 
 // terra-700 — color del thumb del slider (design system SDC)
@@ -24,9 +26,9 @@ const PHASE_COLOR: Record<'initial' | 'final', string> = {
   final: '#1E5631',   // success
 };
 
-// Gradiente energético: rojo → ámbar → amarillo → verde
+// Gradiente energético suave: rosa → durazno → ámbar claro → lima → verde
 const TRACK_GRADIENT =
-  'linear-gradient(to right, #C0392B 0%, #E67E22 33%, #F1C40F 55%, #27AE60 100%)';
+  'linear-gradient(to right, #E8A0A0 0%, #E8C8A0 30%, #E8D8A0 50%, #C8D8A0 70%, #A0C8A0 100%)';
 
 // ─── Delta badge ─────────────────────────────────────────────────────────────
 
@@ -81,6 +83,7 @@ export function EnergySlider({
   compareValue,
   disabled = false,
   showDelta,
+  showLabel = true,
 }: EnergySliderProps) {
   // useId genera IDs únicos estables en SSR/CSR — React 18+
   const uid = useId();
@@ -101,12 +104,46 @@ export function EnergySlider({
       ? parseFloat((value - compareValue).toFixed(1))
       : 0;
 
-  const handleChange = useCallback(
+  // Estado local del input numérico — permite escribir libremente sin snap en cada tecla
+  const [inputStr, setInputStr] = useState(String(value));
+
+  // Sincronizar cuando el valor cambia desde fuera (arrastre del slider o actualización del padre)
+  useEffect(() => {
+    setInputStr(String(value));
+  }, [value]);
+
+  const handleSliderChange = useCallback(
     (e: React.ChangeEvent<HTMLInputElement>) => {
       onChange(parseFloat(e.target.value));
     },
     [onChange],
   );
+
+  const handleInputChange = useCallback(
+    (e: React.ChangeEvent<HTMLInputElement>) => {
+      const str = e.target.value;
+      setInputStr(str);
+      const n = parseFloat(str);
+      if (!isNaN(n) && n >= min && n <= max) {
+        const snapped = Math.round(n / effectiveStep) * effectiveStep;
+        onChange(parseFloat(snapped.toFixed(2)));
+      }
+    },
+    [onChange, min, max, effectiveStep],
+  );
+
+  const handleInputBlur = useCallback(() => {
+    const n = parseFloat(inputStr);
+    if (isNaN(n)) {
+      setInputStr(String(value));
+    } else {
+      const clamped = Math.min(max, Math.max(min, n));
+      const snapped = Math.round(clamped / effectiveStep) * effectiveStep;
+      const final = parseFloat(snapped.toFixed(2));
+      setInputStr(String(final));
+      onChange(final);
+    }
+  }, [inputStr, value, min, max, effectiveStep, onChange]);
 
   return (
     <div className="flex flex-col gap-1 w-full">
@@ -126,36 +163,36 @@ export function EnergySlider({
         }
         #${sliderId}::-webkit-slider-runnable-track {
           background: transparent;
-          height: 8px;
+          height: 6px;
         }
         #${sliderId}::-moz-range-track {
           background: transparent;
-          height: 8px;
+          height: 6px;
           border: none;
         }
         #${sliderId}::-webkit-slider-thumb {
           -webkit-appearance: none;
           appearance: none;
-          width: 22px;
-          height: 22px;
+          width: 20px;
+          height: 20px;
           border-radius: 50%;
           background: #ffffff;
           border: 2px solid ${THUMB_BORDER};
-          box-shadow: 0 1px 4px rgba(0,0,0,0.22);
+          box-shadow: 0 1px 3px rgba(0,0,0,0.15);
           margin-top: -7px;
           cursor: ${disabled ? 'not-allowed' : 'pointer'};
           transition: box-shadow 0.15s ease;
         }
         #${sliderId}:not(:disabled)::-webkit-slider-thumb:hover {
-          box-shadow: 0 2px 8px rgba(0,0,0,0.3);
+          box-shadow: 0 2px 6px rgba(0,0,0,0.22);
         }
         #${sliderId}::-moz-range-thumb {
-          width: 22px;
-          height: 22px;
+          width: 20px;
+          height: 20px;
           border-radius: 50%;
           background: #ffffff;
           border: 2px solid ${THUMB_BORDER};
-          box-shadow: 0 1px 4px rgba(0,0,0,0.22);
+          box-shadow: 0 1px 3px rgba(0,0,0,0.15);
           cursor: ${disabled ? 'not-allowed' : 'pointer'};
         }
         #${sliderId}:focus-visible {
@@ -170,23 +207,31 @@ export function EnergySlider({
         }
       `}</style>
 
-      {/* Fila de label + valor + delta */}
-      <div className="flex items-center justify-between gap-2">
+      {/* Fila de label + input numérico + delta */}
+      <div className={`flex items-center gap-2 ${showLabel ? 'justify-between' : 'justify-end'}`}>
+        {/* Label — siempre presente en el DOM para accesibilidad */}
         <label
           htmlFor={sliderId}
-          className="text-sm font-medium leading-none truncate select-none"
-          style={{ color: phaseColor }}
+          className={`text-sm font-medium leading-none truncate select-none ${showLabel ? '' : 'sr-only'}`}
+          style={showLabel ? { color: phaseColor } : undefined}
         >
           {label}
         </label>
 
         <div className="flex items-center gap-1.5 shrink-0">
-          <span
-            className="text-sm font-semibold tabular-nums min-w-[2.5rem] text-right"
-            style={{ color: phaseColor }}
-          >
-            {value}
-          </span>
+          {/* Input numérico bidireccional */}
+          <input
+            type="number"
+            min={min}
+            max={max}
+            step={effectiveStep}
+            value={inputStr}
+            onChange={handleInputChange}
+            onBlur={handleInputBlur}
+            disabled={disabled}
+            aria-label={`${label} valor numérico`}
+            className="w-16 h-8 text-center text-sm border border-gray-200 rounded tabular-nums disabled:opacity-50 disabled:cursor-not-allowed focus:outline-none focus:border-terra-500 focus:ring-1 focus:ring-terra-500/20"
+          />
           {shouldShowDelta && <DeltaBadge delta={delta} />}
         </div>
       </div>
@@ -201,7 +246,7 @@ export function EnergySlider({
           aria-hidden="true"
           className="absolute inset-x-0 rounded-full pointer-events-none"
           style={{
-            height: 8,
+            height: 6,
             top: '50%',
             transform: 'translateY(-50%)',
             background: TRACK_GRADIENT,
@@ -217,7 +262,7 @@ export function EnergySlider({
           step={effectiveStep}
           value={value}
           disabled={disabled}
-          onChange={handleChange}
+          onChange={handleSliderChange}
           aria-label={label}
           aria-valuemin={min}
           aria-valuemax={max}

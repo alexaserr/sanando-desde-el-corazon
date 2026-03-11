@@ -154,6 +154,9 @@ export interface UpdateGeneralPayload {
   notes?: string;
   cost?: number;
   payment_notes?: string;
+  entities_count?: number | null;
+  implants_count?: number | null;
+  total_cleanings?: number | null;
 }
 
 export interface EnergyReadingPayload {

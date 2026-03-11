@@ -1,6 +1,6 @@
 'use client';
 
-import { useMemo } from 'react';
+import { useMemo, useCallback } from 'react';
 import { EnergySlider } from '../EnergySlider';
 import type { EnergyDimension, EnergyReading } from './types';
 
@@ -25,6 +25,38 @@ export function StepEnergyInitial({
     [readings],
   );
 
+  // Detectar dimensiones masculina y femenina por nombre (insensible a mayúsculas)
+  const masculinaDim = useMemo(
+    () => catalogDimensions.find((d) => d.name.toLowerCase().includes('masculin')),
+    [catalogDimensions],
+  );
+  const femeninaDim = useMemo(
+    () => catalogDimensions.find((d) => d.name.toLowerCase().includes('femenin')),
+    [catalogDimensions],
+  );
+
+  // Cuando cambia masculina, auto-balancear femenina = 100 - masculina
+  const handleChange = useCallback(
+    (dimensionId: string, value: number) => {
+      onChange(dimensionId, value);
+      if (masculinaDim && femeninaDim && dimensionId === masculinaDim.id) {
+        onChange(femeninaDim.id, Math.max(0, Math.min(100, 100 - value)));
+      }
+    },
+    [onChange, masculinaDim, femeninaDim],
+  );
+
+  // Valores actuales de M y F para el indicador de balance
+  const masculinaValue =
+    masculinaDim !== undefined ? (readingMap.get(masculinaDim.id) ?? 0) : null;
+  const femeninaValue =
+    femeninaDim !== undefined ? (readingMap.get(femeninaDim.id) ?? 0) : null;
+  const sumMF =
+    masculinaValue !== null && femeninaValue !== null
+      ? masculinaValue + femeninaValue
+      : null;
+  const mfBalanced = sumMF === 100;
+
   return (
     <section aria-labelledby="step-energy-initial-heading" className="space-y-5">
       <div>
@@ -45,23 +77,37 @@ export function StepEnergyInitial({
           No hay dimensiones energéticas en el catálogo.
         </p>
       ) : (
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
-          {catalogDimensions.map((dim) => (
-            <div
-              key={dim.id}
-              className="bg-white rounded-lg border border-gray-100 shadow-sm p-4"
+        <>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
+            {catalogDimensions.map((dim) => (
+              <div
+                key={dim.id}
+                className="bg-white rounded-lg border border-gray-100 shadow-sm p-4"
+              >
+                <EnergySlider
+                  label={dim.name}
+                  value={readingMap.get(dim.id) ?? 0}
+                  onChange={(v) => handleChange(dim.id, v)}
+                  phase="initial"
+                  max={100}
+                  disabled={disabled}
+                />
+              </div>
+            ))}
+          </div>
+
+          {/* Indicador de balance Masculina + Femenina */}
+          {sumMF !== null && (
+            <p
+              className={`text-xs ${mfBalanced ? 'text-gray-400' : 'text-amber-600'}`}
+              role={mfBalanced ? undefined : 'alert'}
             >
-              <EnergySlider
-                label={dim.name}
-                value={readingMap.get(dim.id) ?? 0}
-                onChange={(v) => onChange(dim.id, v)}
-                phase="initial"
-                max={100}
-                disabled={disabled}
-              />
-            </div>
-          ))}
-        </div>
+              {mfBalanced
+                ? `Masculina (${masculinaValue}) + Femenina (${femeninaValue}) = 100 ✓`
+                : `⚠ Masculina (${masculinaValue}) + Femenina (${femeninaValue}) = ${sumMF} — debe sumar 100`}
+            </p>
+          )}
+        </>
       )}
     </section>
   );

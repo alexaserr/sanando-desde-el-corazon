@@ -134,6 +134,36 @@ function Combobox({
   );
 }
 
+// ─── Pill Sí/No ───────────────────────────────────────────────────────────────
+
+interface YesNoPillsProps {
+  value: boolean | null;
+  onChange: (val: boolean) => void;
+  disabled?: boolean;
+}
+
+function YesNoPills({ value, onChange, disabled = false }: YesNoPillsProps) {
+  function pillClass(option: boolean) {
+    if (value === option) {
+      return option
+        ? 'px-4 py-1.5 rounded-full text-sm font-medium transition-colors bg-[#4A1810] text-white'
+        : 'px-4 py-1.5 rounded-full text-sm font-medium transition-colors bg-gray-100 text-gray-600';
+    }
+    return 'px-4 py-1.5 rounded-full text-sm font-medium transition-colors border border-gray-200 text-gray-400 hover:border-gray-300';
+  }
+
+  return (
+    <div className="flex gap-2">
+      <button type="button" disabled={disabled} onClick={() => onChange(true)} className={pillClass(true)}>
+        Sí
+      </button>
+      <button type="button" disabled={disabled} onClick={() => onChange(false)} className={pillClass(false)}>
+        No
+      </button>
+    </div>
+  );
+}
+
 // ─── StepGeneral ──────────────────────────────────────────────────────────────
 
 export interface StepGeneralProps {
@@ -240,6 +270,112 @@ export function StepGeneral({
           placeholder="Observaciones generales de la sesión…"
           className="rounded-md border border-gray-300 px-3 py-2 text-sm resize-none focus:outline-none focus:ring-2 focus:ring-[#4A1810] disabled:opacity-50 disabled:cursor-not-allowed"
         />
+      </div>
+
+      {/* ─── Limpieza y Entidades ──────────────────────────────────────────── */}
+      <div className="border-t border-gray-100 pt-6 mt-6">
+        <p className="font-semibold text-[#4A1810]">Limpieza y Entidades</p>
+        <p className="text-sm text-gray-500 mt-0.5 mb-5">
+          Registra la información de limpieza detectada
+        </p>
+
+        <div className="space-y-5">
+          {/* Entidades */}
+          <div className="flex flex-wrap items-center gap-4">
+            <span className="text-sm font-medium text-gray-700 w-32 shrink-0">Entidades</span>
+            <YesNoPills
+              value={value.has_entities}
+              onChange={(v) => update('has_entities', v)}
+              disabled={disabled}
+            />
+            <div
+              className={`transition-all duration-200 overflow-hidden ${
+                value.has_entities === true ? 'max-h-12 opacity-100' : 'max-h-0 opacity-0'
+              }`}
+            >
+              <input
+                type="number"
+                min={0}
+                value={value.entities_count}
+                disabled={disabled}
+                onChange={(e) => update('entities_count', Math.max(0, parseInt(e.target.value, 10) || 0))}
+                className="w-20 h-10 text-center text-sm border border-gray-200 rounded focus:outline-none focus:ring-2 focus:ring-[#4A1810] disabled:opacity-50"
+              />
+            </div>
+          </div>
+
+          {/* Capas */}
+          <div className="flex flex-wrap items-center gap-4">
+            <span className="text-sm font-medium text-gray-700 w-32 shrink-0">Capas</span>
+            <YesNoPills
+              value={value.has_capas}
+              onChange={(v) => update('has_capas', v)}
+              disabled={disabled}
+            />
+            <div
+              className={`transition-all duration-200 overflow-hidden ${
+                value.has_capas === true ? 'max-h-12 opacity-100' : 'max-h-0 opacity-0'
+              }`}
+            >
+              <input
+                type="number"
+                min={0}
+                value={value.capas_count}
+                disabled={disabled}
+                onChange={(e) => update('capas_count', Math.max(0, parseInt(e.target.value, 10) || 0))}
+                className="w-20 h-10 text-center text-sm border border-gray-200 rounded focus:outline-none focus:ring-2 focus:ring-[#4A1810] disabled:opacity-50"
+              />
+            </div>
+          </div>
+
+          {/* Implantes */}
+          <div className="flex flex-wrap items-center gap-4">
+            <span className="text-sm font-medium text-gray-700 w-32 shrink-0">Implantes</span>
+            <YesNoPills
+              value={value.has_implants}
+              onChange={(v) => update('has_implants', v)}
+              disabled={disabled}
+            />
+            <div
+              className={`transition-all duration-200 overflow-hidden ${
+                value.has_implants === true ? 'max-h-12 opacity-100' : 'max-h-0 opacity-0'
+              }`}
+            >
+              <input
+                type="number"
+                min={0}
+                value={value.implants_count}
+                disabled={disabled}
+                onChange={(e) => update('implants_count', Math.max(0, parseInt(e.target.value, 10) || 0))}
+                className="w-20 h-10 text-center text-sm border border-gray-200 rounded focus:outline-none focus:ring-2 focus:ring-[#4A1810] disabled:opacity-50"
+              />
+            </div>
+          </div>
+
+          {/* Requiere limpiezas */}
+          <div className="flex flex-wrap items-center gap-4">
+            <span className="text-sm font-medium text-gray-700 w-32 shrink-0">¿Limpiezas?</span>
+            <YesNoPills
+              value={value.requires_cleanings}
+              onChange={(v) => update('requires_cleanings', v)}
+              disabled={disabled}
+            />
+            <div
+              className={`transition-all duration-200 overflow-hidden ${
+                value.requires_cleanings === true ? 'max-h-12 opacity-100' : 'max-h-0 opacity-0'
+              }`}
+            >
+              <input
+                type="number"
+                min={0}
+                value={value.total_cleanings}
+                disabled={disabled}
+                onChange={(e) => update('total_cleanings', Math.max(0, parseInt(e.target.value, 10) || 0))}
+                className="w-20 h-10 text-center text-sm border border-gray-200 rounded focus:outline-none focus:ring-2 focus:ring-[#4A1810] disabled:opacity-50"
+              />
+            </div>
+          </div>
+        </div>
       </div>
     </section>
   );
