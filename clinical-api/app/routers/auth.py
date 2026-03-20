@@ -6,6 +6,7 @@ Flujo:
                           si Admin con 2FA: retorna pending token + requires_2fa=true
   POST /2fa/verify     → pending token + código TOTP → access token (+ refresh cookie)
   POST /refresh        → cookie refresh → nuevo access token (rotación, Redis)
+                          Detecta reutilización de tokens (robo) e invalida todas las sesiones
   POST /logout         → invalida refresh token en Redis + elimina cookie
   POST /logout-all     → invalida TODOS los refresh tokens del usuario en Redis
   POST /2fa/setup      → Admin autenticado → genera secret TOTP, guarda, retorna QR URI
@@ -15,6 +16,7 @@ from uuid import UUID
 
 import pyotp
 import redis.asyncio as aioredis
+import structlog
 from fastapi import APIRouter, Cookie, Depends, HTTPException, Request, Response, status
 from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
 from sqlalchemy import select, text
@@ -46,6 +48,8 @@ from app.security import (
     verify_totp,
 )
 
+logger = structlog.get_logger(__name__)
+
 router = APIRouter(prefix="/api/v1/auth", tags=["auth"])
 
 _REFRESH_COOKIE = "refresh_token"
@@ -61,6 +65,9 @@ def _redis_token_key(token_hash: str) -> str:
 
 def _redis_user_set_key(user_id: str) -> str:
     return f"user_refresh_tokens:{user_id}"
+
+def _redis_used_token_key(token_hash: str) -> str:
+    return f"used_refresh:{token_hash}"
 
 
 # ── Helpers de cookie ─────────────────────────────────────────
@@ -112,12 +119,27 @@ async def _issue_refresh_token(redis: aioredis.Redis, user_id: UUID) -> str:
 
 
 async def _revoke_refresh_token(redis: aioredis.Redis, token: str, user_id_str: str) -> None:
-    """Invalida un token opaco en Redis eliminando su hash."""
+    """Invalida un token opaco en Redis y lo marca como usado para detección de reutilización."""
     token_hash = hash_token(token)
     pipe = redis.pipeline()
     pipe.delete(_redis_token_key(token_hash))
     pipe.srem(_redis_user_set_key(user_id_str), token_hash)
+    # Mark as used for reuse detection (TTL = refresh token lifetime)
+    pipe.set(_redis_used_token_key(token_hash), user_id_str, ex=_REFRESH_TTL)
     await pipe.execute()
+
+
+async def _invalidate_all_sessions(redis: aioredis.Redis, user_id_str: str) -> None:
+    """Invalida TODOS los refresh tokens del usuario — llamado ante reutilización de token."""
+    user_set_key = _redis_user_set_key(user_id_str)
+    all_hashes: set[str] = await redis.smembers(user_set_key)
+
+    if all_hashes:
+        pipe = redis.pipeline()
+        for token_hash in all_hashes:
+            pipe.delete(_redis_token_key(token_hash))
+        pipe.delete(user_set_key)
+        await pipe.execute()
 
 
 # ── Helper pgcrypto ───────────────────────────────────────────
@@ -229,6 +251,7 @@ async def login(
 
 @router.post("/refresh", response_model=RefreshResponse)
 async def refresh(
+    request: Request,
     response: Response,
     db: AsyncSession = Depends(get_db),
     redis: aioredis.Redis = Depends(get_redis),
@@ -247,6 +270,22 @@ async def refresh(
     user_id_str: str | None = await redis.get(_redis_token_key(token_hash))
 
     if user_id_str is None:
+        # Token not in active store — check if it was already used (reuse = theft)
+        stolen_user_id: str | None = await redis.get(
+            _redis_used_token_key(token_hash)
+        )
+        if stolen_user_id is not None:
+            await _invalidate_all_sessions(redis, stolen_user_id)
+            logger.warning(
+                "token_reuse_detected",
+                user_id=stolen_user_id,
+                ip=request.client.host if request.client else "unknown",
+            )
+            _clear_refresh_cookie(response)
+            raise HTTPException(
+                status_code=status.HTTP_401_UNAUTHORIZED,
+                detail="Token reuse detected. All sessions invalidated.",
+            )
         raise _invalid
 
     try:

@@ -581,22 +581,17 @@ async def update_general(
     update_data["updated_at"] = func.now()
     await db.execute(update(Session).where(Session.id == session_id).values(**update_data))
 
-    # Excluir notes del audit log — es PII cifrado
-    audit_fields = {
-        k: str(v) if v is not None else None
-        for k, v in data.model_dump(exclude_unset=True).items()
-        if k != "notes"
-    }
-    if "notes" in data.model_dump(exclude_unset=True):
-        audit_fields["notes"] = "<cifrado>"
-
+    # PII scrubbing is handled automatically by write_audit_log
     await write_audit_log(
         db,
         table_name="sessions",
         record_id=session_id,
         action=AuditAction.UPDATE,
         changed_by=current_user.id,
-        new_data=audit_fields,
+        new_data={
+            k: str(v) if v is not None else None
+            for k, v in data.model_dump(exclude_unset=True).items()
+        },
         ip_address=request.client.host if request.client else None,
         user_agent=request.headers.get("user-agent"),
     )
