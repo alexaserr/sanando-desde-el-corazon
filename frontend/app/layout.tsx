@@ -23,8 +23,16 @@ const jetbrainsMono = JetBrains_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "Sanando desde el Corazón",
-  description: "Plataforma clínica de terapia integral",
+  title: 'Sanando desde el Corazón',
+  description: 'Plataforma clínica de sanación energética',
+  icons: {
+    icon: '/favicon.svg',
+  },
+  openGraph: {
+    title: 'Sanando desde el Corazón',
+    description: 'Plataforma clínica de sanación energética',
+    type: 'website',
+  },
 };
 
 export default function RootLayout({

@@ -19,7 +19,7 @@ import { useAuthStore } from "@/store/auth";
 
 const navItems = [
   { href: "/clinica",               label: "Dashboard",      icon: LayoutDashboard, exact: true,  adminOnly: false },
-  { href: "/clinica/pacientes",     label: "Clientes",       icon: Users,           exact: false, adminOnly: false },
+  { href: "/clinica/pacientes",     label: "Pacientes",      icon: Users,           exact: false, adminOnly: false },
   { href: "/clinica/pacientes/nuevo", label: "Nuevo paciente", icon: UserPlus,      exact: true,  adminOnly: false },
   { href: "/clinica/sesiones",      label: "Sesiones",       icon: CalendarDays,    exact: true,  adminOnly: false },
   { href: "/clinica/sesiones/nueva", label: "Nueva sesión",  icon: PlusCircle,      exact: false, adminOnly: false },
@@ -83,7 +83,7 @@ export function SidebarNav() {
                   : "gap-3 px-3 py-2 mx-2",
                 "min-h-[44px]",
                 isActive
-                  ? "bg-terra-100 text-terra-900 font-medium"
+                  ? "bg-terra-500 text-white font-medium"
                   : "text-terra-600 hover:bg-terra-50 hover:text-terra-800 font-normal",
               )}
             >

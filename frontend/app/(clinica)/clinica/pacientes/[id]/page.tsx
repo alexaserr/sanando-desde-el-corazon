@@ -16,6 +16,9 @@ import {
   PlusCircle,
   X,
   Zap,
+  AlertCircle,
+  AlertTriangle,
+  RefreshCw,
 } from "lucide-react";
 import { apiClient } from "@/lib/api/client";
 import { getClientTopics, completeClientTopic } from "@/lib/api/clinical";
@@ -67,7 +70,7 @@ function SkeletonBlock({ lines = 6 }: { lines?: number }) {
       {Array.from({ length: lines }).map((_, i) => (
         <div
           key={i}
-          className="h-4 bg-terra-200 rounded animate-pulse"
+          className="h-4 bg-terra-100 rounded animate-pulse"
           style={{ width: `${55 + (i % 4) * 12}%` }}
         />
       ))}
@@ -543,7 +546,22 @@ export default function PacienteDetailPage() {
         </span>
       </nav>
 
-      {error && <p className="text-sm text-destructive">{error}</p>}
+      {error && (
+        <div className="border-l-4 border-red-400 bg-red-50 rounded-r-xl p-4 flex items-start gap-3">
+          <AlertCircle className="h-5 w-5 text-red-500 shrink-0 mt-0.5" />
+          <div className="flex-1">
+            <p className="text-sm font-medium text-red-800">Error al cargar los datos</p>
+            <p className="text-sm text-red-600 mt-0.5">{error}</p>
+          </div>
+          <button
+            onClick={() => window.location.reload()}
+            className="flex items-center gap-1.5 text-sm font-medium text-red-700 hover:text-red-900 transition-colors shrink-0"
+          >
+            <RefreshCw className="h-4 w-4" />
+            Reintentar
+          </button>
+        </div>
+      )}
 
       {/* ─── Header del paciente ─── */}
       {!loading && client && (
@@ -584,6 +602,24 @@ export default function PacienteDetailPage() {
                 <Phone className="h-4 w-4" />
               </a>
             )}
+          </div>
+        </div>
+      )}
+
+      {/* ─── Alerta de consentimiento pendiente ─── */}
+      {!loading && client && !client.has_consent && (
+        <div className="bg-amber-50 border-l-4 border-amber-400 rounded-r-lg p-4">
+          <div className="flex items-center gap-2">
+            <AlertTriangle className="h-5 w-5 text-amber-600 shrink-0" />
+            <div>
+              <p className="text-sm font-medium text-amber-800">
+                Consentimiento pendiente
+              </p>
+              <p className="text-xs text-amber-600">
+                Este paciente no tiene consentimiento informado registrado.
+                Requerido por NOM-004-SSA3-2012 antes de la primera sesión.
+              </p>
+            </div>
           </div>
         </div>
       )}

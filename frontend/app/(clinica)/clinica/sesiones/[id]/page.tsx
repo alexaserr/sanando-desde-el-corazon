@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { useParams, useRouter } from 'next/navigation';
-import { ArrowLeft, Download, Zap, ChevronDown } from 'lucide-react';
+import { ArrowLeft, Download, Zap, ChevronDown, AlertCircle, RefreshCw } from 'lucide-react';
 import { apiClient } from '@/lib/api/client';
 import { getChakraColor } from '@/components/clinical/chakra-colors';
 import { formatDateTime, formatCurrency } from '@/lib/utils/formatters';
@@ -306,7 +306,20 @@ export default function SessionDetailPage() {
         >
           <ArrowLeft className="h-4 w-4" /> Volver
         </button>
-        <p className="text-sm text-red-600">{error}</p>
+        <div className="border-l-4 border-red-400 bg-red-50 rounded-r-xl p-4 flex items-start gap-3">
+          <AlertCircle className="h-5 w-5 text-red-500 shrink-0 mt-0.5" />
+          <div className="flex-1">
+            <p className="text-sm font-medium text-red-800">Error al cargar los datos</p>
+            <p className="text-sm text-red-600 mt-0.5">{error}</p>
+          </div>
+          <button
+            onClick={() => window.location.reload()}
+            className="flex items-center gap-1.5 text-sm font-medium text-red-700 hover:text-red-900 transition-colors shrink-0"
+          >
+            <RefreshCw className="h-4 w-4" />
+            Reintentar
+          </button>
+        </div>
       </div>
     );
   if (!session) return null;
@@ -349,7 +362,7 @@ export default function SessionDetailPage() {
       <div className="flex items-center justify-between">
         <button
           onClick={() => router.push(backHref)}
-          className="flex items-center gap-1 text-sm text-terra-700 hover:text-terra-900 transition-colors -ml-1"
+          className="flex items-center gap-1 h-9 text-sm text-terra-700 hover:text-terra-900 transition-colors -ml-1"
         >
           <ArrowLeft className="h-4 w-4" />
           Volver al paciente
@@ -357,7 +370,7 @@ export default function SessionDetailPage() {
         <button
           onClick={handleDownloadPdf}
           disabled={isDownloading}
-          className="flex items-center gap-2 rounded-md bg-terra-DEFAULT px-4 py-2 text-sm font-medium text-white hover:bg-terra-600 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+          className="flex items-center gap-2 rounded-md bg-[#C4704A] px-4 h-9 text-sm font-medium text-white hover:bg-[#B5613B] transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
         >
           <Download size={16} strokeWidth={1.5} />
           {isDownloading ? 'Descargando...' : 'Descargar PDF'}
