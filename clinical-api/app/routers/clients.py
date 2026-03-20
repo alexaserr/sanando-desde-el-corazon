@@ -367,7 +367,7 @@ async def update_client(
         record_id=client_id,
         action=action,
         changed_by=current_user.id,
-        new_data={k: str(v) if v is not None else None for k, v in update_data.items() if k not in pii_fields},
+        new_data={k: str(v) if v is not None else None for k, v in update_data.items()},
         ip_address=ip,
         user_agent=ua,
     )
