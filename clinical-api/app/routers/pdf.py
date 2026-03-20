@@ -18,10 +18,13 @@ from weasyprint import HTML
 
 from app.config import get_settings
 from app.db.models import (
+    ChakraPosition,
     Client,
     Session,
+    SessionAffectation,
     SessionChakraReading,
     SessionEnergyReading,
+    SessionThemeEntry,
     User,
     UserRole,
 )
@@ -198,23 +201,22 @@ def _section_cleaning(
     if limpiezas_req is not None:
         meta.append(f"<strong>Limpiezas requeridas:</strong> {limpiezas_req}")
     if mesa:
-        meta.append(f"<strong>Mesa utilizada:</strong> {_esc(mesa)}")
+        mesa_display = mesa.replace("|", ", ")
+        meta.append(f"<strong>Mesa utilizada:</strong> {_esc(mesa_display)}")
     if beneficios:
         meta.append(f"<strong>Beneficios:</strong> {_esc(beneficios)}")
     if meta:
         parts.append(f'<p class="meta">{" &nbsp;|&nbsp; ".join(meta)}</p>')
     if events:
         header = (
-            "<tr><th>Capa</th><th>Cantidad</th><th>Color aura</th>"
-            "<th>Limp. req.</th><th>Manifestación</th><th>Materiales</th>"
-            "<th>Origen</th><th>Persona</th><th>Área</th></tr>"
+            "<tr><th>#</th><th>Manifestación</th><th>Trabajo realizado</th>"
+            "<th>Materiales</th><th>Origen</th></tr>"
         )
         rows = ""
-        for ev in events:
+        for idx, ev in enumerate(events, 1):
             rows += "<tr>"
-            rows += f"<td>{ev['layer']}</td><td>{ev['qty']}</td><td>{ev['aura']}</td>"
-            rows += f"<td>{ev['req']}</td><td>{ev['manifest']}</td><td>{ev['materials']}</td>"
-            rows += f"<td>{ev['origin']}</td><td>{ev['person']}</td><td>{ev['area']}</td>"
+            rows += f"<td>{idx}</td><td>{ev['manifest']}</td><td>{ev['work_done']}</td>"
+            rows += f"<td>{ev['materials']}</td><td>{ev['origin']}</td>"
             rows += "</tr>"
         parts.append(f"<table>{header}{rows}</table>")
     return "".join(parts)
@@ -244,6 +246,60 @@ def _section_ancestors(ancestors: list[dict[str, str]], conciliation: dict[str, 
         if conciliation.get("relationship"):
             parts.append(f"<p><strong>Relación de sesión:</strong> {conciliation['relationship']}</p>")
     return "".join(parts)
+
+
+def _section_theme_entries(entries: list[dict[str, str]]) -> str:
+    if not entries:
+        return ""
+    header = (
+        "<tr><th>Tema</th><th>Tipo</th><th>Chakra</th><th>Órgano</th>"
+        "<th>E. Ini</th><th>E. Fin</th><th>Significado</th><th>Interpretación</th></tr>"
+    )
+    rows = ""
+    for e in entries:
+        rows += "<tr>"
+        rows += f"<td>{e['topic']}</td><td>{e['entry_type']}</td>"
+        rows += f"<td>{e['chakra']}</td><td>{e['organ']}</td>"
+        rows += f"<td>{e['initial']}</td><td>{e['final']}</td>"
+        rows += f"<td>{e['significado']}</td><td>{e['interpretacion']}</td>"
+        rows += "</tr>"
+    return f"<h2>Temas y Bloqueos</h2><table>{header}{rows}</table>"
+
+
+def _section_affectations(items: list[dict[str, str]]) -> str:
+    if not items:
+        return ""
+    header = (
+        "<tr><th>Chakra</th><th>Órgano/Glándula</th><th>Tipo</th>"
+        "<th>E. Ini</th><th>E. Fin</th>"
+        "<th>Tema adulto (edad)</th><th>Tema infancia (edad)</th></tr>"
+    )
+    rows = ""
+    for a in items:
+        rows += "<tr>"
+        rows += f"<td>{a['chakra']}</td><td>{a['organ']}</td><td>{a['type']}</td>"
+        rows += f"<td>{a['initial']}</td><td>{a['final']}</td>"
+        rows += f"<td>{a['adult']}</td><td>{a['child']}</td>"
+        rows += "</tr>"
+    return f"<h2>Afectaciones</h2><table>{header}{rows}</table>"
+
+
+def _section_organs(items: list[dict[str, str]]) -> str:
+    if not items:
+        return ""
+    header = (
+        "<tr><th>Tipo</th><th>Nombre</th><th>E. Ini</th><th>E. Fin</th>"
+        "<th>Tema adulto (edad)</th><th>Tema infancia (edad)</th><th>Emociones</th></tr>"
+    )
+    rows = ""
+    for o in items:
+        rows += "<tr>"
+        rows += f"<td>{o['source']}</td><td>{o['name']}</td>"
+        rows += f"<td>{o['initial']}</td><td>{o['final']}</td>"
+        rows += f"<td>{o['adult']}</td><td>{o['child']}</td>"
+        rows += f"<td>{o['emotions']}</td>"
+        rows += "</tr>"
+    return f"<h2>Órganos y Columna vertebral</h2><table>{header}{rows}</table>"
 
 
 def _section_close(
@@ -297,8 +353,9 @@ async def export_session_pdf(
                 selectinload(Session.topics),
                 selectinload(Session.lnt_entries),
                 selectinload(Session.cleaning_events),
-                selectinload(Session.affectations),
+                selectinload(Session.affectations).selectinload(SessionAffectation.chakra),
                 selectinload(Session.organs),
+                selectinload(Session.theme_entries).selectinload(SessionThemeEntry.client_topic),
                 selectinload(Session.ancestors),
                 selectinload(Session.ancestor_conciliation),
             )
@@ -397,6 +454,88 @@ async def export_session_pdf(
     ]
     sections.append(_section_topics(topics_data))
 
+    # Theme entries (Temas y Bloqueos — newer wizard sessions)
+    # Build chakra lookup for theme entries (no ORM relationship on the model)
+    chakra_lookup: dict[UUID, str] = {}
+    all_chakras = (await db.execute(select(ChakraPosition))).scalars().all()
+    for cp in all_chakras:
+        chakra_lookup[cp.id] = cp.name
+
+    _ENTRY_TYPE_LABELS = {
+        "bloqueo_1": "Bloqueo 1",
+        "bloqueo_2": "Bloqueo 2",
+        "bloqueo_3": "Bloqueo 3",
+        "resultante": "Resultante",
+        "secundario": "Secundario",
+    }
+    active_theme_entries = [te for te in session.theme_entries if te.deleted_at is None]
+    theme_entries_data = [
+        {
+            "topic": _esc(te.client_topic.name) if te.client_topic else "—",
+            "entry_type": _ENTRY_TYPE_LABELS.get(te.entry_type, te.entry_type),
+            "chakra": _esc(chakra_lookup.get(te.chakra_position_id, "")) if te.chakra_position_id else "—",
+            "organ": _esc(te.organ_name) if te.organ_name else "—",
+            "initial": _fmt_decimal(te.initial_energy),
+            "final": _fmt_decimal(te.final_energy),
+            "significado": _esc(te.significado) if te.significado else "",
+            "interpretacion": _esc(te.interpretacion_tema) if te.interpretacion_tema else "",
+        }
+        for te in active_theme_entries
+    ]
+    sections.append(_section_theme_entries(theme_entries_data))
+
+    # Affectations (migrated sessions)
+    active_affectations = [a for a in session.affectations if a.deleted_at is None]
+    affectations_data = [
+        {
+            "chakra": _esc(a.chakra.name) if a.chakra else "—",
+            "organ": _esc(a.organ_gland) if a.organ_gland else "—",
+            "type": _esc(a.affectation_type) if a.affectation_type else "—",
+            "initial": _fmt_decimal(a.initial_energy),
+            "final": _fmt_decimal(a.final_energy),
+            "adult": (
+                f"{_esc(a.adult_theme)} ({a.adult_age})" if a.adult_theme and a.adult_age is not None
+                else _esc(a.adult_theme) if a.adult_theme
+                else str(a.adult_age) if a.adult_age is not None
+                else "—"
+            ),
+            "child": (
+                f"{_esc(a.child_theme)} ({a.child_age})" if a.child_theme and a.child_age is not None
+                else _esc(a.child_theme) if a.child_theme
+                else str(a.child_age) if a.child_age is not None
+                else "—"
+            ),
+        }
+        for a in active_affectations
+    ]
+    sections.append(_section_affectations(affectations_data))
+
+    # Organs (migrated sessions)
+    active_organs = [o for o in session.organs if o.deleted_at is None]
+    organs_data = [
+        {
+            "source": _esc(o.source_type.value),
+            "name": _esc(o.name) if o.name else "—",
+            "initial": _fmt_decimal(o.initial_energy),
+            "final": _fmt_decimal(o.final_energy),
+            "adult": (
+                f"{_esc(o.adult_theme)} ({o.adult_age})" if o.adult_theme and o.adult_age is not None
+                else _esc(o.adult_theme) if o.adult_theme
+                else str(o.adult_age) if o.adult_age is not None
+                else "—"
+            ),
+            "child": (
+                f"{_esc(o.child_theme)} ({o.child_age})" if o.child_theme and o.child_age is not None
+                else _esc(o.child_theme) if o.child_theme
+                else str(o.child_age) if o.child_age is not None
+                else "—"
+            ),
+            "emotions": _esc(o.emotions) if o.emotions else "—",
+        }
+        for o in active_organs
+    ]
+    sections.append(_section_organs(organs_data))
+
     # LNT
     active_lnt = [l for l in session.lnt_entries if l.deleted_at is None]
     lnt_peticiones = active_lnt[0].peticiones if active_lnt else None
@@ -417,15 +556,10 @@ async def export_session_pdf(
     active_events = [e for e in session.cleaning_events if e.deleted_at is None]
     events_data = [
         {
-            "layer": _esc(ev.layer),
-            "qty": str(ev.quantity) if ev.quantity is not None else "—",
-            "aura": _esc(ev.aura_color),
-            "req": str(ev.cleanings_required) if ev.cleanings_required is not None else "—",
             "manifest": _esc(ev.manifestation),
-            "materials": _esc(ev.materials_used),
+            "work_done": _esc(ev.work_done),
+            "materials": _esc((ev.materials_used or "").replace("|", ", ")),
             "origin": _esc(ev.origin),
-            "person": _esc(ev.person),
-            "area": _esc(ev.life_area),
         }
         for ev in active_events
     ]
