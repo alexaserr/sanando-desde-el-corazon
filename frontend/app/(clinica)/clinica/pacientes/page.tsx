@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useCallback, useRef } from "react";
 import { useRouter } from "next/navigation";
-import { Search, ChevronLeft, ChevronRight } from "lucide-react";
+import { Search, ChevronLeft, ChevronRight, UserSearch, UserPlus, AlertCircle, RefreshCw } from "lucide-react";
 import { apiClient } from "@/lib/api/client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -15,7 +15,7 @@ function SkeletonRow() {
     <tr className="border-b">
       {[1, 2, 3, 4].map((i) => (
         <td key={i} className="px-4 py-3">
-          <div className="h-4 bg-terra-200 rounded animate-pulse" />
+          <div className="h-4 bg-terra-100 rounded animate-pulse" />
         </td>
       ))}
     </tr>
@@ -120,7 +120,22 @@ export default function PacientesPage() {
         </Button>
       </form>
 
-      {error && <p className="text-sm text-destructive">{error}</p>}
+      {error && (
+        <div className="border-l-4 border-red-400 bg-red-50 rounded-r-xl p-4 flex items-start gap-3">
+          <AlertCircle className="h-5 w-5 text-red-500 shrink-0 mt-0.5" />
+          <div className="flex-1">
+            <p className="text-sm font-medium text-red-800">Error al cargar los datos</p>
+            <p className="text-sm text-red-600 mt-0.5">{error}</p>
+          </div>
+          <button
+            onClick={() => fetchClients(query, page)}
+            className="flex items-center gap-1.5 text-sm font-medium text-red-700 hover:text-red-900 transition-colors shrink-0"
+          >
+            <RefreshCw className="h-4 w-4" />
+            Reintentar
+          </button>
+        </div>
+      )}
 
       {/* Tabla */}
       <div className="rounded-xl border border-terra-100 overflow-hidden">
@@ -138,10 +153,31 @@ export default function PacientesPage() {
               Array.from({ length: 8 }).map((_, i) => <SkeletonRow key={i} />)
             ) : clients.length === 0 ? (
               <tr>
-                <td colSpan={4} className="px-5 py-12 text-center text-muted-foreground">
-                  {query
-                    ? `No se encontraron resultados para "${query}"`
-                    : "No hay clientes registrados aún."}
+                <td colSpan={4} className="px-5 py-16 text-center">
+                  <div className="flex flex-col items-center gap-3">
+                    {query ? (
+                      <>
+                        <div className="rounded-full bg-terra-50 p-3">
+                          <UserSearch className="h-6 w-6 text-terra-400" />
+                        </div>
+                        <p className="text-sm font-medium text-gray-700">No se encontraron pacientes</p>
+                        <p className="text-sm text-muted-foreground">Intenta con otro término de búsqueda</p>
+                      </>
+                    ) : (
+                      <>
+                        <div className="rounded-full bg-terra-50 p-3">
+                          <UserPlus className="h-6 w-6 text-terra-400" />
+                        </div>
+                        <p className="text-sm font-medium text-gray-700">No hay pacientes registrados</p>
+                        <a
+                          href="/clinica/pacientes/nuevo"
+                          className="text-sm text-terra-700 hover:text-terra-900 font-medium underline underline-offset-2 transition-colors"
+                        >
+                          Registrar nuevo paciente
+                        </a>
+                      </>
+                    )}
+                  </div>
                 </td>
               </tr>
             ) : (

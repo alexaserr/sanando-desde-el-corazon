@@ -86,9 +86,22 @@ export interface Client {
   medications: ClientMedication[];
   sleep: ClientSleep | null;
   family_members: ClientCondition[];
+  has_consent: boolean | null;
   created_at: string;
   updated_at: string;
   deleted_at: string | null;
+}
+
+/** Item de sesión en listados paginados (GET /clinical/sessions) */
+export interface SessionListItem {
+  id: string;
+  client_id: string | null;
+  client_name: string | null;
+  therapy_type_name: string | null;
+  measured_at: string;
+  general_energy_level: number | null;
+  cost: number | null;
+  created_at: string;
 }
 
 export interface Session {

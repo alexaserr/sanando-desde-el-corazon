@@ -3,19 +3,26 @@
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
-import { Users, CalendarDays, Activity, Zap, ChevronRight } from "lucide-react";
-import { apiClient, ApiError } from "@/lib/api/client";
+import {
+  Users,
+  CalendarDays,
+  Activity,
+  PlusCircle,
+  ChevronRight,
+} from "lucide-react";
+import { apiClient } from "@/lib/api/client";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { formatDate } from "@/lib/utils/formatters";
-import type { Client, PaginatedResponse } from "@/types/api";
+import { formatDate, formatCurrency } from "@/lib/utils/formatters";
+import type { Client, PaginatedResponse, SessionListItem } from "@/types/api";
 
-interface DashboardStats {
-  total_clients: number;
-  sessions_this_month: number | null;
-  sessions_this_week: number | null;
-  total_sessions: number;
-  average_energy: number | null;
+// ─── Helpers ────────────────────────────────────────────────────────────────
+
+function firstDayOfMonth(): string {
+  const now = new Date();
+  return `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}-01`;
 }
+
+// ─── Skeletons & Cards ──────────────────────────────────────────────────────
 
 function StatCardSkeleton() {
   return (
@@ -42,7 +49,15 @@ interface StatCardProps {
   href?: string;
 }
 
-function StatCard({ title, value, description, icon: Icon, iconBg, iconColor, href }: StatCardProps) {
+function StatCard({
+  title,
+  value,
+  description,
+  icon: Icon,
+  iconBg,
+  iconColor,
+  href,
+}: StatCardProps) {
   const card = (
     <Card
       className={`bg-white border border-terra-100 rounded-card shadow-card transition-shadow ${
@@ -53,7 +68,9 @@ function StatCard({ title, value, description, icon: Icon, iconBg, iconColor, hr
         <CardTitle className="text-sm font-medium text-muted-foreground">
           {title}
         </CardTitle>
-        <div className={`h-12 w-12 rounded-full flex items-center justify-center flex-shrink-0 ${iconBg}`}>
+        <div
+          className={`h-12 w-12 rounded-full flex items-center justify-center flex-shrink-0 ${iconBg}`}
+        >
           <Icon className={`h-5 w-5 ${iconColor}`} />
         </div>
       </CardHeader>
@@ -65,55 +82,91 @@ function StatCard({ title, value, description, icon: Icon, iconBg, iconColor, hr
   );
 
   if (href) {
-    return <Link href={href} className="block">{card}</Link>;
+    return (
+      <Link href={href} className="block">
+        {card}
+      </Link>
+    );
   }
   return card;
 }
 
+// ─── Page ───────────────────────────────────────────────────────────────────
+
 export default function ClinicaDashboardPage() {
   const router = useRouter();
-  const [stats, setStats] = useState<DashboardStats | null>(null);
+
+  const [totalClients, setTotalClients] = useState<number | null>(null);
+  const [totalSessions, setTotalSessions] = useState<number | null>(null);
+  const [sessionsThisMonth, setSessionsThisMonth] = useState<number | null>(null);
+  const [recentSessions, setRecentSessions] = useState<SessionListItem[]>([]);
   const [recentClients, setRecentClients] = useState<Client[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    const fetchData = async () => {
+    const load = async () => {
       setLoading(true);
+      setError(null);
 
-      try {
-        const res = await apiClient.get<{ data: DashboardStats }>(
-          "/api/v1/clinical/dashboard/stats",
-        );
-        setStats(res.data);
-      } catch (err) {
-        const message =
-          err instanceof ApiError
-            ? `Error ${err.status}: no se pudieron cargar las estadísticas`
-            : "No se pudieron cargar las estadísticas del dashboard";
-        setError(message);
+      const results = await Promise.allSettled([
+        // Total clients
+        apiClient.get<PaginatedResponse<unknown>>(
+          "/api/v1/clinical/clients?per_page=1&page=1",
+        ),
+        // Recent sessions (total + últimas 5)
+        apiClient.get<{ data: SessionListItem[]; total: number }>(
+          "/api/v1/clinical/sessions?per_page=5&page=1&sort_by=measured_at&sort_order=desc",
+        ),
+        // Sessions this month
+        apiClient.get<{ data: SessionListItem[]; total: number }>(
+          `/api/v1/clinical/sessions?per_page=1&page=1&date_from=${firstDayOfMonth()}`,
+        ),
+        // Recent clients
+        apiClient.get<PaginatedResponse<Client>>(
+          "/api/v1/clinical/clients?page=1&per_page=5&sort_by=created_at&sort_order=desc",
+        ),
+      ]);
+
+      let anyError = false;
+
+      if (results[0].status === "fulfilled") {
+        setTotalClients(results[0].value.total);
+      } else {
+        anyError = true;
       }
 
-      // Pacientes recientes — independiente de las stats
-      try {
-        const clientsRes = await apiClient.get<PaginatedResponse<Client>>(
-          "/api/v1/clinical/clients?page=1&size=5&sort_by=created_at&sort_order=desc",
-        );
-        setRecentClients(clientsRes.items);
-      } catch {
-        setRecentClients([]);
+      if (results[1].status === "fulfilled") {
+        setTotalSessions(results[1].value.total);
+        setRecentSessions(results[1].value.data);
+      } else {
+        anyError = true;
+      }
+
+      if (results[2].status === "fulfilled") {
+        setSessionsThisMonth(results[2].value.total);
+      } else {
+        anyError = true;
+      }
+
+      if (results[3].status === "fulfilled") {
+        setRecentClients(results[3].value.items);
+      }
+
+      if (anyError) {
+        setError("No se pudieron cargar algunas estadísticas.");
       }
 
       setLoading(false);
     };
 
-    fetchData();
+    load();
   }, []);
 
   const statCards: StatCardProps[] = [
     {
       title: "Total Pacientes",
-      value: stats?.total_clients ?? "—",
+      value: totalClients ?? "—",
       description: "Expedientes registrados",
       icon: Users,
       iconBg: "bg-terra-100",
@@ -122,7 +175,7 @@ export default function ClinicaDashboardPage() {
     },
     {
       title: "Sesiones Este Mes",
-      value: stats?.sessions_this_month ?? "—",
+      value: sessionsThisMonth ?? "—",
       description: "Mes actual",
       icon: CalendarDays,
       iconBg: "bg-blue-50/80",
@@ -131,46 +184,125 @@ export default function ClinicaDashboardPage() {
     },
     {
       title: "Total Sesiones",
-      value: stats?.total_sessions ?? "—",
+      value: totalSessions ?? "—",
       description: "Histórico",
       icon: Activity,
       iconBg: "bg-emerald-50/80",
       iconColor: "text-emerald-500",
       href: "/clinica/sesiones",
     },
-    {
-      title: "Energía Promedio",
-      value: stats?.average_energy != null ? stats.average_energy.toFixed(1) : "—",
-      description: "Últimas sesiones",
-      icon: Zap,
-      iconBg: "bg-amber-50/80",
-      iconColor: "text-amber-500",
-    },
   ];
 
   return (
     <div className="space-y-8">
-      <div>
-        <h1 className="font-display text-2xl font-bold text-terra-900">
-          Dashboard
-        </h1>
-        <p className="text-muted-foreground">
-          Bienvenido a Sanando desde el Corazón
-        </p>
+      <div className="flex flex-wrap items-center justify-between gap-4">
+        <div>
+          <h1 className="font-display text-2xl font-bold text-terra-900">
+            Dashboard
+          </h1>
+          <p className="text-muted-foreground">
+            Bienvenido a Sanando desde el Corazón
+          </p>
+        </div>
+        <div className="flex items-center gap-2">
+          <button
+            onClick={() => router.push("/clinica/sesiones/nueva")}
+            className="flex items-center gap-2 bg-terra-700 hover:bg-terra-500 text-white h-10 px-4 rounded text-sm font-medium transition-colors"
+          >
+            <PlusCircle className="h-4 w-4" />
+            Nueva sesión
+          </button>
+          <button
+            onClick={() => router.push("/clinica/pacientes/nuevo")}
+            className="flex items-center gap-2 border border-terra-200 text-terra-700 hover:bg-terra-50 h-10 px-4 rounded text-sm font-medium transition-colors"
+          >
+            <PlusCircle className="h-4 w-4" />
+            Nuevo paciente
+          </button>
+        </div>
       </div>
 
-      {/* Error de estadísticas */}
+      {/* Error parcial */}
       {error && (
         <div className="rounded-md border border-destructive/40 bg-destructive/10 px-4 py-3 text-sm text-destructive">
           {error}
         </div>
       )}
 
-      {/* Stat cards */}
-      <div className="grid gap-5 grid-cols-1 sm:grid-cols-2 lg:grid-cols-4">
+      {/* KPI Cards */}
+      <div className="grid gap-5 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3">
         {loading
-          ? Array.from({ length: 4 }).map((_, i) => <StatCardSkeleton key={i} />)
+          ? Array.from({ length: 3 }).map((_, i) => (
+              <StatCardSkeleton key={i} />
+            ))
           : statCards.map((card) => <StatCard key={card.title} {...card} />)}
+      </div>
+
+      {/* Sesiones recientes */}
+      <div className="space-y-3">
+        <div className="flex items-center justify-between">
+          <h2 className="text-base font-semibold text-terra-900">
+            Sesiones Recientes
+          </h2>
+          <button
+            onClick={() => router.push("/clinica/sesiones")}
+            className="text-sm text-terra-700 hover:text-terra-900 flex items-center gap-1 transition-colors"
+          >
+            Ver todas
+            <ChevronRight className="h-3 w-3" />
+          </button>
+        </div>
+
+        <div className="rounded-xl border border-terra-100 overflow-hidden bg-white">
+          {loading ? (
+            <ul className="divide-y">
+              {Array.from({ length: 5 }).map((_, i) => (
+                <li
+                  key={i}
+                  className="flex items-center justify-between px-4 py-3 gap-4"
+                >
+                  <div className="space-y-1.5">
+                    <div className="h-4 w-40 bg-terra-200 rounded animate-pulse" />
+                    <div className="h-3 w-24 bg-terra-200 rounded animate-pulse" />
+                  </div>
+                  <div className="h-3 w-20 bg-terra-200 rounded animate-pulse" />
+                </li>
+              ))}
+            </ul>
+          ) : recentSessions.length === 0 ? (
+            <p className="px-4 py-8 text-center text-sm text-muted-foreground">
+              No hay sesiones registradas aún.
+            </p>
+          ) : (
+            <ul className="divide-y">
+              {recentSessions.map((s) => (
+                <li
+                  key={s.id}
+                  onClick={() => router.push(`/clinica/sesiones/${s.id}`)}
+                  className="flex items-center justify-between px-4 py-3 cursor-pointer hover:bg-terra-50 transition-colors"
+                >
+                  <div>
+                    <p className="text-sm font-medium text-terra-900">
+                      {s.client_name ?? "Sin paciente"}
+                    </p>
+                    <p className="text-xs text-muted-foreground">
+                      {s.therapy_type_name ?? "Sesión"} ·{" "}
+                      {formatDate(s.measured_at)}
+                    </p>
+                  </div>
+                  <div className="flex items-center gap-3 text-xs text-muted-foreground flex-shrink-0">
+                    {s.cost != null && (
+                      <span className="text-terra-700 font-medium">
+                        {formatCurrency(s.cost)}
+                      </span>
+                    )}
+                    <ChevronRight className="h-3 w-3" />
+                  </div>
+                </li>
+              ))}
+            </ul>
+          )}
+        </div>
       </div>
 
       {/* Pacientes recientes */}
@@ -192,7 +324,10 @@ export default function ClinicaDashboardPage() {
           {loading ? (
             <ul className="divide-y">
               {Array.from({ length: 5 }).map((_, i) => (
-                <li key={i} className="flex items-center justify-between px-4 py-3 gap-4">
+                <li
+                  key={i}
+                  className="flex items-center justify-between px-4 py-3 gap-4"
+                >
                   <div className="space-y-1.5">
                     <div className="h-4 w-40 bg-terra-200 rounded animate-pulse" />
                     <div className="h-3 w-24 bg-terra-200 rounded animate-pulse" />
@@ -210,7 +345,9 @@ export default function ClinicaDashboardPage() {
               {recentClients.map((client) => (
                 <li
                   key={client.id}
-                  onClick={() => router.push(`/clinica/pacientes/${client.id}`)}
+                  onClick={() =>
+                    router.push(`/clinica/pacientes/${client.id}`)
+                  }
                   className="flex items-center justify-between px-4 py-3 cursor-pointer hover:bg-terra-50 transition-colors"
                 >
                   <div>

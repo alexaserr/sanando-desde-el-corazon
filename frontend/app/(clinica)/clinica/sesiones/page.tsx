@@ -2,7 +2,7 @@
 
 import { useRouter } from "next/navigation";
 import Link from "next/link";
-import { Users, PlusCircle } from "lucide-react";
+import { Users, PlusCircle, CalendarPlus } from "lucide-react";
 
 export default function SessionsPage() {
   const router = useRouter();
@@ -28,25 +28,33 @@ export default function SessionsPage() {
         </button>
       </div>
 
-      {/* Estado vacío — no hay endpoint global de sesiones */}
+      {/* Estado vacío */}
       <div className="flex flex-col items-center justify-center gap-4 py-16 text-center">
         <div className="rounded-full bg-terra-50 p-4">
-          <Users className="h-8 w-8 text-terra-400" />
+          <CalendarPlus className="h-8 w-8 text-terra-400" />
         </div>
         <div>
           <h2 className="text-lg font-medium text-gray-900 mb-1">
-            Consulta las sesiones desde la ficha de cada clienta
+            No hay sesiones registradas
           </h2>
           <p className="text-sm text-gray-500 max-w-sm">
-            Selecciona una clienta para ver su historial de sesiones completo.
+            Consulta las sesiones desde la ficha de cada clienta o crea una nueva sesión.
           </p>
         </div>
-        <Link
-          href="/clinica/pacientes"
-          className="text-sm text-terra-700 hover:text-terra-900 font-medium underline underline-offset-2 transition-colors"
-        >
-          Ir a Clientes
-        </Link>
+        <div className="flex items-center gap-4">
+          <Link
+            href="/clinica/sesiones/nueva"
+            className="text-sm text-terra-700 hover:text-terra-900 font-medium underline underline-offset-2 transition-colors"
+          >
+            Nueva sesión
+          </Link>
+          <Link
+            href="/clinica/pacientes"
+            className="text-sm text-terra-700 hover:text-terra-900 font-medium underline underline-offset-2 transition-colors"
+          >
+            Ir a Clientes
+          </Link>
+        </div>
       </div>
     </div>
   );
