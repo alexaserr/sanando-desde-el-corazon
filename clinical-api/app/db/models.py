@@ -327,6 +327,11 @@ class Session(Base, UUIDPrimaryKeyMixin, TimestampMixin, SoftDeleteMixin):
     mesa_utilizada: Mapped[str | None] = mapped_column(Text, nullable=True)
     beneficios: Mapped[str | None] = mapped_column(Text, nullable=True)
 
+    # Campos de costo de limpieza — migración 0010
+    porcentaje_pago: Mapped[Decimal | None] = mapped_column(Numeric(5, 2), nullable=True)
+    incluye_iva: Mapped[bool] = mapped_column(Boolean, nullable=False, default=False)
+    costo_calculado: Mapped[Decimal | None] = mapped_column(Numeric(10, 2), nullable=True)
+
     # Notas clínicas cifradas con pgcrypto
     notes: Mapped[bytes | None] = mapped_column(LargeBinary, nullable=True)          # PII
 

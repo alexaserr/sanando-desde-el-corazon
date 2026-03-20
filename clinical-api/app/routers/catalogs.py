@@ -4,14 +4,14 @@ Router de catálogos estáticos: terapias, chakras, dimensiones energéticas.
 Los catálogos se cachean en memoria (módulo-level) al primer acceso,
 ya que son datos de referencia que no cambian en runtime.
 """
-from sqlalchemy import select
+from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import AsyncSession
-from fastapi import APIRouter, Depends
+from fastapi import APIRouter, Depends, HTTPException, status
 
 from app.db.models import ChakraPosition, EnergyDimension, TherapyType, User, UserRole
 from app.db.session import get_db
 from app.dependencies import require_role
-from app.schemas.catalogs import ChakraResponse, DimensionResponse, TherapyTypeResponse
+from app.schemas.catalogs import ChakraResponse, DimensionCreate, DimensionResponse, TherapyTypeResponse
 
 router = APIRouter(prefix="/api/v1/catalogs", tags=["catalogs"])
 
@@ -76,3 +76,46 @@ async def list_energy_dimensions(
         ).scalars().all()
         _cache["energy_dimensions"] = [DimensionResponse.model_validate(r) for r in rows]
     return _cache["energy_dimensions"]  # type: ignore[return-value]
+
+
+@router.post(
+    "/energy-dimensions",
+    response_model=DimensionResponse,
+    status_code=status.HTTP_201_CREATED,
+    summary="Crear nueva dimensión energética (solo admin)",
+)
+async def create_energy_dimension(
+    body: DimensionCreate,
+    db: AsyncSession = Depends(get_db),
+    _: User = Depends(require_role(UserRole.admin)),
+) -> DimensionResponse:
+    # Verificar nombre único
+    existing = (
+        await db.execute(
+            select(EnergyDimension).where(EnergyDimension.name == body.name)
+        )
+    ).scalar_one_or_none()
+    if existing:
+        raise HTTPException(
+            status_code=status.HTTP_409_CONFLICT,
+            detail=f"Ya existe una dimensión con nombre '{body.name}'",
+        )
+
+    # display_order = max actual + 1
+    max_order = (
+        await db.execute(select(func.coalesce(func.max(EnergyDimension.display_order), 0)))
+    ).scalar_one()
+
+    dimension = EnergyDimension(
+        name=body.name,
+        display_order=max_order + 1,
+        is_active=True,
+    )
+    db.add(dimension)
+    await db.commit()
+    await db.refresh(dimension)
+
+    # Invalidar cache
+    _cache.pop("energy_dimensions", None)
+
+    return DimensionResponse.model_validate(dimension)
