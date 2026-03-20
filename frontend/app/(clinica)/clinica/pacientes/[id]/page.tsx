@@ -454,6 +454,20 @@ export default function PacienteDetailPage() {
   const [topicsLoading, setTopicsLoading] = useState(false);
   const [topicsEndpointMissing, setTopicsEndpointMissing] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [isMarkingConsent, setIsMarkingConsent] = useState(false);
+
+  async function handleMarkConsent() {
+    if (!client || isMarkingConsent) return;
+    setIsMarkingConsent(true);
+    try {
+      await apiClient.post(`/api/v1/clinical/clients/${client.id}/documents`, {});
+      setClient((prev) => prev ? { ...prev, has_consent: true } : prev);
+    } catch (err) {
+      console.error('Failed to mark consent:', err);
+    } finally {
+      setIsMarkingConsent(false);
+    }
+  }
 
   useEffect(() => {
     const fetchClient = async () => {
@@ -609,17 +623,25 @@ export default function PacienteDetailPage() {
       {/* ─── Alerta de consentimiento pendiente ─── */}
       {!loading && client && !client.has_consent && (
         <div className="bg-amber-50 border-l-4 border-amber-400 rounded-r-lg p-4">
-          <div className="flex items-center gap-2">
-            <AlertTriangle className="h-5 w-5 text-amber-600 shrink-0" />
-            <div>
-              <p className="text-sm font-medium text-amber-800">
-                Consentimiento pendiente
-              </p>
-              <p className="text-xs text-amber-600">
-                Este paciente no tiene consentimiento informado registrado.
-                Requerido por NOM-004-SSA3-2012 antes de la primera sesión.
-              </p>
+          <div className="flex items-center justify-between gap-4">
+            <div className="flex items-center gap-2">
+              <AlertTriangle className="h-5 w-5 text-amber-600 shrink-0" />
+              <div>
+                <p className="text-sm font-medium text-amber-800">
+                  Consentimiento pendiente
+                </p>
+                <p className="text-xs text-amber-600">
+                  Requerido por NOM-004-SSA3-2012 antes de la primera sesión.
+                </p>
+              </div>
             </div>
+            <button
+              onClick={handleMarkConsent}
+              disabled={isMarkingConsent}
+              className="shrink-0 flex items-center gap-1.5 bg-amber-600 hover:bg-amber-700 text-white text-xs font-medium px-3 py-1.5 rounded-md transition-colors disabled:opacity-50"
+            >
+              {isMarkingConsent ? 'Guardando...' : 'Marcar como firmado'}
+            </button>
           </div>
         </div>
       )}

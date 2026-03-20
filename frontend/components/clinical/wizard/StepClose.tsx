@@ -260,7 +260,7 @@ export function StepClose({
       <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
         {/* Costo */}
         <div className="flex flex-col gap-1">
-          <label htmlFor={costId} className="text-sm font-medium text-gray-700">
+          <label htmlFor={costId} className="text-xs uppercase tracking-wide font-normal text-[#4A3628]">
             Costo de la sesión (MXN)
           </label>
           <div className="relative">
@@ -276,7 +276,7 @@ export function StepClose({
               disabled={disabled || isClosing || isCleaningSession}
               onChange={(e) => onChange('cost', e.target.value)}
               placeholder="0.00"
-              className="w-full rounded-md border border-gray-300 pl-7 pr-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#2C2220] disabled:opacity-50 disabled:cursor-not-allowed"
+              className="w-full rounded-none border-0 border-b border-[#D4A592] bg-[#FAF7F5] pl-7 pr-3 py-2 text-sm focus:outline-none focus:ring-0 focus:border-b-2 focus:border-[#C4704A] disabled:opacity-50 disabled:cursor-not-allowed"
             />
           </div>
           {!isCleaningSession && suggestedPrice !== undefined && (
@@ -293,7 +293,7 @@ export function StepClose({
 
         {/* Notas de pago */}
         <div className="flex flex-col gap-1">
-          <label htmlFor={paymentNotesId} className="text-sm font-medium text-gray-700">
+          <label htmlFor={paymentNotesId} className="text-xs uppercase tracking-wide font-normal text-[#4A3628]">
             Notas de pago
           </label>
           <input
@@ -303,7 +303,7 @@ export function StepClose({
             disabled={disabled || isClosing}
             onChange={(e) => onChange('payment_notes', e.target.value)}
             placeholder="Método de pago, referencia…"
-            className="rounded-md border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#2C2220] disabled:opacity-50 disabled:cursor-not-allowed"
+            className="rounded-none border-0 border-b border-[#D4A592] bg-[#FAF7F5] px-3 py-2 text-sm focus:outline-none focus:ring-0 focus:border-b-2 focus:border-[#C4704A] disabled:opacity-50 disabled:cursor-not-allowed"
           />
         </div>
       </div>

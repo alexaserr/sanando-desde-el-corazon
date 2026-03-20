@@ -58,7 +58,7 @@ export default function EmotionSelector({
         type="button"
         disabled={disabled}
         onClick={() => setOpen((prev) => !prev)}
-        className="flex w-full items-center justify-between rounded-lg border border-[#EDE5E0] bg-white px-3 py-2 text-sm text-[#2C2220] shadow-sm transition-colors hover:border-[#C4704A] focus:outline-none focus:ring-2 focus:ring-[#C4704A]/30 disabled:cursor-not-allowed disabled:opacity-50"
+        className="flex w-full items-center justify-between rounded-none border-0 border-b border-[#D4A592] bg-[#FAF7F5] px-3 py-2 text-sm text-[#2C2220] transition-colors hover:border-[#C4704A] focus:outline-none focus:ring-0 focus:border-b-2 focus:border-[#C4704A] disabled:cursor-not-allowed disabled:opacity-50"
         style={{ fontFamily: 'Lato, sans-serif', fontWeight: 400 }}
       >
         <span className={selected.length === 0 ? 'text-[#A9967E]' : 'text-[#2C2220]'}>

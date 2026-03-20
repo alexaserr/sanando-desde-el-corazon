@@ -1,8 +1,11 @@
 'use client';
 
 import { useMemo, useCallback, useState } from 'react';
+import { Plus } from 'lucide-react';
 import { EnergySlider } from '../EnergySlider';
 import { StepAncestors } from './StepAncestors';
+import { createEnergyDimension } from '@/lib/api/clinical';
+import { useAuthStore } from '@/store/auth';
 import type { EnergyDimension, EnergyReading, AncestorEntry, AncestorConciliation } from './types';
 
 export interface StepEnergyInitialProps {
@@ -17,6 +20,8 @@ export interface StepEnergyInitialProps {
   onAncestorsChange: (ancestors: AncestorEntry[]) => void;
   conciliation: AncestorConciliation;
   onConciliationChange: (conciliation: AncestorConciliation) => void;
+  /** Callback cuando se crea una nueva dimensión desde el formulario inline. */
+  onDimensionCreated?: (dim: { id: string; name: string }) => void;
 }
 
 export function StepEnergyInitial({
@@ -28,8 +33,18 @@ export function StepEnergyInitial({
   onAncestorsChange,
   conciliation,
   onConciliationChange,
+  onDimensionCreated,
 }: StepEnergyInitialProps) {
   const [isAncestorsOpen, setIsAncestorsOpen] = useState(false);
+
+  // Nueva dimensión — inline form state
+  const [showNewDimForm, setShowNewDimForm] = useState(false);
+  const [newDimName, setNewDimName] = useState('');
+  const [newDimError, setNewDimError] = useState<string | null>(null);
+  const [isCreating, setIsCreating] = useState(false);
+
+  const user = useAuthStore((s) => s.user);
+  const isAdmin = user?.role === 'admin';
 
   // Índice por dimension_id para O(1) lookup al renderizar
   const readingMap = useMemo(
@@ -74,6 +89,25 @@ export function StepEnergyInitial({
   const mfBalanced = sumMF === 100;
 
   const ancestorBadge = ancestors.length > 0 ? ancestors.length : null;
+
+  // Handler para crear nueva dimensión
+  const handleCreateDimension = useCallback(async () => {
+    const trimmed = newDimName.trim();
+    if (!trimmed) return;
+
+    setIsCreating(true);
+    setNewDimError(null);
+    try {
+      const created = await createEnergyDimension(trimmed);
+      onDimensionCreated?.(created);
+      setNewDimName('');
+      setShowNewDimForm(false);
+    } catch (err) {
+      setNewDimError(err instanceof Error ? err.message : 'Error al crear la dimensión.');
+    } finally {
+      setIsCreating(false);
+    }
+  }, [newDimName, onDimensionCreated]);
 
   return (
     <section aria-labelledby="step-energy-initial-heading" className="space-y-5">
@@ -146,6 +180,58 @@ export function StepEnergyInitial({
             </p>
           )}
         </>
+      )}
+
+      {/* Botón + formulario inline para nueva dimensión (solo admin) */}
+      {isAdmin && !disabled && (
+        <div className="pt-1">
+          {!showNewDimForm ? (
+            <button
+              type="button"
+              onClick={() => setShowNewDimForm(true)}
+              className="text-xs text-[#C4704A] flex items-center gap-1 hover:text-[#A35A38] transition-colors"
+            >
+              <Plus className="w-3.5 h-3.5" />
+              Nueva dimensión
+            </button>
+          ) : (
+            <div className="bg-[#F2E8E4] rounded-lg p-3 flex gap-2 items-end animate-in fade-in slide-in-from-top-1 duration-200">
+              <div className="flex-1">
+                <label className="block text-[11px] uppercase tracking-wide text-[#4A3628] mb-1">
+                  Nombre de la nueva dimensión
+                </label>
+                <input
+                  type="text"
+                  value={newDimName}
+                  onChange={(e) => setNewDimName(e.target.value)}
+                  onKeyDown={(e) => { if (e.key === 'Enter') handleCreateDimension(); }}
+                  placeholder="Ej. Energía Vital"
+                  disabled={isCreating}
+                  className="w-full bg-[#FAF7F5] border-b border-[#D4A592] rounded-none px-2 py-1.5 text-sm text-[#2C2220] placeholder:text-gray-400 focus:outline-none focus:border-[#C4704A] disabled:opacity-50 transition-colors"
+                />
+                {newDimError && (
+                  <p className="text-xs text-red-600 mt-1">{newDimError}</p>
+                )}
+              </div>
+              <button
+                type="button"
+                onClick={handleCreateDimension}
+                disabled={isCreating || !newDimName.trim()}
+                className="bg-[#C4704A] text-white rounded-md px-3 py-1.5 text-[13px] uppercase font-medium hover:bg-[#A35A38] disabled:opacity-50 transition-colors shrink-0"
+              >
+                {isCreating ? 'Creando…' : 'Crear'}
+              </button>
+              <button
+                type="button"
+                onClick={() => { setShowNewDimForm(false); setNewDimName(''); setNewDimError(null); }}
+                disabled={isCreating}
+                className="text-[#4A3628] text-xs hover:underline shrink-0 pb-0.5"
+              >
+                Cancelar
+              </button>
+            </div>
+          )}
+        </div>
       )}
 
       {/* Modal de Ancestros */}

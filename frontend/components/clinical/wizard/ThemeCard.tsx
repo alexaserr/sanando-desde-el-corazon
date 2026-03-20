@@ -71,7 +71,7 @@ export function ThemeCard({ theme, index, chakras, onChange, onDelete, disabled 
     <article
       ref={articleRef}
       aria-labelledby={headingId}
-      className="bg-white rounded-xl border border-gray-200 shadow-sm overflow-hidden"
+      className="bg-white rounded-lg shadow-[0_2px_8px_rgba(44,34,32,0.06)] overflow-hidden"
     >
       {/* ── Cabecera colapsable ─────────────────────────────────────────────── */}
       <div className="flex items-center gap-2 px-4 py-3 bg-terra-50 border-b border-gray-100">
@@ -238,7 +238,7 @@ export function ThemeCard({ theme, index, chakras, onChange, onDelete, disabled 
             />
             <label
               htmlFor={secondaryTogId}
-              className="text-sm font-medium text-gray-700 cursor-pointer select-none"
+              className="text-xs uppercase tracking-wide font-normal text-[#4A3628] cursor-pointer select-none"
             >
               Tema secundario
             </label>
@@ -250,7 +250,7 @@ export function ThemeCard({ theme, index, chakras, onChange, onDelete, disabled 
               {/* Nombre del tema secundario */}
               <div className="flex flex-col gap-1">
                 <label
-                  className="text-xs font-bold text-terra-700 uppercase tracking-wide select-none"
+                  className="text-xs font-normal text-[#4A3628] uppercase tracking-wide select-none"
                   style={{ fontFamily: 'Lato, sans-serif' }}
                 >
                   Nombre del tema secundario
@@ -261,7 +261,7 @@ export function ThemeCard({ theme, index, chakras, onChange, onDelete, disabled 
                   disabled={disabled}
                   onChange={(e) => onChange({ secondary_name: e.target.value })}
                   placeholder="Ej. Miedo al rechazo"
-                  className="w-full rounded-lg border border-[#EDE5E0] bg-white px-3 py-2 text-sm text-[#2C2220] placeholder-[#A9967E] shadow-sm focus:outline-none focus:ring-2 focus:ring-[#C4704A]/30 focus:border-[#C4704A] disabled:opacity-50 disabled:cursor-not-allowed"
+                  className="w-full rounded-none border-0 border-b border-[#D4A592] bg-[#FAF7F5] px-3 py-2 text-sm text-[#2C2220] placeholder-[#A9967E] focus:outline-none focus:ring-0 focus:border-b-2 focus:border-[#C4704A] disabled:opacity-50 disabled:cursor-not-allowed"
                   style={{ fontFamily: 'Lato, sans-serif' }}
                 />
               </div>
@@ -294,7 +294,7 @@ export function ThemeCard({ theme, index, chakras, onChange, onDelete, disabled 
           {/* Emociones predominantes */}
           <div className="flex flex-col gap-1.5">
             <p
-              className="text-xs font-bold text-terra-700 uppercase tracking-wide select-none"
+              className="text-xs font-normal text-[#4A3628] uppercase tracking-wide select-none"
               style={{ fontFamily: 'Lato, sans-serif' }}
             >
               Emociones predominantes

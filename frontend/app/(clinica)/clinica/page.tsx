@@ -11,7 +11,6 @@ import {
   ChevronRight,
 } from "lucide-react";
 import { apiClient } from "@/lib/api/client";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { formatDate, formatCurrency } from "@/lib/utils/formatters";
 import type { Client, PaginatedResponse, SessionListItem } from "@/types/api";
 
@@ -26,16 +25,14 @@ function firstDayOfMonth(): string {
 
 function StatCardSkeleton() {
   return (
-    <Card>
-      <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+    <div className="bg-white rounded-lg shadow-[0_2px_8px_rgba(44,34,32,0.06)] p-6">
+      <div className="flex flex-row items-center justify-between pb-3">
         <div className="h-4 w-28 bg-terra-200 rounded animate-pulse" />
-        <div className="h-8 w-8 bg-terra-200 rounded animate-pulse" />
-      </CardHeader>
-      <CardContent>
-        <div className="h-8 w-16 bg-terra-200 rounded animate-pulse mb-1" />
-        <div className="h-3 w-24 bg-terra-200 rounded animate-pulse" />
-      </CardContent>
-    </Card>
+        <div className="h-12 w-12 bg-terra-200 rounded-full animate-pulse" />
+      </div>
+      <div className="h-9 w-16 bg-terra-200 rounded animate-pulse mb-1" />
+      <div className="h-3 w-24 bg-terra-200 rounded animate-pulse" />
+    </div>
   );
 }
 
@@ -59,26 +56,26 @@ function StatCard({
   href,
 }: StatCardProps) {
   const card = (
-    <Card
-      className={`bg-white border border-terra-100 rounded-card shadow-card transition-shadow ${
-        href ? "cursor-pointer hover:shadow-card-hover" : "cursor-default"
+    <div
+      className={`bg-white rounded-lg shadow-[0_2px_8px_rgba(44,34,32,0.06)] transition-shadow ${
+        href ? "cursor-pointer hover:shadow-[0_4px_16px_rgba(44,34,32,0.10)]" : "cursor-default"
       }`}
     >
-      <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-3 p-6">
-        <CardTitle className="text-sm font-medium text-muted-foreground">
+      <div className="flex flex-row items-center justify-between p-6 pb-3">
+        <span className="text-xs font-medium uppercase tracking-wide text-[#4A3628]">
           {title}
-        </CardTitle>
+        </span>
         <div
           className={`h-12 w-12 rounded-full flex items-center justify-center flex-shrink-0 ${iconBg}`}
         >
           <Icon className={`h-5 w-5 ${iconColor}`} />
         </div>
-      </CardHeader>
-      <CardContent className="px-6 pb-6 pt-0">
-        <div className="text-2xl font-bold text-terra-900">{value}</div>
-        <p className="text-xs text-muted-foreground mt-1">{description}</p>
-      </CardContent>
-    </Card>
+      </div>
+      <div className="px-6 pb-6 pt-0">
+        <div className="font-body text-3xl font-bold text-[#2C2220]">{value}</div>
+        <p className="text-sm text-[#4A3628]/70 mt-1">{description}</p>
+      </div>
+    </div>
   );
 
   if (href) {
@@ -194,27 +191,28 @@ export default function ClinicaDashboardPage() {
   ];
 
   return (
-    <div className="space-y-8">
+    <div className="space-y-12 max-w-5xl">
+      {/* Header */}
       <div className="flex flex-wrap items-center justify-between gap-4">
         <div>
-          <h1 className="font-display text-2xl font-bold text-terra-900">
+          <h1 className="font-display text-2xl font-semibold text-[#2C2220]">
             Dashboard
           </h1>
-          <p className="text-muted-foreground">
+          <p className="text-sm text-[#4A3628]/60">
             Bienvenido a Sanando desde el Corazón
           </p>
         </div>
         <div className="flex items-center gap-2">
           <button
             onClick={() => router.push("/clinica/sesiones/nueva")}
-            className="flex items-center gap-2 bg-terra-700 hover:bg-terra-500 text-white h-10 px-4 rounded text-sm font-medium transition-colors"
+            className="flex items-center gap-2 bg-[#C4704A] hover:bg-[#A85C3A] text-white h-10 px-4 rounded-lg text-sm font-medium transition-colors"
           >
             <PlusCircle className="h-4 w-4" />
             Nueva sesión
           </button>
           <button
             onClick={() => router.push("/clinica/pacientes/nuevo")}
-            className="flex items-center gap-2 border border-terra-200 text-terra-700 hover:bg-terra-50 h-10 px-4 rounded text-sm font-medium transition-colors"
+            className="flex items-center gap-2 border border-[#C4704A] text-[#C4704A] hover:bg-[#C4704A]/5 h-10 px-4 rounded-lg text-sm font-medium transition-colors"
           >
             <PlusCircle className="h-4 w-4" />
             Nuevo paciente
@@ -239,27 +237,27 @@ export default function ClinicaDashboardPage() {
       </div>
 
       {/* Sesiones recientes */}
-      <div className="space-y-3">
+      <div className="space-y-4">
         <div className="flex items-center justify-between">
-          <h2 className="text-base font-semibold text-terra-900">
+          <h2 className="font-display text-lg font-semibold text-[#2C2220]">
             Sesiones Recientes
           </h2>
           <button
             onClick={() => router.push("/clinica/sesiones")}
-            className="text-sm text-terra-700 hover:text-terra-900 flex items-center gap-1 transition-colors"
+            className="text-sm text-[#C4704A] hover:text-[#A85C3A] flex items-center gap-1 transition-colors"
           >
             Ver todas
             <ChevronRight className="h-3 w-3" />
           </button>
         </div>
 
-        <div className="rounded-xl border border-terra-100 overflow-hidden bg-white">
+        <div className="rounded-lg shadow-[0_2px_8px_rgba(44,34,32,0.06)] overflow-hidden bg-white">
           {loading ? (
-            <ul className="divide-y">
+            <ul className="divide-y divide-[#2C2220]/5">
               {Array.from({ length: 5 }).map((_, i) => (
                 <li
                   key={i}
-                  className="flex items-center justify-between px-4 py-3 gap-4"
+                  className="flex items-center justify-between px-5 py-3.5 gap-4"
                 >
                   <div className="space-y-1.5">
                     <div className="h-4 w-40 bg-terra-200 rounded animate-pulse" />
@@ -270,29 +268,29 @@ export default function ClinicaDashboardPage() {
               ))}
             </ul>
           ) : recentSessions.length === 0 ? (
-            <p className="px-4 py-8 text-center text-sm text-muted-foreground">
+            <p className="px-5 py-8 text-center text-sm text-[#4A3628]/60">
               No hay sesiones registradas aún.
             </p>
           ) : (
-            <ul className="divide-y">
+            <ul className="divide-y divide-[#2C2220]/5">
               {recentSessions.map((s) => (
                 <li
                   key={s.id}
                   onClick={() => router.push(`/clinica/sesiones/${s.id}`)}
-                  className="flex items-center justify-between px-4 py-3 cursor-pointer hover:bg-terra-50 transition-colors"
+                  className="flex items-center justify-between px-5 py-3.5 cursor-pointer hover:shadow-[inset_0_0_0_0_transparent,0_2px_8px_rgba(44,34,32,0.06)] hover:bg-[#FAF7F5] transition-all duration-150"
                 >
                   <div>
-                    <p className="text-sm font-medium text-terra-900">
+                    <p className="text-sm font-medium text-[#2C2220]">
                       {s.client_name ?? "Sin paciente"}
                     </p>
-                    <p className="text-xs text-muted-foreground">
+                    <p className="text-xs text-[#4A3628]/60">
                       {s.therapy_type_name ?? "Sesión"} ·{" "}
                       {formatDate(s.measured_at)}
                     </p>
                   </div>
-                  <div className="flex items-center gap-3 text-xs text-muted-foreground flex-shrink-0">
+                  <div className="flex items-center gap-3 text-xs text-[#4A3628]/60 flex-shrink-0">
                     {s.cost != null && (
-                      <span className="text-terra-700 font-medium">
+                      <span className="text-[#2C2220] font-medium">
                         {formatCurrency(s.cost)}
                       </span>
                     )}
@@ -306,27 +304,27 @@ export default function ClinicaDashboardPage() {
       </div>
 
       {/* Pacientes recientes */}
-      <div className="space-y-3">
+      <div className="space-y-4">
         <div className="flex items-center justify-between">
-          <h2 className="text-base font-semibold text-terra-900">
+          <h2 className="font-display text-lg font-semibold text-[#2C2220]">
             Pacientes Recientes
           </h2>
           <button
             onClick={() => router.push("/clinica/pacientes")}
-            className="text-sm text-terra-700 hover:text-terra-900 flex items-center gap-1 transition-colors"
+            className="text-sm text-[#C4704A] hover:text-[#A85C3A] flex items-center gap-1 transition-colors"
           >
             Ver todos
             <ChevronRight className="h-3 w-3" />
           </button>
         </div>
 
-        <div className="rounded-xl border border-terra-100 overflow-hidden bg-white">
+        <div className="rounded-lg shadow-[0_2px_8px_rgba(44,34,32,0.06)] overflow-hidden bg-white">
           {loading ? (
-            <ul className="divide-y">
+            <ul className="divide-y divide-[#2C2220]/5">
               {Array.from({ length: 5 }).map((_, i) => (
                 <li
                   key={i}
-                  className="flex items-center justify-between px-4 py-3 gap-4"
+                  className="flex items-center justify-between px-5 py-3.5 gap-4"
                 >
                   <div className="space-y-1.5">
                     <div className="h-4 w-40 bg-terra-200 rounded animate-pulse" />
@@ -337,28 +335,30 @@ export default function ClinicaDashboardPage() {
               ))}
             </ul>
           ) : recentClients.length === 0 ? (
-            <p className="px-4 py-8 text-center text-sm text-muted-foreground">
+            <p className="px-5 py-8 text-center text-sm text-[#4A3628]/60">
               No hay pacientes registrados aún.
             </p>
           ) : (
-            <ul className="divide-y">
+            <ul className="divide-y divide-[#2C2220]/5">
               {recentClients.map((client) => (
                 <li
                   key={client.id}
                   onClick={() =>
                     router.push(`/clinica/pacientes/${client.id}`)
                   }
-                  className="flex items-center justify-between px-4 py-3 cursor-pointer hover:bg-terra-50 transition-colors"
+                  className="flex items-center justify-between px-5 py-3.5 cursor-pointer hover:shadow-[inset_0_0_0_0_transparent,0_2px_8px_rgba(44,34,32,0.06)] hover:bg-[#FAF7F5] transition-all duration-150"
                 >
                   <div>
-                    <p className="text-sm font-medium text-terra-900">
+                    <p className="text-sm font-medium text-[#2C2220]">
                       {client.full_name}
                     </p>
-                    <p className="text-xs text-muted-foreground">
-                      {client.profession ?? client.email ?? "—"}
+                    <p className="text-xs text-[#4A3628]/60">
+                      {(client.profession && client.profession !== "NA")
+                        ? client.profession
+                        : client.email ?? "—"}
                     </p>
                   </div>
-                  <div className="flex items-center gap-2 text-xs text-muted-foreground flex-shrink-0">
+                  <div className="flex items-center gap-2 text-xs text-[#4A3628]/60 flex-shrink-0">
                     <span>{formatDate(client.created_at)}</span>
                     <ChevronRight className="h-3 w-3" />
                   </div>

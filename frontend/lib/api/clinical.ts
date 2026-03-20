@@ -31,6 +31,10 @@ export async function getEnergyDimensions(): Promise<EnergyDimension[]> {
   return apiClient.get<EnergyDimension[]>('/api/v1/catalogs/energy-dimensions');
 }
 
+export async function createEnergyDimension(name: string): Promise<{ id: string; name: string }> {
+  return apiClient.post<{ id: string; name: string }, { name: string }>('/api/v1/catalogs/energy-dimensions', { name });
+}
+
 export async function getClientsList(): Promise<ClientListItem[]> {
   const res = await apiClient.get<{ items: ClientListItem[] }>(
     '/api/v1/clinical/clients?per_page=500&sort_by=full_name&sort_order=asc',

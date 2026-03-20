@@ -45,7 +45,7 @@ function LntCard({ entry, index, onChange, onDelete, disabled = false }: LntCard
   }
 
   return (
-    <article className="bg-white rounded-xl border border-gray-200 shadow-sm overflow-hidden">
+    <article className="bg-white rounded-lg shadow-[0_2px_8px_rgba(44,34,32,0.06)] overflow-hidden">
       {/* Cabecera */}
       <div className="flex items-center justify-between px-4 py-3 bg-terra-50 border-b border-gray-100">
         <span className="text-sm font-semibold text-terra-700">
@@ -81,7 +81,7 @@ function LntCard({ entry, index, onChange, onDelete, disabled = false }: LntCard
       <div className="p-4 space-y-5">
         {/* Nombre del tema */}
         <div className="flex flex-col gap-1">
-          <label htmlFor={nameId} className="text-xs font-medium text-gray-600">
+          <label htmlFor={nameId} className="text-xs uppercase tracking-wide font-normal text-[#4A3628]">
             Tema trabajado
           </label>
           <input
@@ -91,7 +91,7 @@ function LntCard({ entry, index, onChange, onDelete, disabled = false }: LntCard
             disabled={disabled}
             onChange={(e) => onChange({ theme_organ: e.target.value })}
             placeholder="Ej: Miedo al abandono"
-            className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-terra-700 focus:border-terra-700 disabled:opacity-50 disabled:cursor-not-allowed"
+            className="w-full rounded-none border-0 border-b border-[#D4A592] bg-[#FAF7F5] px-3 py-2 text-sm focus:outline-none focus:ring-0 focus:border-b-2 focus:border-[#C4704A] disabled:opacity-50 disabled:cursor-not-allowed"
           />
         </div>
 
@@ -238,7 +238,7 @@ export function StepLNT({
 
       {/* Peticiones */}
       <div className="flex flex-col gap-1.5">
-        <label htmlFor={peticionesId} className="text-sm font-medium text-gray-700">
+        <label htmlFor={peticionesId} className="text-xs uppercase tracking-wide font-normal text-[#4A3628]">
           Peticiones
         </label>
         <textarea
@@ -248,7 +248,7 @@ export function StepLNT({
           disabled={disabled}
           onChange={(e) => onPeticionesChange(e.target.value)}
           placeholder="Intenciones y peticiones de la sesión…"
-          className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-terra-700 focus:border-terra-700 disabled:opacity-50 disabled:cursor-not-allowed resize-y"
+          className="w-full rounded-none border-0 border-b border-[#D4A592] bg-[#FAF7F5] px-3 py-2 text-sm focus:outline-none focus:ring-0 focus:border-b-2 focus:border-[#C4704A] disabled:opacity-50 disabled:cursor-not-allowed resize-y"
         />
       </div>
     </section>

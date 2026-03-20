@@ -70,7 +70,7 @@ function CheckboxGroup({ legend, options, selected, onChange, disabled }: Checkb
 
   return (
     <fieldset>
-      <legend className="text-xs font-semibold text-terra-700 mb-2">{legend}</legend>
+      <legend className="text-xs font-normal uppercase tracking-wide text-[#4A3628] mb-2">{legend}</legend>
       <div className="grid grid-cols-2 sm:grid-cols-3 gap-x-4 gap-y-2">
         {options.map((opt) => (
           <label key={opt} className="flex items-start gap-1.5 cursor-pointer select-none">
@@ -120,7 +120,7 @@ function DynamicList({ legend, items, onChange, disabled, placeholder }: Dynamic
 
   return (
     <div className="space-y-2">
-      <p className="text-xs font-semibold text-terra-700">{legend}</p>
+      <p className="text-xs font-normal uppercase tracking-wide text-[#4A3628]">{legend}</p>
 
       {items.map((item, i) => (
         <div key={i} className="flex items-center gap-2">
@@ -133,7 +133,7 @@ function DynamicList({ legend, items, onChange, disabled, placeholder }: Dynamic
             onChange={(e) => updateText(i, e.target.value)}
             disabled={disabled}
             placeholder={placeholder}
-            className="flex-1 min-h-[32px] rounded border border-gray-300 px-2 py-1 text-sm text-gray-800 focus:outline-none focus:ring-1 focus:ring-terra-700 disabled:opacity-50"
+            className="flex-1 min-h-[32px] rounded-none border-0 border-b border-[#D4A592] bg-[#FAF7F5] px-2 py-1 text-sm text-gray-800 focus:outline-none focus:ring-0 focus:border-b-2 focus:border-[#C4704A] disabled:opacity-50"
           />
           <button
             type="button"
@@ -185,7 +185,7 @@ function AncestorCard({ entry, index, onChange, onDelete, disabled }: AncestorCa
   return (
     <article
       aria-labelledby={headingId}
-      className="border border-gray-200 rounded-xl overflow-hidden bg-white shadow-sm"
+      className="rounded-lg overflow-hidden bg-white shadow-[0_2px_8px_rgba(44,34,32,0.06)]"
     >
       {/* Cabecera */}
       <div className="flex items-center gap-2 px-4 py-3 bg-terra-50 border-b border-gray-100">
@@ -224,12 +224,12 @@ function AncestorCard({ entry, index, onChange, onDelete, disabled }: AncestorCa
         <div className="p-4 space-y-5">
           {/* Miembro */}
           <div className="space-y-1">
-            <label className="block text-xs font-semibold text-terra-700">Miembro</label>
+            <label className="block text-xs font-normal uppercase tracking-wide text-[#4A3628]">Miembro</label>
             <select
               value={entry.member}
               onChange={(e) => update('member', e.target.value)}
               disabled={disabled}
-              className="w-full rounded border border-gray-300 px-3 py-1.5 text-sm focus:outline-none focus:ring-1 focus:ring-terra-700 disabled:opacity-50"
+              className="w-full rounded-none border-0 border-b border-[#D4A592] bg-[#FAF7F5] px-3 py-1.5 text-sm focus:outline-none focus:ring-0 focus:border-b-2 focus:border-[#C4704A] disabled:opacity-50"
             >
               <option value="">Seleccionar…</option>
               {MEMBER_OPTIONS.map((opt) => (
@@ -240,7 +240,7 @@ function AncestorCard({ entry, index, onChange, onDelete, disabled }: AncestorCa
 
           {/* Linaje */}
           <fieldset>
-            <legend className="text-xs font-semibold text-terra-700 mb-2">Linaje</legend>
+            <legend className="text-xs font-normal uppercase tracking-wide text-[#4A3628] mb-2">Linaje</legend>
             <div className="flex gap-5">
               {(['materno', 'paterno', 'ambos'] as const).map((opt) => (
                 <label key={opt} className="flex items-center gap-1.5 cursor-pointer select-none">
@@ -436,13 +436,13 @@ export function StepAncestors({
 
             {CONCILIATION_FIELDS.map(({ key, label }) => (
               <div key={key} className="space-y-1.5">
-                <label className="block text-xs font-semibold text-terra-700">{label}</label>
+                <label className="block text-xs font-normal uppercase tracking-wide text-[#4A3628]">{label}</label>
                 <textarea
                   rows={3}
                   value={conciliation[key]}
                   onChange={(e) => updateConciliation(key, e.target.value)}
                   disabled={disabled}
-                  className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm text-gray-800 resize-y focus:outline-none focus:ring-1 focus:ring-terra-700 disabled:opacity-50"
+                  className="w-full rounded-none border-0 border-b border-[#D4A592] bg-[#FAF7F5] px-3 py-2 text-sm text-gray-800 resize-y focus:outline-none focus:ring-0 focus:border-b-2 focus:border-[#C4704A] disabled:opacity-50"
                 />
               </div>
             ))}

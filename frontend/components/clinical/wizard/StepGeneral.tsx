@@ -89,7 +89,7 @@ function Combobox({
 
   return (
     <div className="flex flex-col gap-1">
-      <label htmlFor={id} className="text-sm font-medium text-gray-700">
+      <label htmlFor={id} className="text-xs uppercase tracking-wide font-normal text-[#4A3628]">
         {label}
       </label>
       <div ref={containerRef} className="relative">
@@ -103,7 +103,7 @@ function Combobox({
           }}
           aria-haspopup="listbox"
           aria-expanded={open}
-          className="w-full flex items-center justify-between rounded-md border border-gray-300 bg-white px-3 py-2 text-sm text-left shadow-sm focus:outline-none focus:ring-2 focus:ring-[#2C2220] disabled:opacity-50 disabled:cursor-not-allowed"
+          className="w-full flex items-center justify-between rounded-none border-0 border-b border-[#D4A592] bg-[#FAF7F5] px-3 py-2 text-sm text-left focus:outline-none focus:ring-0 focus:border-b-2 focus:border-[#C4704A] disabled:opacity-50 disabled:cursor-not-allowed"
         >
           <span className={selected ? 'text-gray-900' : 'text-gray-400'}>
             {selected ? selected.label : placeholder}
@@ -181,7 +181,7 @@ function YesNoPills({ value, onChange, disabled = false }: YesNoPillsProps) {
   function pillClass(option: boolean) {
     if (value === option) {
       return option
-        ? 'px-4 py-1.5 rounded-md text-sm font-medium transition-colors bg-[#2C2220] text-white'
+        ? 'px-4 py-1.5 rounded-md text-sm font-medium transition-colors bg-[#C4704A] text-white'
         : 'px-4 py-1.5 rounded-md text-sm font-medium transition-colors bg-gray-100 text-gray-600';
     }
     return 'px-4 py-1.5 rounded-md text-sm font-medium transition-colors border border-gray-200 text-gray-400 hover:border-gray-300';
@@ -286,7 +286,7 @@ export function StepGeneral({
 
       {/* Fecha y hora de medición */}
       <div className="flex flex-col gap-1 max-w-xs">
-        <label htmlFor={dateInputId} className="text-sm font-medium text-gray-700">
+        <label htmlFor={dateInputId} className="text-xs uppercase tracking-wide font-normal text-[#4A3628]">
           Fecha de medición *
         </label>
         <input
@@ -295,13 +295,13 @@ export function StepGeneral({
           value={value.measured_at}
           disabled={disabled}
           onChange={(e) => update('measured_at', e.target.value)}
-          className="rounded-md border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#2C2220] disabled:opacity-50 disabled:cursor-not-allowed"
+          className="rounded-none border-0 border-b border-[#D4A592] bg-[#FAF7F5] px-3 py-2 text-sm focus:outline-none focus:ring-0 focus:border-b-2 focus:border-[#C4704A] disabled:opacity-50 disabled:cursor-not-allowed"
         />
       </div>
 
       {/* Energía general */}
       <div className="bg-gray-50 rounded-lg p-4">
-        <p className="text-sm font-medium text-gray-600 mb-3">
+        <p className="text-xs uppercase tracking-wide font-normal text-[#4A3628] mb-3">
           Nivel de energía general
         </p>
         <EnergySlider
@@ -316,7 +316,7 @@ export function StepGeneral({
 
       {/* Notas generales */}
       <div className="flex flex-col gap-1">
-        <label htmlFor={notesInputId} className="text-sm font-medium text-gray-700">
+        <label htmlFor={notesInputId} className="text-xs uppercase tracking-wide font-normal text-[#4A3628]">
           Notas generales
         </label>
         <textarea
@@ -326,7 +326,7 @@ export function StepGeneral({
           onChange={(e) => update('notes', e.target.value)}
           rows={4}
           placeholder="Observaciones generales de la sesión…"
-          className="rounded-md border border-gray-300 px-3 py-2 text-sm resize-none focus:outline-none focus:ring-2 focus:ring-[#2C2220] disabled:opacity-50 disabled:cursor-not-allowed"
+          className="rounded-none border-0 border-b border-[#D4A592] bg-[#FAF7F5] px-3 py-2 text-sm resize-none focus:outline-none focus:ring-0 focus:border-b-2 focus:border-[#C4704A] disabled:opacity-50 disabled:cursor-not-allowed"
         />
       </div>
 
@@ -340,7 +340,7 @@ export function StepGeneral({
         <div className="space-y-5">
           {/* Entidades */}
           <div className="flex flex-wrap items-center gap-4">
-            <span className="text-sm font-medium text-gray-700 w-32 shrink-0">Entidades</span>
+            <span className="text-xs uppercase tracking-wide font-normal text-[#4A3628] w-32 shrink-0">Entidades</span>
             <YesNoPills
               value={value.has_entities}
               onChange={(v) => update('has_entities', v)}
@@ -364,7 +364,7 @@ export function StepGeneral({
 
           {/* Capas */}
           <div className="flex flex-wrap items-center gap-4">
-            <span className="text-sm font-medium text-gray-700 w-32 shrink-0">Capas</span>
+            <span className="text-xs uppercase tracking-wide font-normal text-[#4A3628] w-32 shrink-0">Capas</span>
             <YesNoPills
               value={value.has_capas}
               onChange={(v) => update('has_capas', v)}
@@ -388,7 +388,7 @@ export function StepGeneral({
 
           {/* Implantes */}
           <div className="flex flex-wrap items-center gap-4">
-            <span className="text-sm font-medium text-gray-700 w-32 shrink-0">Implantes</span>
+            <span className="text-xs uppercase tracking-wide font-normal text-[#4A3628] w-32 shrink-0">Implantes</span>
             <YesNoPills
               value={value.has_implants}
               onChange={(v) => update('has_implants', v)}
@@ -412,7 +412,7 @@ export function StepGeneral({
 
           {/* Requiere limpiezas */}
           <div className="flex flex-wrap items-center gap-4">
-            <span className="text-sm font-medium text-gray-700 w-32 shrink-0">¿Limpiezas?</span>
+            <span className="text-xs uppercase tracking-wide font-normal text-[#4A3628] w-32 shrink-0">¿Limpiezas?</span>
             <YesNoPills
               value={value.requires_cleanings}
               onChange={(v) => update('requires_cleanings', v)}

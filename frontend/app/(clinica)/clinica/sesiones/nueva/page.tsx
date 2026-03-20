@@ -227,6 +227,18 @@ export default function NuevaSessionPage() {
     );
   }
 
+  const handleNewDimension = useCallback((dim: { id: string; name: string }) => {
+    setCatalogs((prev) => {
+      if (!prev) return prev;
+      return {
+        ...prev,
+        dimensions: [...prev.dimensions, { ...dim, display_order: prev.dimensions.length + 1, is_active: true }],
+      };
+    });
+    setEnergyInitial((prev) => [...prev, { dimension_id: dim.id, value: 50 }]);
+    setEnergyFinal((prev) => [...prev, { dimension_id: dim.id, value: 50 }]);
+  }, []);
+
   const handleThemesChange = useCallback((updated: ThemeEntry[]) => {
     setThemes(updated);
   }, []);
@@ -658,6 +670,7 @@ export default function NuevaSessionPage() {
             onAncestorsChange={setAncestors}
             conciliation={ancestorConciliation}
             onConciliationChange={setAncestorConciliation}
+            onDimensionCreated={handleNewDimension}
           />
         )}
 

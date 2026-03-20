@@ -23,18 +23,18 @@ export function AgesSection({ label, value, onChange, disabled = false }: AgesSe
   }
 
   const inputClass =
-    'w-full rounded border border-gray-300 px-2.5 py-2 text-sm focus:outline-none focus:ring-1 focus:ring-terra-700 disabled:opacity-50 disabled:cursor-not-allowed';
+    'w-full rounded-none border-0 border-b border-[#D4A592] bg-[#FAF7F5] px-2.5 py-2 text-sm focus:outline-none focus:ring-0 focus:border-b-2 focus:border-[#C4704A] disabled:opacity-50 disabled:cursor-not-allowed';
 
   const textareaClass =
-    'w-full rounded border border-gray-300 px-2.5 py-2 text-sm resize-none focus:outline-none focus:ring-1 focus:ring-terra-700 disabled:opacity-50 disabled:cursor-not-allowed';
+    'w-full rounded-none border-0 border-b border-[#D4A592] bg-[#FAF7F5] px-2.5 py-2 text-sm resize-none focus:outline-none focus:ring-0 focus:border-b-2 focus:border-[#C4704A] disabled:opacity-50 disabled:cursor-not-allowed';
 
   return (
     <fieldset className="space-y-3">
-      <legend className="text-sm font-semibold text-gray-700">{label}</legend>
+      <legend className="text-xs uppercase tracking-wide font-normal text-[#4A3628]">{label}</legend>
 
       {/* Lugar / Espacio */}
       <div className="flex flex-col gap-1">
-        <label htmlFor={placeId} className="text-xs font-medium text-gray-600">
+        <label htmlFor={placeId} className="text-xs uppercase tracking-wide font-normal text-[#4A3628]">
           Lugar / Espacio
         </label>
         <input
@@ -51,7 +51,7 @@ export function AgesSection({ label, value, onChange, disabled = false }: AgesSe
 
       {/* Personas involucradas */}
       <div className="flex flex-col gap-1">
-        <label htmlFor={peopleId} className="text-xs font-medium text-gray-600">
+        <label htmlFor={peopleId} className="text-xs uppercase tracking-wide font-normal text-[#4A3628]">
           Personas involucradas
         </label>
         <input
@@ -68,7 +68,7 @@ export function AgesSection({ label, value, onChange, disabled = false }: AgesSe
 
       {/* Situación ocurrida */}
       <div className="flex flex-col gap-1">
-        <label htmlFor={situationId} className="text-xs font-medium text-gray-600">
+        <label htmlFor={situationId} className="text-xs uppercase tracking-wide font-normal text-[#4A3628]">
           Situación ocurrida
         </label>
         <textarea
@@ -84,7 +84,7 @@ export function AgesSection({ label, value, onChange, disabled = false }: AgesSe
 
       {/* Descripción */}
       <div className="flex flex-col gap-1">
-        <label htmlFor={descriptionId} className="text-xs font-medium text-gray-600">
+        <label htmlFor={descriptionId} className="text-xs uppercase tracking-wide font-normal text-[#4A3628]">
           Descripción
         </label>
         <textarea
@@ -100,7 +100,7 @@ export function AgesSection({ label, value, onChange, disabled = false }: AgesSe
 
       {/* Emociones generadas */}
       <div className="flex flex-col gap-1">
-        <label htmlFor={emotionsId} className="text-xs font-medium text-gray-600">
+        <label htmlFor={emotionsId} className="text-xs uppercase tracking-wide font-normal text-[#4A3628]">
           Emociones generadas
         </label>
         <input

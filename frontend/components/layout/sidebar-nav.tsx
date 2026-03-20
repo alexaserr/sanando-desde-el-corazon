@@ -83,11 +83,11 @@ export function SidebarNav() {
                   : "gap-3 px-3 py-2 mx-2",
                 "min-h-[44px]",
                 isActive
-                  ? "bg-terra-500 text-white font-medium"
-                  : "text-terra-600 hover:bg-terra-50 hover:text-terra-800 font-normal",
+                  ? "bg-[#C4704A]/10 text-[#2C2220] font-medium border-l-[3px] border-[#C4704A]"
+                  : "text-[#4A3628] hover:bg-[#FAF7F5] hover:text-[#2C2220] font-normal border-l-[3px] border-transparent",
               )}
             >
-              <Icon className="h-5 w-5 shrink-0" />
+              <Icon className="h-5 w-5 shrink-0" strokeWidth={1.5} />
               {!sidebarCollapsed && (
                 <span className="truncate">{label}</span>
               )}

@@ -53,7 +53,7 @@ export function BlockageRow({
     <div className="flex flex-col gap-2">
     <div className="flex flex-wrap items-center gap-2">
       {/* Label */}
-      <span className="shrink-0 text-xs font-semibold text-terra-700 uppercase tracking-wide select-none w-[72px]">
+      <span className="shrink-0 text-xs font-normal text-[#4A3628] uppercase tracking-wide select-none w-[72px]">
         {label}
       </span>
 
@@ -64,7 +64,7 @@ export function BlockageRow({
         disabled={disabled}
         onChange={(e) => handleChakraChange(e.target.value)}
         aria-label={`Chakra — ${label}`}
-        className="min-h-[36px] w-[150px] rounded border border-gray-300 px-2 py-1 text-sm bg-white focus:outline-none focus:ring-1 focus:ring-terra-700 disabled:opacity-50 disabled:cursor-not-allowed"
+        className="min-h-[36px] w-[150px] rounded-none border-0 border-b border-[#D4A592] bg-[#FAF7F5] px-2 py-1 text-sm focus:outline-none focus:ring-0 focus:border-b-2 focus:border-[#C4704A] disabled:opacity-50 disabled:cursor-not-allowed"
       >
         <option value="">— Chakra —</option>
         {chakras
@@ -84,7 +84,7 @@ export function BlockageRow({
         disabled={disabled || !value.chakra_position_id}
         onChange={(e) => handleOrganChange(e.target.value)}
         aria-label={`Órgano — ${label}`}
-        className="min-h-[36px] w-[180px] rounded border border-gray-300 px-2 py-1 text-sm bg-white focus:outline-none focus:ring-1 focus:ring-terra-700 disabled:opacity-50 disabled:cursor-not-allowed"
+        className="min-h-[36px] w-[180px] rounded-none border-0 border-b border-[#D4A592] bg-[#FAF7F5] px-2 py-1 text-sm focus:outline-none focus:ring-0 focus:border-b-2 focus:border-[#C4704A] disabled:opacity-50 disabled:cursor-not-allowed"
       >
         <option value="">— Órgano —</option>
         {organs.map((o) => (

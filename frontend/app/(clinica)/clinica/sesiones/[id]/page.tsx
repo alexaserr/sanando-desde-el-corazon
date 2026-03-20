@@ -158,7 +158,7 @@ function CollapsibleCard({
   children: React.ReactNode;
 }) {
   return (
-    <details open={defaultOpen} className="group bg-white rounded-xl border border-terra-100 shadow-sm">
+    <details open={defaultOpen} className="group bg-white rounded-lg shadow-[0_2px_8px_rgba(44,34,32,0.06)]">
       <summary className="flex items-center justify-between cursor-pointer p-5 select-none">
         <h2 className="font-display text-lg font-semibold text-terra-900">
           {title}

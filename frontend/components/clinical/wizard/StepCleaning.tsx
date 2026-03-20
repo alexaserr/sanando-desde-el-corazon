@@ -207,7 +207,7 @@ function MultiSelectDropdown({
         type="button"
         disabled={disabled}
         onClick={() => setOpen((p) => !p)}
-        className="flex min-h-[44px] w-full items-center justify-between gap-1 rounded border border-gray-300 bg-white px-2.5 py-1.5 text-sm text-left focus:outline-none focus:ring-1 focus:ring-terra-700 disabled:opacity-50 disabled:cursor-not-allowed"
+        className="flex min-h-[44px] w-full items-center justify-between gap-1 rounded-none border-0 border-b border-[#D4A592] bg-[#FAF7F5] px-2.5 py-1.5 text-sm text-left focus:outline-none focus:ring-0 focus:border-b-2 focus:border-[#C4704A] disabled:opacity-50 disabled:cursor-not-allowed"
       >
         <span className={`truncate ${selected.length === 0 ? 'text-gray-400' : 'text-gray-800'}`}>
           {label}
@@ -279,10 +279,10 @@ export interface StepCleaningProps {
 }
 
 const SELECT_CLASS =
-  'min-h-[44px] w-full rounded border border-gray-300 bg-white px-2.5 py-1.5 text-sm focus:outline-none focus:ring-1 focus:ring-terra-700 disabled:opacity-50 disabled:cursor-not-allowed';
+  'min-h-[44px] w-full rounded-none border-0 border-b border-[#D4A592] bg-[#FAF7F5] px-2.5 py-1.5 text-sm focus:outline-none focus:ring-0 focus:border-b-2 focus:border-[#C4704A] disabled:opacity-50 disabled:cursor-not-allowed';
 
 const INPUT_CLASS =
-  'h-11 w-full rounded-lg border border-[#EDE5E0] bg-white px-3 text-sm text-[#2C2220] focus:outline-none focus:ring-2 focus:ring-[#C4704A]/30 focus:border-[#C4704A] disabled:opacity-50 disabled:cursor-not-allowed';
+  'h-11 w-full rounded-none border-0 border-b border-[#D4A592] bg-[#FAF7F5] px-3 text-sm text-[#2C2220] focus:outline-none focus:ring-0 focus:border-b-2 focus:border-[#C4704A] disabled:opacity-50 disabled:cursor-not-allowed';
 
 export function StepCleaning({
   rows,
@@ -387,10 +387,10 @@ export function StepCleaning({
       {/* ── Sección 1: Checks pre-tabla ────────────────────────────────────── */}
       <section
         aria-label="Tipos de capas"
-        className="rounded-lg border border-gray-200 bg-white p-4 shadow-sm"
+        className="rounded-lg bg-white p-4 shadow-[0_2px_8px_rgba(44,34,32,0.06)]"
       >
         <p
-          className="mb-3 text-xs font-semibold uppercase tracking-wide text-terra-700"
+          className="mb-3 text-xs font-normal uppercase tracking-wide text-[#4A3628]"
           style={{ fontFamily: 'Lato, sans-serif' }}
         >
           Capas detectadas
@@ -420,7 +420,7 @@ export function StepCleaning({
                   onChange={(e) =>
                     handleCheckQuantity(idx, parseInt(e.target.value, 10) || 0)
                   }
-                  className="h-9 w-20 rounded border border-gray-300 bg-white px-2 text-center text-sm focus:outline-none focus:ring-1 focus:ring-terra-700 disabled:opacity-40 disabled:cursor-not-allowed"
+                  className="h-9 w-20 rounded-none border-0 border-b border-[#D4A592] bg-[#FAF7F5] px-2 text-center text-sm focus:outline-none focus:ring-0 focus:border-b-2 focus:border-[#C4704A] disabled:opacity-40 disabled:cursor-not-allowed"
                   aria-label={`Cantidad ${chk.label}`}
                 />
               </div>
@@ -435,7 +435,7 @@ export function StepCleaning({
       {/* ── Sección 2: Tabla de eventos ────────────────────────────────────── */}
       <section aria-label="Filas de limpieza">
         <p
-          className="mb-3 text-xs font-semibold uppercase tracking-wide text-terra-700"
+          className="mb-3 text-xs font-normal uppercase tracking-wide text-[#4A3628]"
           style={{ fontFamily: 'Lato, sans-serif' }}
         >
           Eventos de limpieza
@@ -444,7 +444,7 @@ export function StepCleaning({
         {/* Cabecera desktop */}
         <div
           aria-hidden="true"
-          className="mb-1 hidden grid-cols-[32px_1fr_1fr_1fr_1fr_36px] gap-2 px-1 text-xs font-semibold uppercase tracking-wide text-gray-500 xl:grid"
+          className="mb-1 hidden grid-cols-[32px_1fr_1fr_1fr_1fr_36px] gap-2 px-1 text-xs font-normal uppercase tracking-wide text-[#4A3628] xl:grid"
         >
           <span className="text-center">#</span>
           <span>Manifestación</span>
@@ -488,7 +488,7 @@ export function StepCleaning({
 
               {/* Manifestación */}
               <div>
-                <label className="mb-1 block text-xs text-gray-500 xl:hidden">Manifestación</label>
+                <label className="mb-1 block text-xs uppercase tracking-wide text-[#4A3628] xl:hidden">Manifestación</label>
                 <select
                   value={row.manifestation}
                   disabled={disabled}
@@ -505,7 +505,7 @@ export function StepCleaning({
 
               {/* Trabajo realizado */}
               <div>
-                <label className="mb-1 block text-xs text-gray-500 xl:hidden">Trabajo realizado</label>
+                <label className="mb-1 block text-xs uppercase tracking-wide text-[#4A3628] xl:hidden">Trabajo realizado</label>
                 <MultiSelectDropdown
                   options={TRABAJOS}
                   selected={row.work_done}
@@ -524,7 +524,7 @@ export function StepCleaning({
                     disabled={disabled}
                     onChange={(e) => updateRow(row._localId, { work_done_other: e.target.value })}
                     placeholder="Especifica…"
-                    className="mt-1.5 h-9 w-full rounded border border-gray-300 bg-white px-2.5 text-sm placeholder-gray-400 focus:outline-none focus:ring-1 focus:ring-terra-700 disabled:opacity-50 disabled:cursor-not-allowed"
+                    className="mt-1.5 h-9 w-full rounded-none border-0 border-b border-[#D4A592] bg-[#FAF7F5] px-2.5 text-sm placeholder-gray-400 focus:outline-none focus:ring-0 focus:border-b-2 focus:border-[#C4704A] disabled:opacity-50 disabled:cursor-not-allowed"
                     aria-label={`Trabajo otro fila ${idx + 1}`}
                   />
                 )}
@@ -532,7 +532,7 @@ export function StepCleaning({
 
               {/* Materiales */}
               <div>
-                <label className="mb-1 block text-xs text-gray-500 xl:hidden">Materiales</label>
+                <label className="mb-1 block text-xs uppercase tracking-wide text-[#4A3628] xl:hidden">Materiales</label>
                 <MultiSelectDropdown
                   options={MATERIALES}
                   selected={row.materials}
@@ -545,7 +545,7 @@ export function StepCleaning({
 
               {/* Origen */}
               <div>
-                <label className="mb-1 block text-xs text-gray-500 xl:hidden">Origen</label>
+                <label className="mb-1 block text-xs uppercase tracking-wide text-[#4A3628] xl:hidden">Origen</label>
                 <select
                   value={row.origin}
                   disabled={disabled}
@@ -591,7 +591,7 @@ export function StepCleaning({
       {/* ── Sección 3: Mesa utilizada (multi-select) ──────────────────────── */}
       <section aria-label="Mesa utilizada">
         <p
-          className="mb-3 text-xs font-semibold uppercase tracking-wide text-terra-700"
+          className="mb-3 text-xs font-normal uppercase tracking-wide text-[#4A3628]"
           style={{ fontFamily: 'Lato, sans-serif' }}
         >
           Mesa utilizada
@@ -622,7 +622,7 @@ export function StepCleaning({
       {/* ── Sección 4: Beneficios al cliente ──────────────────────────────── */}
       <section aria-label="Beneficios al cliente">
         <label
-          className="mb-2 block text-xs font-semibold uppercase tracking-wide text-terra-700"
+          className="mb-2 block text-xs font-normal uppercase tracking-wide text-[#4A3628]"
           style={{ fontFamily: 'Lato, sans-serif' }}
         >
           Beneficios al cliente
@@ -633,7 +633,7 @@ export function StepCleaning({
           disabled={disabled}
           onChange={(e) => updateSummary({ beneficios: e.target.value })}
           placeholder="Describe los beneficios obtenidos durante la limpieza…"
-          className="w-full rounded-lg border border-[#EDE5E0] bg-white px-3 py-2 text-sm text-[#2C2220] placeholder-[#A9967E] shadow-sm focus:outline-none focus:ring-2 focus:ring-[#C4704A]/30 focus:border-[#C4704A] disabled:opacity-50 disabled:cursor-not-allowed resize-none"
+          className="w-full rounded-none border-0 border-b border-[#D4A592] bg-[#FAF7F5] px-3 py-2 text-sm text-[#2C2220] placeholder-[#A9967E] focus:outline-none focus:ring-0 focus:border-b-2 focus:border-[#C4704A] disabled:opacity-50 disabled:cursor-not-allowed resize-none"
           style={{ fontFamily: 'Lato, sans-serif' }}
         />
       </section>
@@ -643,7 +643,7 @@ export function StepCleaning({
       {/* ── Sección 5: Resumen ────────────────────────────────────────────── */}
       <section aria-label="Resumen de limpieza" className="grid grid-cols-2 gap-4 max-w-sm">
         <div className="flex flex-col gap-1">
-          <label className="text-xs font-semibold uppercase tracking-wide text-gray-600">
+          <label className="text-xs font-normal uppercase tracking-wide text-[#4A3628]">
             Cantidad de capas
           </label>
           <div className={`${INPUT_CLASS} flex items-center opacity-70 cursor-default`}>
@@ -651,7 +651,7 @@ export function StepCleaning({
           </div>
         </div>
         <div className="flex flex-col gap-1">
-          <label className="text-xs font-semibold uppercase tracking-wide text-gray-600">
+          <label className="text-xs font-normal uppercase tracking-wide text-[#4A3628]">
             Limpiezas requeridas
           </label>
           <input
