@@ -108,7 +108,7 @@ class LNTItem(BaseModel):
 
 
 class LNTUpdate(BaseModel):
-    entries: list[LNTItem] = Field(..., min_length=1)
+    entries: list[LNTItem] = Field(default_factory=list)
     peticiones: str | None = None  # nivel sesión — se almacena en la primera entrada
 
 

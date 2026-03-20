@@ -851,6 +851,9 @@ async def save_lnt(
     rows = [e.model_dump() for e in data.entries]
     if rows:
         rows[0]["peticiones"] = data.peticiones
+    elif data.peticiones:
+        # Solo peticiones sin entradas (e.g. Medicina Cuántica desde StepTopics)
+        rows = [{"peticiones": data.peticiones}]
 
     await _replace_soft_delete(SessionLnt, session_id, rows, db)
 
