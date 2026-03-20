@@ -15,7 +15,7 @@ import { StepCleaning }      from '@/components/clinical/wizard/StepCleaning';
 import { StepLNT }           from '@/components/clinical/wizard/StepLNT';
 
 import { useWizardStore } from '@/lib/stores/wizardStore';
-import { getWizardConfig } from '@/lib/data/wizard-config';
+import { getWizardConfig, injectCleaningStep } from '@/lib/data/wizard-config';
 import {
   getTherapyTypes,
   getChakraPositions,
@@ -28,6 +28,7 @@ import {
   saveChakraReadings,
   closeSession,
   getClientTopics,
+  createClientTopic,
   saveThemeEntries,
   saveLntEntries,
 } from '@/lib/api/clinical';
@@ -77,7 +78,7 @@ function defaultCloseData(): CloseData {
 }
 
 function initEnergyReadings(dimensions: EnergyDimension[]): EnergyReading[] {
-  return dimensions.filter((d) => d.is_active).map((d) => ({ dimension_id: d.id, value: 50 }));
+  return dimensions.map((d) => ({ dimension_id: d.id, value: 50 }));
 }
 
 function initChakraReadings(chakras: ChakraPosition[]): WizardChakraReading[] {
@@ -122,6 +123,9 @@ export default function NuevaSessionPage() {
   const [ancestorConciliation, setAncestorConciliation] = useState<AncestorConciliation>({
     healing_phrases: '', conciliation_acts: '', life_aspects_affected: '', session_relationship: '',
   });
+
+  // Flag: entidades/capas/implantes detectados → inyectar StepCleaning
+  const [hasEntitiesFlag, setHasEntitiesFlag] = useState(false);
 
   // Estado de UI
   const [isSaving, setIsSaving] = useState(false);
@@ -181,7 +185,10 @@ export default function NuevaSessionPage() {
     return getWizardConfig(therapy?.name ?? '');
   }, [catalogs, generalData.therapy_type_id]);
 
-  const activeSteps = wizardConfig.steps;
+  const activeSteps = useMemo(() => {
+    if (hasEntitiesFlag) return injectCleaningStep(wizardConfig.steps);
+    return wizardConfig.steps;
+  }, [wizardConfig.steps, hasEntitiesFlag]);
 
   // Auto-rellenar costo por defecto al llegar al paso de cierre
   useEffect(() => {
@@ -307,6 +314,27 @@ export default function NuevaSessionPage() {
         .filter((t) => t.topic_id !== null)
         .map((t) => ({ client_topic_id: t.topic_id as string, progress_pct: t.progress_pct }));
       await saveThemeEntries(sid, { entries, topic_progress: topicProgress });
+    }
+
+    // Persist secondary theme names as client_topics (if not already existing)
+    if (generalData.client_id) {
+      const secondaryThemes = themes.filter(
+        (t) => t.is_secondary && t.secondary_name?.trim(),
+      );
+      for (const t of secondaryThemes) {
+        const name = t.secondary_name!.trim();
+        const alreadyExists = clientTopics.some(
+          (ct) => ct.name.toLowerCase() === name.toLowerCase(),
+        );
+        if (!alreadyExists) {
+          try {
+            const created = await createClientTopic(generalData.client_id, name);
+            setClientTopics((prev) => [...prev, created]);
+          } catch {
+            // Non-critical — silently skip duplicates or transient failures
+          }
+        }
+      }
     }
   }
 
@@ -508,7 +536,7 @@ export default function NuevaSessionPage() {
   }
 
   // Dimensiones activas para los steps de energía
-  const activeDimensions = catalogs.dimensions.filter((d) => d.is_active);
+  const activeDimensions = catalogs.dimensions;
 
   // isNextDisabled solo aplica al paso 1
   const currentComponent = activeSteps[currentStep - 1]?.component;
@@ -556,6 +584,7 @@ export default function NuevaSessionPage() {
             value={generalData}
             onChange={setGeneralData}
             onSearchClients={(q) => searchClients(q)}
+            onEntitiesChange={setHasEntitiesFlag}
             disabled={isSaving}
           />
         )}
@@ -639,6 +668,8 @@ export default function NuevaSessionPage() {
             onCloseSession={handleCloseSession}
             disabled={isSaving}
             isClosing={isSaving}
+            isCleaningSession={activeSteps.some((s) => s.component === 'StepCleaning')}
+            limpiezasRequeridas={cleaningSummary.limpiezas_requeridas}
           />
         )}
       </WizardShell>

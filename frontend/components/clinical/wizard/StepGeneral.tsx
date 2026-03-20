@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useRef, useEffect, useId } from 'react';
+import { useState, useRef, useEffect, useId, useCallback } from 'react';
 import { EnergySlider } from '../EnergySlider';
 import type { ClientOption, TherapyTypeOption, GeneralData } from './types';
 
@@ -209,6 +209,8 @@ export interface StepGeneralProps {
   disabled?: boolean;
   /** Búsqueda server-side de clientes (debounce 300ms). */
   onSearchClients?: (query: string) => Promise<ClientOption[]>;
+  /** Notifica si alguno de entidades/capas/implantes está en "Sí". */
+  onEntitiesChange?: (hasEntities: boolean) => void;
 }
 
 export function StepGeneral({
@@ -218,6 +220,7 @@ export function StepGeneral({
   onChange,
   disabled = false,
   onSearchClients,
+  onEntitiesChange,
 }: StepGeneralProps) {
   const clientSelectId   = useId();
   const therapySelectId  = useId();
@@ -226,6 +229,16 @@ export function StepGeneral({
 
   const clientOptions    = clients.map((c) => ({ value: c.id, label: c.full_name }));
   const therapyOptions   = therapyTypes.map((t) => ({ value: t.id, label: t.name }));
+
+  // Notify parent when entidades/capas/implantes toggles change
+  const hasAnyEntity = value.has_entities === true || value.has_capas === true || value.has_implants === true;
+  const stableOnEntitiesChange = useCallback(
+    (flag: boolean) => onEntitiesChange?.(flag),
+    [onEntitiesChange],
+  );
+  useEffect(() => {
+    stableOnEntitiesChange(hasAnyEntity);
+  }, [hasAnyEntity, stableOnEntitiesChange]);
 
   function update<K extends keyof GeneralData>(field: K, val: GeneralData[K]) {
     onChange({ ...value, [field]: val });

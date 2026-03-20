@@ -119,11 +119,19 @@ export interface ThemeEntry {
   progress_pct: number;
 }
 
+/** Check de capas pre-tabla (sección 1 del reporte de limpieza). */
+export interface CleaningCheck {
+  label: string;
+  checked: boolean;
+  quantity: number;
+}
+
 /** Una fila del reporte de limpieza energética. */
 export interface CleaningRow {
   _localId: string;
   manifestation: string;
-  work: string;
+  work_done: string;
+  work_done_other?: string;
   materials: string[];
   origin: string;
 }
