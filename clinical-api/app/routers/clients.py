@@ -85,6 +85,9 @@ def _client_select(key: str):
         Client.important_notes,
         Client.motivation_visit,
         Client.motivation_general,
+        Client.has_consent,
+        Client.consent_pdf_path,
+        Client.archived_at,
         Client.created_at,
         Client.updated_at,
         Client.deleted_at,
@@ -470,3 +473,49 @@ async def list_client_sessions(
     ]
 
     return ClientSessionsResponse(data=items, total=total, page=page, per_page=per_page)
+
+
+@router.post(
+    "/{client_id}/documents",
+    status_code=status.HTTP_201_CREATED,
+    summary="Subir documento de consentimiento (stub — TODO: MinIO upload)",
+)
+async def upload_consent_document(
+    client_id: UUID,
+    request: Request,
+    # file: UploadFile  — TODO: wire MinIO upload
+    db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(require_role(UserRole.admin)),
+) -> dict:
+    """
+    Stub: marca has_consent=True para el cliente.
+    En el futuro aceptará un PDF via UploadFile y lo almacenará en MinIO.
+    """
+    ip = request.client.host if request.client else None
+    ua = request.headers.get("user-agent")
+
+    result = await db.execute(
+        update(Client)
+        .where(Client.id == client_id, Client.deleted_at.is_(None))
+        .values(has_consent=True)
+        .returning(Client.id)
+    )
+    if result.scalar_one_or_none() is None:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Cliente no encontrado",
+        )
+
+    await write_audit_log(
+        db,
+        table_name="clients",
+        record_id=client_id,
+        action=AuditAction.UPDATE,
+        changed_by=current_user.id,
+        new_data={"has_consent": True},
+        ip_address=ip,
+        user_agent=ua,
+    )
+
+    await db.commit()
+    return {"status": "ok", "has_consent": True}

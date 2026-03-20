@@ -199,6 +199,11 @@ class Client(Base, UUIDPrimaryKeyMixin, TimestampMixin, SoftDeleteMixin):
     motivation_visit: Mapped[dict[str, Any] | None] = mapped_column(JSONB, nullable=True)   # array de texto libre
     motivation_general: Mapped[str | None] = mapped_column(Text, nullable=True)
 
+    # Consentimiento y retención — NOM-004-SSA3-2012
+    has_consent: Mapped[bool] = mapped_column(Boolean, nullable=False, default=False)
+    consent_pdf_path: Mapped[str | None] = mapped_column(Text, nullable=True)
+    archived_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
+
     # Trazabilidad de migración Notion
     notion_page_id: Mapped[str | None] = mapped_column(String(100), nullable=True, unique=True)
     migration_batch_id: Mapped[UUID | None] = mapped_column(PG_UUID(as_uuid=True), nullable=True)
