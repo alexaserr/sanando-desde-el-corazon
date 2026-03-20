@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { useParams, useRouter } from 'next/navigation';
-import { ArrowLeft, Zap, ChevronDown } from 'lucide-react';
+import { ArrowLeft, Download, Zap, ChevronDown } from 'lucide-react';
 import { apiClient } from '@/lib/api/client';
 import { getChakraColor } from '@/components/clinical/chakra-colors';
 import { formatDateTime, formatCurrency } from '@/lib/utils/formatters';
@@ -263,6 +263,28 @@ export default function SessionDetailPage() {
   const [session, setSession] = useState<SessionFullDetail | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [isDownloading, setIsDownloading] = useState(false);
+
+  async function handleDownloadPdf() {
+    if (!session || isDownloading) return;
+    setIsDownloading(true);
+    try {
+      const response = await apiClient.raw(`/api/v1/clinical/sessions/${session.id}/pdf`, {
+        method: 'GET',
+      });
+      const blob = await response.blob();
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `sesion_${session.id.slice(0, 8)}_${new Date(session.measured_at).toISOString().slice(0, 10)}.pdf`;
+      a.click();
+      URL.revokeObjectURL(url);
+    } catch (err) {
+      console.error('PDF download failed:', err);
+    } finally {
+      setIsDownloading(false);
+    }
+  }
 
   useEffect(() => {
     apiClient
@@ -323,14 +345,24 @@ export default function SessionDetailPage() {
 
   return (
     <div className="space-y-5 max-w-4xl">
-      {/* Volver */}
-      <button
-        onClick={() => router.push(backHref)}
-        className="flex items-center gap-1 text-sm text-terra-700 hover:text-terra-900 transition-colors -ml-1"
-      >
-        <ArrowLeft className="h-4 w-4" />
-        Volver al paciente
-      </button>
+      {/* Volver + Descargar PDF */}
+      <div className="flex items-center justify-between">
+        <button
+          onClick={() => router.push(backHref)}
+          className="flex items-center gap-1 text-sm text-terra-700 hover:text-terra-900 transition-colors -ml-1"
+        >
+          <ArrowLeft className="h-4 w-4" />
+          Volver al paciente
+        </button>
+        <button
+          onClick={handleDownloadPdf}
+          disabled={isDownloading}
+          className="flex items-center gap-2 rounded-md bg-terra-DEFAULT px-4 py-2 text-sm font-medium text-white hover:bg-terra-600 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+        >
+          <Download size={16} strokeWidth={1.5} />
+          {isDownloading ? 'Descargando...' : 'Descargar PDF'}
+        </button>
+      </div>
 
       {/* ── Encabezado ── */}
       <div className="flex flex-wrap items-start justify-between gap-4">
