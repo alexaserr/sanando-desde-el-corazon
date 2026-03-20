@@ -24,6 +24,11 @@ class ChakraResponse(BaseModel):
     model_config = {"from_attributes": True}
 
 
+class DimensionCreate(BaseModel):
+    name: str
+    description: str | None = None
+
+
 class DimensionResponse(BaseModel):
     id: UUID
     name: str

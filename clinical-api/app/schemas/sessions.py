@@ -4,6 +4,7 @@ Schemas Pydantic para sesiones clínicas y wizard de captura de 7 pasos.
 Escalas:
   - Dimensiones energéticas: 0-100 (decimal)
   - Chakras: 0-14 (escala nativa Notion, no convertir a 0-100)
+  - LNT initial/final energy: 0-14 (escala nativa Notion)
 """
 from datetime import datetime
 from decimal import Decimal
@@ -99,8 +100,8 @@ class TopicResponse(BaseModel):
 
 class LNTItem(BaseModel):
     theme_organ: str | None = Field(None, max_length=300)
-    initial_energy: Decimal | None = Field(None, ge=0, le=100)
-    final_energy: Decimal | None = Field(None, ge=0, le=100)
+    initial_energy: Decimal | None = Field(None, ge=0, le=14)
+    final_energy: Decimal | None = Field(None, ge=0, le=14)
     healing_energy_body: bool | None = None
     healing_spiritual_body: bool | None = None
     healing_physical_body: bool | None = None
@@ -280,12 +281,18 @@ class SessionGeneralUpdate(BaseModel):
     bud_chakra: str | None = Field(None, max_length=200)
     payment_notes: str | None = None
     notes: str | None = None  # PII — se cifra con pgp_sym_encrypt al escribir
+    porcentaje_pago: Decimal | None = Field(None, ge=0, le=100)
+    incluye_iva: bool | None = None
+    costo_calculado: Decimal | None = Field(None, ge=0)
 
 
 class SessionCloseRequest(BaseModel):
     """Paso 7 — cierre y confirmación de pago."""
     cost: Decimal | None = Field(None, ge=0)
     payment_notes: str | None = None
+    porcentaje_pago: Decimal | None = Field(None, ge=0, le=100)
+    incluye_iva: bool | None = None
+    costo_calculado: Decimal | None = Field(None, ge=0)
 
 
 class SessionResponse(BaseModel):
@@ -310,6 +317,9 @@ class SessionResponse(BaseModel):
     limpiezas_requeridas: int | None = None
     mesa_utilizada: str | None = None
     beneficios: str | None = None
+    porcentaje_pago: Decimal | None = None
+    incluye_iva: bool | None = None
+    costo_calculado: Decimal | None = None
     created_at: datetime
     updated_at: datetime
     deleted_at: datetime | None = None

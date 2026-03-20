@@ -399,6 +399,9 @@ async def _build_session_response(session_id: UUID, db: AsyncSession) -> Session
         limpiezas_requeridas=session.limpiezas_requeridas,
         mesa_utilizada=session.mesa_utilizada,
         beneficios=session.beneficios,
+        porcentaje_pago=session.porcentaje_pago,
+        incluye_iva=session.incluye_iva,
+        costo_calculado=session.costo_calculado,
         created_at=session.created_at,
         updated_at=session.updated_at,
         deleted_at=session.deleted_at,
@@ -751,6 +754,12 @@ async def close_session(
         values["cost"] = data.cost
     if data.payment_notes is not None:
         values["payment_notes"] = data.payment_notes
+    if data.porcentaje_pago is not None:
+        values["porcentaje_pago"] = data.porcentaje_pago
+    if data.incluye_iva is not None:
+        values["incluye_iva"] = data.incluye_iva
+    if data.costo_calculado is not None:
+        values["costo_calculado"] = data.costo_calculado
 
     await db.execute(update(Session).where(Session.id == session_id).values(**values))
 
