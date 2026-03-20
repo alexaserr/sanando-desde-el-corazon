@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { useParams, useRouter } from 'next/navigation';
-import { ArrowLeft, Zap } from 'lucide-react';
+import { ArrowLeft, Zap, ChevronDown } from 'lucide-react';
 import { apiClient } from '@/lib/api/client';
 import { getChakraColor } from '@/components/clinical/chakra-colors';
 import { formatDateTime, formatCurrency } from '@/lib/utils/formatters';
@@ -47,6 +47,7 @@ interface LNTEntry {
   healing_energy_body: boolean | null;
   healing_spiritual_body: boolean | null;
   healing_physical_body: boolean | null;
+  peticiones: string | null;
 }
 
 interface CleaningEvent {
@@ -91,6 +92,25 @@ interface OrganItem {
   emotions: string | null;
 }
 
+interface AncestorItem {
+  id: string;
+  member: string | null;
+  lineage: string | null;
+  bond_energy: string[] | null;
+  ancestor_roles: string[] | null;
+  consultant_roles: string[] | null;
+  energy_expressions: { number: number; expression: string }[] | null;
+  family_traumas: { number: number; trauma: string }[] | null;
+}
+
+interface AncestorConciliationItem {
+  id: string;
+  healing_phrases: string | null;
+  conciliation_acts: string | null;
+  life_aspects_affected: string | null;
+  session_relationship: string | null;
+}
+
 interface SessionFullDetail {
   id: string;
   client_id: string | null;
@@ -108,6 +128,11 @@ interface SessionFullDetail {
   bud_chakra: string | null;
   payment_notes: string | null;
   notes: string | null;
+  // Resumen de limpiezas
+  capas: number | null;
+  limpiezas_requeridas: number | null;
+  mesa_utilizada: string | null;
+  beneficios: string | null;
   created_at: string;
   updated_at: string;
   energy_readings: EnergyReading[];
@@ -117,37 +142,46 @@ interface SessionFullDetail {
   cleaning_events: CleaningEvent[];
   affectations: AffectationItem[];
   organs: OrganItem[];
+  ancestors: AncestorItem[];
+  ancestor_conciliation: AncestorConciliationItem | null;
 }
 
 // ─── Componentes auxiliares ───────────────────────────────────────────────────
 
-function SectionCard({
+function CollapsibleCard({
   title,
+  defaultOpen = true,
   children,
 }: {
   title: string;
+  defaultOpen?: boolean;
   children: React.ReactNode;
 }) {
   return (
-    <div className="bg-white rounded-xl border border-terra-100 shadow-sm p-6">
-      <h2 className="font-display text-lg font-semibold text-terra-900 mb-4">
-        {title}
-      </h2>
-      {children}
-    </div>
+    <details open={defaultOpen} className="group bg-white rounded-xl border border-terra-100 shadow-sm">
+      <summary className="flex items-center justify-between cursor-pointer p-5 select-none">
+        <h2 className="font-display text-lg font-semibold text-terra-900">
+          {title}
+        </h2>
+        <ChevronDown className="h-5 w-5 text-terra-400 transition-transform group-open:rotate-180" />
+      </summary>
+      <div className="px-5 pb-5 pt-0">
+        {children}
+      </div>
+    </details>
   );
 }
 
 function Delta({
   initial,
-  final,
+  final: fin,
 }: {
   initial: number | null;
   final: number | null;
 }) {
-  if (initial == null || final == null)
+  if (initial == null || fin == null)
     return <span className="text-gray-300">—</span>;
-  const delta = Number(final) - Number(initial);
+  const delta = Number(fin) - Number(initial);
   const sign = delta > 0 ? '+' : '';
   const cls =
     delta > 0
@@ -179,6 +213,22 @@ function MetaBadge({ label, value }: { label: string; value: React.ReactNode }) 
   );
 }
 
+function Chip({ children }: { children: React.ReactNode }) {
+  return (
+    <span className="inline-flex items-center text-xs bg-terra-50 text-terra-700 border border-terra-200 rounded-full px-2.5 py-0.5">
+      {children}
+    </span>
+  );
+}
+
+function FieldLabel({ children }: { children: React.ReactNode }) {
+  return (
+    <p className="text-xs uppercase tracking-wide text-gray-400 font-medium mb-0.5">
+      {children}
+    </p>
+  );
+}
+
 function SkeletonDetail() {
   return (
     <div className="space-y-6 max-w-4xl animate-pulse">
@@ -191,6 +241,18 @@ function SkeletonDetail() {
       </div>
     </div>
   );
+}
+
+// ─── Helpers ─────────────────────────────────────────────────────────────────
+
+/** Pipe-delimited string → comma-separated display */
+function pipesToDisplay(s: string | null): string {
+  if (!s) return '';
+  return s.split('|').map((v) => v.trim()).filter(Boolean).join(', ');
+}
+
+function notEmpty<T>(arr: T[] | undefined | null): arr is T[] {
+  return Array.isArray(arr) && arr.length > 0;
 }
 
 // ─── Página principal ─────────────────────────────────────────────────────────
@@ -231,29 +293,36 @@ export default function SessionDetailPage() {
     ? `/clinica/pacientes/${session.client_id}`
     : '/clinica/sesiones';
 
-  // Solo dimensiones con al menos un valor registrado
+  // Filtrar datos activos (sin soft-delete)
   const energyRows = session.energy_readings.filter(
     (r) => r.initial_value != null || r.final_value != null,
   );
-  // Chakras ordenados por posición
   const chakraRows = [...session.chakra_readings]
     .filter((r) => r.initial_value != null || r.final_value != null)
     .sort((a, b) => a.chakra_position - b.chakra_position);
+  const activeTopics = session.topics.filter((t) => !('deleted_at' in t && (t as Record<string, unknown>).deleted_at));
+  const activeLNT = session.lnt_entries.filter((e) => !('deleted_at' in e && (e as Record<string, unknown>).deleted_at));
+  const activeCleanings = session.cleaning_events.filter((e) => !('deleted_at' in e && (e as Record<string, unknown>).deleted_at));
+  const activeAffectations = session.affectations.filter((e) => !('deleted_at' in e && (e as Record<string, unknown>).deleted_at));
+  const activeOrgans = session.organs.filter((e) => !('deleted_at' in e && (e as Record<string, unknown>).deleted_at));
+  const activeAncestors = session.ancestors.filter((e) => !('deleted_at' in e && (e as Record<string, unknown>).deleted_at));
 
-  const activeTopics = session.topics.filter((t) => !('deleted_at' in t && t.deleted_at));
-  const activeLNT = session.lnt_entries.filter((e) => !('deleted_at' in e && e.deleted_at));
-  const activeCleanings = session.cleaning_events.filter((e) => !('deleted_at' in e && e.deleted_at));
-  const activeAffectations = session.affectations.filter((e) => !('deleted_at' in e && e.deleted_at));
-  const activeOrgans = session.organs.filter((e) => !('deleted_at' in e && e.deleted_at));
-
-  const hasOtros =
-    activeLNT.length > 0 ||
+  // Determinar si hay datos de limpieza (summary o eventos)
+  const hasCleaningData =
     activeCleanings.length > 0 ||
-    activeAffectations.length > 0 ||
-    activeOrgans.length > 0;
+    (session.capas != null && session.capas > 0) ||
+    (session.limpiezas_requeridas != null && session.limpiezas_requeridas > 0) ||
+    !!session.mesa_utilizada ||
+    !!session.beneficios;
+
+  const hasAncestorData = activeAncestors.length > 0 || session.ancestor_conciliation != null;
+
+  // ¿Tiene mediciones finales? Si no, es sesión de limpieza (solo mostrar iniciales)
+  const hasFinalEnergy = energyRows.some((r) => r.final_value != null);
+  const hasFinalChakra = chakraRows.some((r) => r.final_value != null);
 
   return (
-    <div className="space-y-6 max-w-4xl">
+    <div className="space-y-5 max-w-4xl">
       {/* Volver */}
       <button
         onClick={() => router.push(backHref)}
@@ -283,8 +352,8 @@ export default function SessionDetailPage() {
         )}
       </div>
 
-      {/* ── Sección 1: Resumen general ── */}
-      <SectionCard title="Resumen general">
+      {/* ── 1. Datos generales ── */}
+      <CollapsibleCard title="Datos generales">
         <div className="flex flex-wrap gap-6 mb-4">
           {session.general_energy_level != null && (
             <div className="flex items-center gap-3 bg-terra-50 rounded-xl px-4 py-3">
@@ -307,50 +376,39 @@ export default function SessionDetailPage() {
             <MetaBadge label="Implantes" value={session.implants_count} />
           )}
           {(session.total_cleanings != null && session.total_cleanings > 0) && (
-            <MetaBadge label="Limpiezas" value={session.total_cleanings} />
+            <MetaBadge label="Limpiezas totales" value={session.total_cleanings} />
           )}
-          {session.bud && (
-            <MetaBadge label="Bud" value={session.bud} />
-          )}
-          {session.bud_chakra && (
-            <MetaBadge label="Chakra Bud" value={session.bud_chakra} />
-          )}
+          {session.bud && <MetaBadge label="Bud" value={session.bud} />}
+          {session.bud_chakra && <MetaBadge label="Chakra Bud" value={session.bud_chakra} />}
         </div>
 
         {session.notes && (
           <div className="mb-3">
-            <p className="text-xs uppercase tracking-wide text-gray-400 font-medium mb-2">
-              Notas
-            </p>
-            <div className="bg-amber-50/60 border-l-4 border-amber-300 rounded-r-xl p-4">
+            <FieldLabel>Notas</FieldLabel>
+            <div className="bg-amber-50/60 border-l-4 border-amber-300 rounded-r-xl p-4 mt-1">
               <p className="text-sm text-amber-900 leading-relaxed whitespace-pre-wrap">
                 {session.notes}
               </p>
             </div>
           </div>
         )}
+      </CollapsibleCard>
 
-        {session.payment_notes && (
-          <div>
-            <p className="text-xs uppercase tracking-wide text-gray-400 font-medium mb-1">
-              Notas de pago
-            </p>
-            <p className="text-sm text-terra-800">{session.payment_notes}</p>
-          </div>
-        )}
-      </SectionCard>
-
-      {/* ── Sección 2: Dimensiones energéticas ── */}
+      {/* ── 2. Dimensiones energéticas ── */}
       {energyRows.length > 0 && (
-        <SectionCard title="Dimensiones energéticas">
+        <CollapsibleCard title={hasFinalEnergy ? 'Dimensiones energéticas' : 'Mediciones energéticas iniciales'}>
           <div className="overflow-x-auto">
             <table className="w-full text-sm">
               <thead>
                 <tr className="border-b border-terra-100 text-xs uppercase tracking-wide text-terra-500">
                   <th className="text-left py-2 pr-4 font-medium">Dimensión</th>
                   <th className="text-center py-2 px-3 font-medium w-20">Inicial</th>
-                  <th className="text-center py-2 px-3 font-medium w-20">Final</th>
-                  <th className="text-center py-2 pl-3 font-medium w-20">Delta</th>
+                  {hasFinalEnergy && (
+                    <>
+                      <th className="text-center py-2 px-3 font-medium w-20">Final</th>
+                      <th className="text-center py-2 pl-3 font-medium w-20">Delta</th>
+                    </>
+                  )}
                 </tr>
               </thead>
               <tbody>
@@ -360,23 +418,27 @@ export default function SessionDetailPage() {
                     <td className="py-2.5 px-3 text-center text-terra-600">
                       <NumCell value={r.initial_value} />
                     </td>
-                    <td className="py-2.5 px-3 text-center text-terra-600">
-                      <NumCell value={r.final_value} />
-                    </td>
-                    <td className="py-2.5 pl-3 text-center">
-                      <Delta initial={r.initial_value} final={r.final_value} />
-                    </td>
+                    {hasFinalEnergy && (
+                      <>
+                        <td className="py-2.5 px-3 text-center text-terra-600">
+                          <NumCell value={r.final_value} />
+                        </td>
+                        <td className="py-2.5 pl-3 text-center">
+                          <Delta initial={r.initial_value} final={r.final_value} />
+                        </td>
+                      </>
+                    )}
                   </tr>
                 ))}
               </tbody>
             </table>
           </div>
-        </SectionCard>
+        </CollapsibleCard>
       )}
 
-      {/* ── Sección 3: Chakras ── */}
+      {/* ── 3. Chakras ── */}
       {chakraRows.length > 0 && (
-        <SectionCard title="Chakras">
+        <CollapsibleCard title={hasFinalChakra ? 'Chakras' : 'Chakras — mediciones iniciales'}>
           <p className="text-xs text-gray-400 mb-3">Escala 0 – 14</p>
           <div className="overflow-x-auto">
             <table className="w-full text-sm">
@@ -384,8 +446,12 @@ export default function SessionDetailPage() {
                 <tr className="border-b border-terra-100 text-xs uppercase tracking-wide text-terra-500">
                   <th className="text-left py-2 pr-4 font-medium">Chakra</th>
                   <th className="text-center py-2 px-3 font-medium w-20">Inicial</th>
-                  <th className="text-center py-2 px-3 font-medium w-20">Final</th>
-                  <th className="text-center py-2 pl-3 font-medium w-20">Delta</th>
+                  {hasFinalChakra && (
+                    <>
+                      <th className="text-center py-2 px-3 font-medium w-20">Final</th>
+                      <th className="text-center py-2 pl-3 font-medium w-20">Delta</th>
+                    </>
+                  )}
                 </tr>
               </thead>
               <tbody>
@@ -405,24 +471,28 @@ export default function SessionDetailPage() {
                       <td className="py-2.5 px-3 text-center text-terra-600">
                         <NumCell value={r.initial_value} />
                       </td>
-                      <td className="py-2.5 px-3 text-center text-terra-600">
-                        <NumCell value={r.final_value} />
-                      </td>
-                      <td className="py-2.5 pl-3 text-center">
-                        <Delta initial={r.initial_value} final={r.final_value} />
-                      </td>
+                      {hasFinalChakra && (
+                        <>
+                          <td className="py-2.5 px-3 text-center text-terra-600">
+                            <NumCell value={r.final_value} />
+                          </td>
+                          <td className="py-2.5 pl-3 text-center">
+                            <Delta initial={r.initial_value} final={r.final_value} />
+                          </td>
+                        </>
+                      )}
                     </tr>
                   );
                 })}
               </tbody>
             </table>
           </div>
-        </SectionCard>
+        </CollapsibleCard>
       )}
 
-      {/* ── Sección 4: Temas trabajados ── */}
+      {/* ── 4. Temas trabajados ── */}
       {activeTopics.length > 0 && (
-        <SectionCard title="Temas trabajados">
+        <CollapsibleCard title="Temas trabajados">
           <div className="space-y-4">
             {activeTopics.map((t, idx) => (
               <div
@@ -445,27 +515,23 @@ export default function SessionDetailPage() {
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-sm">
                   {t.adult_theme && (
                     <div>
-                      <p className="text-xs text-gray-400 font-medium uppercase tracking-wide mb-0.5">
-                        Tema adulto
-                        {t.adult_age != null ? ` (${t.adult_age} años)` : ''}
-                      </p>
+                      <FieldLabel>
+                        Tema adulto{t.adult_age != null ? ` (${t.adult_age} años)` : ''}
+                      </FieldLabel>
                       <p className="text-terra-800">{t.adult_theme}</p>
                     </div>
                   )}
                   {t.child_theme && (
                     <div>
-                      <p className="text-xs text-gray-400 font-medium uppercase tracking-wide mb-0.5">
-                        Tema infancia
-                        {t.child_age != null ? ` (${t.child_age} años)` : ''}
-                      </p>
+                      <FieldLabel>
+                        Tema infancia{t.child_age != null ? ` (${t.child_age} años)` : ''}
+                      </FieldLabel>
                       <p className="text-terra-800">{t.child_theme}</p>
                     </div>
                   )}
                   {t.emotions && (
                     <div className="sm:col-span-2">
-                      <p className="text-xs text-gray-400 font-medium uppercase tracking-wide mb-0.5">
-                        Emociones
-                      </p>
+                      <FieldLabel>Emociones</FieldLabel>
                       <p className="text-terra-800">{t.emotions}</p>
                     </div>
                   )}
@@ -496,98 +562,266 @@ export default function SessionDetailPage() {
               </div>
             ))}
           </div>
-        </SectionCard>
+        </CollapsibleCard>
       )}
 
-      {/* ── Sección 5: Otros datos ── */}
-      {hasOtros && (
-        <SectionCard title="Otros datos">
+      {/* ── 5. LNT ── */}
+      {activeLNT.length > 0 && (
+        <CollapsibleCard title="LNT — Liberación Neuromuscular y Tisular">
+          <div className="space-y-3">
+            {activeLNT.map((e) => (
+              <div key={e.id} className="border border-terra-100 rounded-lg p-4 text-sm space-y-2">
+                {e.theme_organ && (
+                  <p className="font-medium text-terra-900">{e.theme_organ}</p>
+                )}
+                <div className="flex flex-wrap gap-4 text-terra-600">
+                  {e.initial_energy != null && <span>Inicial: {e.initial_energy}</span>}
+                  {e.final_energy != null && <span>Final: {e.final_energy}</span>}
+                  {e.initial_energy != null && e.final_energy != null && (
+                    <span>
+                      Delta: <Delta initial={e.initial_energy} final={e.final_energy} />
+                    </span>
+                  )}
+                </div>
+                <div className="flex flex-wrap gap-2">
+                  {e.healing_energy_body && (
+                    <span className="text-xs bg-blue-50 text-blue-700 border border-blue-200 rounded-full px-2 py-0.5">
+                      Cuerpo energético
+                    </span>
+                  )}
+                  {e.healing_spiritual_body && (
+                    <span className="text-xs bg-purple-50 text-purple-700 border border-purple-200 rounded-full px-2 py-0.5">
+                      Cuerpo espiritual
+                    </span>
+                  )}
+                  {e.healing_physical_body && (
+                    <span className="text-xs bg-green-50 text-green-700 border border-green-200 rounded-full px-2 py-0.5">
+                      Cuerpo físico
+                    </span>
+                  )}
+                </div>
+                {e.peticiones && (
+                  <div className="mt-1">
+                    <FieldLabel>Peticiones</FieldLabel>
+                    <p className="text-terra-800 whitespace-pre-wrap">{e.peticiones}</p>
+                  </div>
+                )}
+              </div>
+            ))}
+          </div>
+        </CollapsibleCard>
+      )}
+
+      {/* ── 6. Reporte de Limpieza ── */}
+      {hasCleaningData && (
+        <CollapsibleCard title="Reporte de Limpieza">
+          {/* Resumen de limpieza */}
+          <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 mb-4">
+            {session.capas != null && (
+              <div className="bg-terra-50 rounded-lg p-3">
+                <p className="text-xs uppercase tracking-wide text-terra-500 font-medium">Capas</p>
+                <p className="text-xl font-bold text-terra-900">{session.capas}</p>
+              </div>
+            )}
+            {session.limpiezas_requeridas != null && (
+              <div className="bg-terra-50 rounded-lg p-3">
+                <p className="text-xs uppercase tracking-wide text-terra-500 font-medium">Limpiezas requeridas</p>
+                <p className="text-xl font-bold text-terra-900">{session.limpiezas_requeridas}</p>
+              </div>
+            )}
+          </div>
+
+          {session.mesa_utilizada && (
+            <div className="mb-4">
+              <FieldLabel>Mesa utilizada</FieldLabel>
+              <div className="flex flex-wrap gap-1.5 mt-1">
+                {session.mesa_utilizada.split('|').map((m) => m.trim()).filter(Boolean).map((m) => (
+                  <Chip key={m}>{m}</Chip>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {session.beneficios && (
+            <div className="mb-4">
+              <FieldLabel>Beneficios</FieldLabel>
+              <p className="text-sm text-terra-800 whitespace-pre-wrap mt-1">{session.beneficios}</p>
+            </div>
+          )}
+
+          {/* Tabla de eventos de limpieza */}
+          {activeCleanings.length > 0 ? (
+            <div>
+              <h3 className="text-sm font-semibold text-terra-700 mb-3 uppercase tracking-wide">
+                Eventos de limpieza
+              </h3>
+              <div className="overflow-x-auto">
+                <table className="w-full text-sm">
+                  <thead>
+                    <tr className="border-b border-terra-100 text-xs uppercase tracking-wide text-terra-500">
+                      <th className="text-left py-2 pr-3 font-medium w-8">#</th>
+                      <th className="text-left py-2 pr-3 font-medium">Manifestación</th>
+                      <th className="text-left py-2 pr-3 font-medium">Trabajo realizado</th>
+                      <th className="text-left py-2 pr-3 font-medium">Materiales</th>
+                      <th className="text-left py-2 font-medium">Origen</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {activeCleanings.map((ev, idx) => (
+                      <tr key={ev.id} className="border-b border-terra-50 hover:bg-terra-50/30 align-top">
+                        <td className="py-2.5 pr-3 text-terra-400 font-medium">{idx + 1}</td>
+                        <td className="py-2.5 pr-3 text-terra-800">{ev.manifestation || '—'}</td>
+                        <td className="py-2.5 pr-3 text-terra-800">{ev.work_done || '—'}</td>
+                        <td className="py-2.5 pr-3 text-terra-800">
+                          {ev.materials_used ? pipesToDisplay(ev.materials_used) : '—'}
+                        </td>
+                        <td className="py-2.5 text-terra-800">{ev.origin || '—'}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          ) : (
+            <p className="text-sm text-gray-400 italic">Sin eventos de limpieza registrados</p>
+          )}
+        </CollapsibleCard>
+      )}
+
+      {/* ── 7. Constelación de Ancestros ── */}
+      {hasAncestorData && (
+        <CollapsibleCard title="Constelación de Ancestros">
+          {activeAncestors.length > 0 && (
+            <div className="space-y-4 mb-4">
+              {activeAncestors.map((a, idx) => (
+                <div key={a.id} className="border border-terra-100 rounded-lg p-4 space-y-3">
+                  <div className="flex items-center gap-3">
+                    <span className="text-xs font-medium text-terra-500 uppercase tracking-wide">
+                      Ancestro {idx + 1}
+                    </span>
+                  </div>
+
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-sm">
+                    {a.member && (
+                      <div>
+                        <FieldLabel>Miembro</FieldLabel>
+                        <p className="text-terra-800 font-medium">{a.member}</p>
+                      </div>
+                    )}
+                    {a.lineage && (
+                      <div>
+                        <FieldLabel>Linaje</FieldLabel>
+                        <p className="text-terra-800">{a.lineage}</p>
+                      </div>
+                    )}
+                  </div>
+
+                  {notEmpty(a.bond_energy) && (
+                    <div>
+                      <FieldLabel>Energía del vínculo</FieldLabel>
+                      <div className="flex flex-wrap gap-1.5 mt-1">
+                        {a.bond_energy.map((b) => <Chip key={b}>{b}</Chip>)}
+                      </div>
+                    </div>
+                  )}
+
+                  {notEmpty(a.ancestor_roles) && (
+                    <div>
+                      <FieldLabel>Roles del ancestro</FieldLabel>
+                      <div className="flex flex-wrap gap-1.5 mt-1">
+                        {a.ancestor_roles.map((r) => <Chip key={r}>{r}</Chip>)}
+                      </div>
+                    </div>
+                  )}
+
+                  {notEmpty(a.consultant_roles) && (
+                    <div>
+                      <FieldLabel>Roles del consultante</FieldLabel>
+                      <div className="flex flex-wrap gap-1.5 mt-1">
+                        {a.consultant_roles.map((r) => <Chip key={r}>{r}</Chip>)}
+                      </div>
+                    </div>
+                  )}
+
+                  {notEmpty(a.energy_expressions) && (
+                    <div>
+                      <FieldLabel>Expresiones de la energía</FieldLabel>
+                      <div className="space-y-1 mt-1">
+                        {a.energy_expressions.map((ee, i) => (
+                          <p key={i} className="text-sm text-terra-800">
+                            <span className="text-terra-500 font-medium">{ee.number}.</span> {ee.expression}
+                          </p>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+
+                  {notEmpty(a.family_traumas) && (
+                    <div>
+                      <FieldLabel>Traumas familiares</FieldLabel>
+                      <div className="space-y-1 mt-1">
+                        {a.family_traumas.map((ft, i) => (
+                          <p key={i} className="text-sm text-terra-800">
+                            <span className="text-terra-500 font-medium">{ft.number}.</span> {ft.trauma}
+                          </p>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+                </div>
+              ))}
+            </div>
+          )}
+
+          {/* Conciliación */}
+          {session.ancestor_conciliation && (
+            <div className="border-t border-terra-100 pt-4">
+              <h3 className="text-sm font-semibold text-terra-700 mb-3 uppercase tracking-wide">
+                Conciliación
+              </h3>
+              <div className="space-y-3 text-sm">
+                {session.ancestor_conciliation.healing_phrases && (
+                  <div>
+                    <FieldLabel>Frases sanadoras</FieldLabel>
+                    <p className="text-terra-800 whitespace-pre-wrap">
+                      {session.ancestor_conciliation.healing_phrases}
+                    </p>
+                  </div>
+                )}
+                {session.ancestor_conciliation.conciliation_acts && (
+                  <div>
+                    <FieldLabel>Actos de conciliación</FieldLabel>
+                    <p className="text-terra-800 whitespace-pre-wrap">
+                      {session.ancestor_conciliation.conciliation_acts}
+                    </p>
+                  </div>
+                )}
+                {session.ancestor_conciliation.life_aspects_affected && (
+                  <div>
+                    <FieldLabel>Aspectos de vida afectados</FieldLabel>
+                    <p className="text-terra-800 whitespace-pre-wrap">
+                      {session.ancestor_conciliation.life_aspects_affected}
+                    </p>
+                  </div>
+                )}
+                {session.ancestor_conciliation.session_relationship && (
+                  <div>
+                    <FieldLabel>Relación con la sesión</FieldLabel>
+                    <p className="text-terra-800 whitespace-pre-wrap">
+                      {session.ancestor_conciliation.session_relationship}
+                    </p>
+                  </div>
+                )}
+              </div>
+            </div>
+          )}
+        </CollapsibleCard>
+      )}
+
+      {/* ── 8. Otros datos (Afectaciones / Órganos) ── */}
+      {(activeAffectations.length > 0 || activeOrgans.length > 0) && (
+        <CollapsibleCard title="Otros datos">
           <div className="space-y-6">
-
-            {/* LNT */}
-            {activeLNT.length > 0 && (
-              <div>
-                <h3 className="text-sm font-semibold text-terra-700 mb-3 uppercase tracking-wide">
-                  LNT
-                </h3>
-                <div className="space-y-3">
-                  {activeLNT.map((e) => (
-                    <div key={e.id} className="border border-terra-100 rounded-lg p-4 text-sm space-y-2">
-                      {e.theme_organ && (
-                        <p className="font-medium text-terra-900">{e.theme_organ}</p>
-                      )}
-                      <div className="flex flex-wrap gap-4 text-terra-600">
-                        {e.initial_energy != null && <span>Inicial: {e.initial_energy}</span>}
-                        {e.final_energy != null && <span>Final: {e.final_energy}</span>}
-                      </div>
-                      <div className="flex flex-wrap gap-3">
-                        {e.healing_energy_body && (
-                          <span className="text-xs bg-blue-50 text-blue-700 border border-blue-200 rounded-full px-2 py-0.5">
-                            Cuerpo energético
-                          </span>
-                        )}
-                        {e.healing_spiritual_body && (
-                          <span className="text-xs bg-purple-50 text-purple-700 border border-purple-200 rounded-full px-2 py-0.5">
-                            Cuerpo espiritual
-                          </span>
-                        )}
-                        {e.healing_physical_body && (
-                          <span className="text-xs bg-green-50 text-green-700 border border-green-200 rounded-full px-2 py-0.5">
-                            Cuerpo físico
-                          </span>
-                        )}
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              </div>
-            )}
-
-            {/* Eventos de limpieza */}
-            {activeCleanings.length > 0 && (
-              <div>
-                <h3 className="text-sm font-semibold text-terra-700 mb-3 uppercase tracking-wide">
-                  Eventos de limpieza
-                </h3>
-                <div className="space-y-3">
-                  {activeCleanings.map((e) => (
-                    <div key={e.id} className="border border-terra-100 rounded-lg p-4 text-sm space-y-2">
-                      <div className="flex flex-wrap gap-3">
-                        {e.layer && <MetaBadge label="Capa" value={e.layer} />}
-                        {e.quantity != null && <MetaBadge label="Cantidad" value={e.quantity} />}
-                        {e.aura_color && <MetaBadge label="Color de aura" value={e.aura_color} />}
-                        {e.cleanings_required != null && (
-                          <MetaBadge label="Limpiezas requeridas" value={e.cleanings_required} />
-                        )}
-                        {e.energy_level != null && (
-                          <MetaBadge label="Nivel energético" value={e.energy_level} />
-                        )}
-                      </div>
-                      {e.manifestation && (
-                        <p className="text-terra-700">
-                          <span className="text-xs text-gray-400 font-medium uppercase tracking-wide mr-1">Manifestación:</span>
-                          {e.manifestation}
-                        </p>
-                      )}
-                      {e.origin && (
-                        <p className="text-terra-700">
-                          <span className="text-xs text-gray-400 font-medium uppercase tracking-wide mr-1">Origen:</span>
-                          {e.origin}
-                        </p>
-                      )}
-                      {e.work_done && (
-                        <p className="text-terra-700">
-                          <span className="text-xs text-gray-400 font-medium uppercase tracking-wide mr-1">Trabajo realizado:</span>
-                          {e.work_done}
-                        </p>
-                      )}
-                    </div>
-                  ))}
-                </div>
-              </div>
-            )}
-
-            {/* Afectaciones */}
             {activeAffectations.length > 0 && (
               <div>
                 <h3 className="text-sm font-semibold text-terra-700 mb-3 uppercase tracking-wide">
@@ -624,7 +858,6 @@ export default function SessionDetailPage() {
               </div>
             )}
 
-            {/* Órganos */}
             {activeOrgans.length > 0 && (
               <div>
                 <h3 className="text-sm font-semibold text-terra-700 mb-3 uppercase tracking-wide">
@@ -667,7 +900,26 @@ export default function SessionDetailPage() {
               </div>
             )}
           </div>
-        </SectionCard>
+        </CollapsibleCard>
+      )}
+
+      {/* ── 9. Cierre / Pago ── */}
+      {(session.cost != null || session.payment_notes) && (
+        <CollapsibleCard title="Cierre y pago">
+          <div className="flex flex-wrap gap-6">
+            {session.cost != null && (
+              <MetaBadge label="Costo" value={formatCurrency(session.cost)} />
+            )}
+          </div>
+          {session.payment_notes && (
+            <div className="mt-3">
+              <FieldLabel>Notas de pago</FieldLabel>
+              <p className="text-sm text-terra-800 whitespace-pre-wrap mt-1">
+                {session.payment_notes}
+              </p>
+            </div>
+          )}
+        </CollapsibleCard>
       )}
 
       {/* Pie de página */}
