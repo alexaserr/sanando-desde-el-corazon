@@ -53,7 +53,7 @@ function SessionSummaryPanel({ summary }: SessionSummaryPanelProps) {
 
   return (
     <div className="bg-amber-50 border border-amber-200 rounded-lg p-4">
-      <h3 className="text-sm font-semibold text-[#4A1810] mb-3">
+      <h3 className="text-sm font-semibold text-[#2C2220] mb-3">
         Resumen de la sesión
       </h3>
       <div className="divide-y divide-gray-100">
@@ -157,7 +157,7 @@ export function StepClose({
       <div>
         <h2
           id="step-close-heading"
-          className="text-base font-semibold text-[#4A1810]"
+          className="text-base font-semibold text-[#2C2220]"
         >
           Cierre de sesión
         </h2>
@@ -172,7 +172,7 @@ export function StepClose({
       {/* Cálculo de Limpieza (solo para sesiones de limpieza) */}
       {isCleaningSession && (
         <div className="bg-white border border-gray-200 rounded-lg p-5 space-y-4">
-          <h3 className="text-sm font-semibold text-[#4A1810]">
+          <h3 className="text-sm font-semibold text-[#2C2220]">
             Cálculo de Limpieza
           </h3>
 
@@ -194,7 +194,7 @@ export function StepClose({
           <div className="flex flex-col gap-2">
             <div className="flex items-center justify-between">
               <span className="text-sm text-gray-500">Porcentaje que puede pagar</span>
-              <span className="text-sm font-semibold text-[#4A1810]">{porcentajePago}%</span>
+              <span className="text-sm font-semibold text-[#2C2220]">{porcentajePago}%</span>
             </div>
             <input
               type="range"
@@ -204,9 +204,9 @@ export function StepClose({
               value={porcentajePago}
               disabled={disabled || isClosing}
               onChange={(e) => setPorcentajePago(Number(e.target.value))}
-              className="w-full h-2 rounded-lg appearance-none cursor-pointer accent-[#4A1810] disabled:opacity-50 disabled:cursor-not-allowed"
+              className="w-full h-2 rounded-lg appearance-none cursor-pointer accent-[#2C2220] disabled:opacity-50 disabled:cursor-not-allowed"
               style={{
-                background: `linear-gradient(to right, #4A1810 0%, #8B4513 ${porcentajePago}%, #e5e7eb ${porcentajePago}%)`,
+                background: `linear-gradient(to right, #2C2220 0%, #C4704A ${porcentajePago}%, #e5e7eb ${porcentajePago}%)`,
               }}
             />
           </div>
@@ -227,8 +227,8 @@ export function StepClose({
                 aria-checked={incluyeIva}
                 disabled={disabled || isClosing}
                 onClick={() => setIncluyeIva((prev) => !prev)}
-                className={`relative inline-flex h-6 w-11 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-[#4A1810] focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed ${
-                  incluyeIva ? 'bg-[#4A1810]' : 'bg-gray-200'
+                className={`relative inline-flex h-6 w-11 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-[#2C2220] focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed ${
+                  incluyeIva ? 'bg-[#2C2220]' : 'bg-gray-200'
                 }`}
               >
                 <span
@@ -243,7 +243,7 @@ export function StepClose({
           {/* Costo final */}
           <div className="flex items-center justify-between pt-2 border-t border-gray-100">
             <span className="text-sm text-gray-500">Costo final</span>
-            <span className="text-2xl font-bold text-[#4A1810]">{formatMXN(costoFinal)}</span>
+            <span className="text-2xl font-bold text-[#2C2220]">{formatMXN(costoFinal)}</span>
           </div>
         </div>
       )}
@@ -268,7 +268,7 @@ export function StepClose({
               disabled={disabled || isClosing || isCleaningSession}
               onChange={(e) => onChange('cost', e.target.value)}
               placeholder="0.00"
-              className="w-full rounded-md border border-gray-300 pl-7 pr-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#4A1810] disabled:opacity-50 disabled:cursor-not-allowed"
+              className="w-full rounded-md border border-gray-300 pl-7 pr-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#2C2220] disabled:opacity-50 disabled:cursor-not-allowed"
             />
           </div>
           {!isCleaningSession && suggestedPrice !== undefined && (
@@ -295,7 +295,7 @@ export function StepClose({
             disabled={disabled || isClosing}
             onChange={(e) => onChange('payment_notes', e.target.value)}
             placeholder="Método de pago, referencia…"
-            className="rounded-md border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#4A1810] disabled:opacity-50 disabled:cursor-not-allowed"
+            className="rounded-md border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#2C2220] disabled:opacity-50 disabled:cursor-not-allowed"
           />
         </div>
       </div>

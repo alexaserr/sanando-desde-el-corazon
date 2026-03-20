@@ -48,21 +48,26 @@ const config: Config = {
           DEFAULT: "hsl(var(--card))",
           foreground: "hsl(var(--card-foreground))",
         },
-        // Paleta SDC — Sanando desde el Corazón (alineada con Squarespace)
+        // Paleta SDC v3.0 — Sanando desde el Corazón
         terra: {
-          900: "#362017",  // dark foreground
-          800: "#5A2C14",
-          700: "#B1481E",  // terra primary
-          600: "#C96438",
-          500: "#D4876A",  // variante clara
-          400: "#DFA98E",
-          300: "#E8C8B8",
-          200: "#F6EDEA",  // crema/blush
-          100: "#FBF6F4",
-          50:  "#FFFFFF",  // white/background
+          DEFAULT: "#C4704A",
+          50:  "#FAF7F5",   // marfil
+          100: "#F2E8E4",   // lino
+          200: "#D4A592",   // arcilla
+          300: "#D4A592",
+          400: "#C4704A",   // terra primary
+          500: "#C4704A",
+          600: "#B5613B",
+          700: "#A0522D",
+          800: "#4A3628",   // chocolate
+          900: "#2C2220",   // charcoal
         },
-        crema: "#F6EDEA",
-        blush: "#F6EDEA",
+        marfil: "#FAF7F5",
+        lino: "#F2E8E4",
+        arcilla: "#D4A592",
+        charcoal: "#2C2220",
+        chocolate: "#4A3628",
+        sage: "#B7BFB3",
         success: "#2D7A4F",
         error: "#C75050",
         warning: "#B8860B",
@@ -93,8 +98,8 @@ const config: Config = {
         "accordion-up": "accordion-up 0.2s ease-out",
       },
       fontFamily: {
-        display: ["var(--font-display)", "Playfair Display", "Georgia", "serif"],
-        sans: ["Almarai", "system-ui", "sans-serif"],
+        display: ["var(--font-playfair)", "Playfair Display", "Georgia", "serif"],
+        sans: ["var(--font-lato)", "Lato", "system-ui", "sans-serif"],
         mono: ["var(--font-mono)", "JetBrains Mono", "monospace"],
       },
     },

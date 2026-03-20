@@ -8,11 +8,11 @@ const buttonVariants = cva(
   {
     variants: {
       variant: {
-        default: "bg-terra-700 text-white hover:bg-[#D4623A]",
+        default: "bg-terra text-white hover:bg-terra-600",
         destructive: "bg-destructive text-destructive-foreground hover:bg-destructive/90",
         outline: "border border-input bg-background hover:bg-accent hover:text-accent-foreground",
-        secondary: "bg-transparent border border-[1.5px] border-terra-700 text-terra-700 hover:bg-terra-200",
-        ghost: "bg-transparent text-terra-900 hover:bg-terra-200",
+        secondary: "bg-transparent border border-terra text-terra hover:bg-terra-100",
+        ghost: "bg-transparent text-charcoal hover:bg-terra-100",
         link: "text-primary underline-offset-4 hover:underline",
       },
       size: {

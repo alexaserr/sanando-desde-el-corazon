@@ -251,7 +251,7 @@ export function ThemeCard({ theme, index, chakras, onChange, onDelete, disabled 
               <div className="flex flex-col gap-1">
                 <label
                   className="text-xs font-bold text-terra-700 uppercase tracking-wide select-none"
-                  style={{ fontFamily: 'Almarai, sans-serif' }}
+                  style={{ fontFamily: 'Lato, sans-serif' }}
                 >
                   Nombre del tema secundario
                 </label>
@@ -261,8 +261,8 @@ export function ThemeCard({ theme, index, chakras, onChange, onDelete, disabled 
                   disabled={disabled}
                   onChange={(e) => onChange({ secondary_name: e.target.value })}
                   placeholder="Ej. Miedo al rechazo"
-                  className="w-full rounded-lg border border-[#EDE5E0] bg-white px-3 py-2 text-sm text-[#362017] placeholder-[#A9967E] shadow-sm focus:outline-none focus:ring-2 focus:ring-[#B1481E]/30 focus:border-[#B1481E] disabled:opacity-50 disabled:cursor-not-allowed"
-                  style={{ fontFamily: 'Almarai, sans-serif' }}
+                  className="w-full rounded-lg border border-[#EDE5E0] bg-white px-3 py-2 text-sm text-[#2C2220] placeholder-[#A9967E] shadow-sm focus:outline-none focus:ring-2 focus:ring-[#C4704A]/30 focus:border-[#C4704A] disabled:opacity-50 disabled:cursor-not-allowed"
+                  style={{ fontFamily: 'Lato, sans-serif' }}
                 />
               </div>
             </div>
@@ -295,7 +295,7 @@ export function ThemeCard({ theme, index, chakras, onChange, onDelete, disabled 
           <div className="flex flex-col gap-1.5">
             <p
               className="text-xs font-bold text-terra-700 uppercase tracking-wide select-none"
-              style={{ fontFamily: 'Almarai, sans-serif' }}
+              style={{ fontFamily: 'Lato, sans-serif' }}
             >
               Emociones predominantes
             </p>

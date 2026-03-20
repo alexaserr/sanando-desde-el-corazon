@@ -18,17 +18,17 @@ export interface EnergySliderProps {
 }
 
 // terra-700 — color de relleno del thumb (alineado con Squarespace)
-const THUMB_COLOR = '#B1481E';
+const THUMB_COLOR = '#C4704A';
 
 // Acentos por fase
 const PHASE_COLOR: Record<'initial' | 'final', string> = {
-  initial: '#362017', // terra-900
+  initial: '#2C2220', // charcoal
   final: '#2D7A4F',   // success
 };
 
 // Gradiente energético — crema → terra primary (monocromático, alineado con la marca)
 const TRACK_GRADIENT =
-  'linear-gradient(to right, #E8DDD5 0%, #D4B5A0 30%, #C4937A 60%, #B1481E 100%)';
+  'linear-gradient(to right, #F2E8E4 0%, #D4A592 30%, #C4937A 60%, #C4704A 100%)';
 
 // ─── Delta badge ─────────────────────────────────────────────────────────────
 
