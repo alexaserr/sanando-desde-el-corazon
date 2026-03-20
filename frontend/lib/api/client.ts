@@ -168,4 +168,22 @@ export const apiClient = {
   delete<TResponse>(path: string, options?: Omit<RequestOptions, "body" | "formBody">) {
     return request<TResponse>(path, { ...options, method: "DELETE" });
   },
+
+  /** Return the raw Response (for file downloads, blobs, etc.). */
+  async raw(path: string, options?: Omit<RequestOptions, "body" | "formBody"> & { method?: string }): Promise<Response> {
+    const token = useAuthStore.getState().accessToken;
+    const headers = new Headers(options?.headers as HeadersInit | undefined);
+    if (token) {
+      headers.set("Authorization", `Bearer ${token}`);
+    }
+    const response = await fetch(`${BASE_URL}${path}`, {
+      ...options,
+      headers,
+      credentials: "include",
+    });
+    if (!response.ok) {
+      throw new ApiError(response.status, `Error ${response.status}`);
+    }
+    return response;
+  },
 };

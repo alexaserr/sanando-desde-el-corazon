@@ -9,23 +9,29 @@ import {
   UserPlus,
   CalendarDays,
   PlusCircle,
+  Shield,
   PanelLeftClose,
   PanelLeftOpen,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useUiStore } from "@/lib/stores/uiStore";
+import { useAuthStore } from "@/store/auth";
 
 const navItems = [
-  { href: "/clinica",               label: "Dashboard",      icon: LayoutDashboard, exact: true  },
-  { href: "/clinica/pacientes",     label: "Clientes",       icon: Users,           exact: false },
-  { href: "/clinica/pacientes/nuevo", label: "Nuevo paciente", icon: UserPlus,      exact: true  },
-  { href: "/clinica/sesiones",      label: "Sesiones",       icon: CalendarDays,    exact: true  },
-  { href: "/clinica/sesiones/nueva", label: "Nueva sesión",  icon: PlusCircle,      exact: false },
+  { href: "/clinica",               label: "Dashboard",      icon: LayoutDashboard, exact: true,  adminOnly: false },
+  { href: "/clinica/pacientes",     label: "Clientes",       icon: Users,           exact: false, adminOnly: false },
+  { href: "/clinica/pacientes/nuevo", label: "Nuevo paciente", icon: UserPlus,      exact: true,  adminOnly: false },
+  { href: "/clinica/sesiones",      label: "Sesiones",       icon: CalendarDays,    exact: true,  adminOnly: false },
+  { href: "/clinica/sesiones/nueva", label: "Nueva sesión",  icon: PlusCircle,      exact: false, adminOnly: false },
+  { href: "/clinica/seguridad",     label: "Seguridad",      icon: Shield,          exact: true,  adminOnly: true  },
 ];
 
 export function SidebarNav() {
   const pathname = usePathname();
   const { sidebarCollapsed, toggleSidebar, setSidebarCollapsed } = useUiStore();
+  const { user } = useAuthStore();
+  const isAdmin = user?.role === 'admin';
+  const visibleItems = navItems.filter((item) => !item.adminOnly || isAdmin);
 
   // Responsive: colapsar automáticamente en pantallas < 1024px
   useEffect(() => {
@@ -60,7 +66,7 @@ export function SidebarNav() {
 
       {/* ── Nav items ─────────────────────────────────────────────────────── */}
       <nav className="flex-1 py-4 px-2 space-y-1" aria-label="Navegación principal">
-        {navItems.map(({ href, label, icon: Icon, exact }) => {
+        {visibleItems.map(({ href, label, icon: Icon, exact }) => {
           const isActive = exact
             ? pathname === href
             : pathname === href || pathname.startsWith(href + "/");
