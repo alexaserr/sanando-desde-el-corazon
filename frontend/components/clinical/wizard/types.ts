@@ -130,7 +130,7 @@ export interface CleaningCheck {
 export interface CleaningRow {
   _localId: string;
   manifestation: string;
-  work_done: string;
+  work_done: string[];
   work_done_other?: string;
   materials: string[];
   origin: string;

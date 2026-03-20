@@ -145,7 +145,7 @@ function newRow(): CleaningRow {
   return {
     _localId: crypto.randomUUID(),
     manifestation: '',
-    work_done: '',
+    work_done: [],
     materials: [],
     origin: '',
   };
@@ -159,15 +159,25 @@ function mesaToString(arr: string[]): string {
   return arr.join('|');
 }
 
-// ─── MaterialsDropdown ──────────────────────────────────────────────────────
+// ─── MultiSelectDropdown ────────────────────────────────────────────────────
 
-interface MaterialsDropdownProps {
+interface MultiSelectDropdownProps {
+  options: readonly string[];
   selected: string[];
   onChange: (val: string[]) => void;
+  placeholder: string;
+  pluralLabel: string;
   disabled?: boolean;
 }
 
-function MaterialsDropdown({ selected, onChange, disabled = false }: MaterialsDropdownProps) {
+function MultiSelectDropdown({
+  options,
+  selected,
+  onChange,
+  placeholder,
+  pluralLabel,
+  disabled = false,
+}: MultiSelectDropdownProps) {
   const [open, setOpen] = useState(false);
   const ref = useRef<HTMLDivElement>(null);
 
@@ -186,10 +196,10 @@ function MaterialsDropdown({ selected, onChange, disabled = false }: MaterialsDr
 
   const label =
     selected.length === 0
-      ? '— Materiales —'
+      ? placeholder
       : selected.length === 1
         ? selected[0]
-        : `${selected.length} materiales`;
+        : `${selected.length} ${pluralLabel}`;
 
   return (
     <div ref={ref} className="relative w-full">
@@ -213,7 +223,7 @@ function MaterialsDropdown({ selected, onChange, disabled = false }: MaterialsDr
           className="absolute z-50 mt-1 max-h-60 w-56 overflow-y-auto rounded border border-[#EDE5E0] bg-white py-1"
           style={{ boxShadow: '0 4px 16px rgba(54,32,23,0.12)' }}
         >
-          {MATERIALES.map((m) => (
+          {options.map((m) => (
             <label
               key={m}
               className="flex cursor-pointer items-center gap-2 px-3 py-1.5 text-sm text-[#2C2220] hover:bg-[#FAF7F5]"
@@ -496,19 +506,18 @@ export function StepCleaning({
               {/* Trabajo realizado */}
               <div>
                 <label className="mb-1 block text-xs text-gray-500 xl:hidden">Trabajo realizado</label>
-                <select
-                  value={row.work_done}
+                <MultiSelectDropdown
+                  options={TRABAJOS}
+                  selected={row.work_done}
+                  onChange={(val) => updateRow(row._localId, {
+                    work_done: val,
+                    work_done_other: val.includes('Otro') ? row.work_done_other : undefined,
+                  })}
+                  placeholder="— Trabajo —"
+                  pluralLabel="trabajos"
                   disabled={disabled}
-                  onChange={(e) => updateRow(row._localId, { work_done: e.target.value, work_done_other: e.target.value === 'Otro' ? row.work_done_other : undefined })}
-                  aria-label={`Trabajo fila ${idx + 1}`}
-                  className={SELECT_CLASS}
-                >
-                  <option value="">— Trabajo —</option>
-                  {TRABAJOS.map((t) => (
-                    <option key={t} value={t}>{t}</option>
-                  ))}
-                </select>
-                {row.work_done === 'Otro' && (
+                />
+                {row.work_done.includes('Otro') && (
                   <input
                     type="text"
                     value={row.work_done_other ?? ''}
@@ -524,9 +533,12 @@ export function StepCleaning({
               {/* Materiales */}
               <div>
                 <label className="mb-1 block text-xs text-gray-500 xl:hidden">Materiales</label>
-                <MaterialsDropdown
+                <MultiSelectDropdown
+                  options={MATERIALES}
                   selected={row.materials}
                   onChange={(m) => updateRow(row._localId, { materials: m })}
+                  placeholder="— Materiales —"
+                  pluralLabel="materiales"
                   disabled={disabled}
                 />
               </div>

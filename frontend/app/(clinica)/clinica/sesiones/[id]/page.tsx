@@ -703,7 +703,7 @@ export default function SessionDetailPage() {
                       <tr key={ev.id} className="border-b border-terra-50 hover:bg-terra-50/30 align-top">
                         <td className="py-2.5 pr-3 text-terra-400 font-medium">{idx + 1}</td>
                         <td className="py-2.5 pr-3 text-terra-800">{ev.manifestation || '—'}</td>
-                        <td className="py-2.5 pr-3 text-terra-800">{ev.work_done || '—'}</td>
+                        <td className="py-2.5 pr-3 text-terra-800">{ev.work_done ? pipesToDisplay(ev.work_done) : '—'}</td>
                         <td className="py-2.5 pr-3 text-terra-800">
                           {ev.materials_used ? pipesToDisplay(ev.materials_used) : '—'}
                         </td>

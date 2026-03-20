@@ -445,7 +445,7 @@ export default function NuevaSessionPage() {
         if (!sessionId) throw new Error('Sesión no iniciada');
         const events = cleaningRows.map((r) => ({
           manifestation: r.manifestation,
-          work_done: r.work_done === 'Otro' && r.work_done_other ? r.work_done_other : r.work_done,
+          work_done: r.work_done.map((w) => w === 'Otro' && r.work_done_other ? r.work_done_other : w).join('|'),
           materials_used: r.materials.join('|'),
           origin: r.origin,
         }));
@@ -533,7 +533,7 @@ export default function NuevaSessionPage() {
       } else if (stepComponent === 'StepCleaning') {
         const events = cleaningRows.map((r) => ({
           manifestation: r.manifestation,
-          work_done: r.work_done === 'Otro' && r.work_done_other ? r.work_done_other : r.work_done,
+          work_done: r.work_done.map((w) => w === 'Otro' && r.work_done_other ? r.work_done_other : w).join('|'),
           materials_used: r.materials.join('|'),
           origin: r.origin,
         }));
