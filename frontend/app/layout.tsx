@@ -1,15 +1,18 @@
 import type { Metadata } from "next";
-import { Playfair_Display, JetBrains_Mono } from "next/font/google";
-import "@fontsource/almarai/300.css";
-import "@fontsource/almarai/400.css";
-import "@fontsource/almarai/700.css";
-import "@fontsource/almarai/800.css";
+import { Lato, Playfair_Display, JetBrains_Mono } from "next/font/google";
 import "./globals.css";
+
+const lato = Lato({
+  subsets: ["latin"],
+  weight: ["300", "400", "700", "900"],
+  variable: "--font-lato",
+  display: "swap",
+});
 
 const playfairDisplay = Playfair_Display({
   subsets: ["latin"],
-  weight: ["600", "700"],
-  variable: "--font-display",
+  weight: ["400", "500", "600", "700"],
+  variable: "--font-playfair",
   display: "swap",
 });
 
@@ -32,7 +35,7 @@ export default function RootLayout({
   return (
     <html lang="es" suppressHydrationWarning>
       <body
-        className={`${playfairDisplay.variable} ${jetbrainsMono.variable} font-sans antialiased`}
+        className={`${lato.variable} ${playfairDisplay.variable} ${jetbrainsMono.variable} font-sans antialiased`}
       >
         {children}
       </body>

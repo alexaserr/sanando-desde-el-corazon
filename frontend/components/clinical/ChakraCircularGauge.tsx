@@ -195,12 +195,12 @@ function SingleGauge({ reading, color, onChange, disabled, ghostValue }: SingleG
         </button>
       </div>
 
-      {/* Nombre del chakra — Almarai 700, 18px, en el color del chakra */}
+      {/* Nombre del chakra — Lato 700, 18px, en el color del chakra */}
       <span
         className="text-center leading-tight max-w-[110px]"
         style={{
           color,
-          fontFamily: 'Almarai, sans-serif',
+          fontFamily: 'Lato, sans-serif',
           fontWeight: 700,
           fontSize: '18px',
         }}

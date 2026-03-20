@@ -82,7 +82,7 @@ export function StepEnergyInitial({
         <div>
           <h2
             id="step-energy-initial-heading"
-            className="text-base font-semibold text-[#4A1810]"
+            className="text-base font-semibold text-[#2C2220]"
           >
             Energía inicial
           </h2>

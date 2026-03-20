@@ -208,6 +208,7 @@ interface LntItemPayload {
 
 export interface SaveLntPayload {
   entries: LntItemPayload[];
+  peticiones?: string;
 }
 
 export async function saveLntEntries(

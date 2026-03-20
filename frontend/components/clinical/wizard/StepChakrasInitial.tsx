@@ -22,7 +22,7 @@ export function StepChakrasInitial({
       <div>
         <h2
           id="step-chakras-initial-heading"
-          className="text-base font-semibold text-[#4A1810]"
+          className="text-base font-semibold text-[#2C2220]"
         >
           Chakras iniciales
         </h2>

@@ -134,7 +134,7 @@ function LntCard({ entry, index, onChange, onDelete, disabled = false }: LntCard
                 disabled={disabled}
                 onChange={(e) => handleCheckbox(key, e.target.checked)}
                 className="w-4 h-4 cursor-pointer disabled:cursor-not-allowed"
-                style={{ accentColor: '#B1481E' }}
+                style={{ accentColor: '#C4704A' }}
               />
               {label}
             </label>
@@ -185,7 +185,7 @@ export function StepLNT({
       <div>
         <h2
           id="step-lnt-heading"
-          className="text-base font-semibold text-[#4A1810]"
+          className="text-base font-semibold text-[#2C2220]"
           style={{ fontFamily: 'Playfair Display, serif' }}
         >
           Temas LNT

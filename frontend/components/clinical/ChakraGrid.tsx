@@ -208,7 +208,7 @@ function ChakraSlider({
             className="truncate select-none"
             style={{
               color,
-              fontFamily: 'Almarai, system-ui, sans-serif',
+              fontFamily: 'Lato, system-ui, sans-serif',
               fontSize: 16,
               fontWeight: 700,
             }}

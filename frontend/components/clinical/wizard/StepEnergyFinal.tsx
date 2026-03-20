@@ -141,7 +141,7 @@ export function StepEnergyFinal({
                 {/* Valor inicial de referencia */}
                 {initialValue !== undefined && (
                   <p className="text-xs text-gray-400 mb-1 select-none">
-                    Inicial: <span className="font-semibold text-[#4A1810]">{initialValue}</span>
+                    Inicial: <span className="font-semibold text-[#2C2220]">{initialValue}</span>
                   </p>
                 )}
                 <EnergySlider

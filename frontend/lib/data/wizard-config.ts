@@ -112,7 +112,7 @@ export const WIZARD_CONFIGS: Record<string, TherapyWizardConfig> = {
   },
   'Limpieza Energética': {
     therapyName: 'Limpieza Energética',
-    steps: [...BASE, S_CLEANING, ...TAIL],
+    steps: [...BASE, S_CLEANING, S_CLOSE],
     defaultCost: 1300,
   },
 };
@@ -123,11 +123,18 @@ export function getWizardConfig(therapyTypeName: string): TherapyWizardConfig {
 
 /**
  * Inyecta StepCleaning en el arreglo de pasos si no está presente.
- * Se inserta justo antes de TAIL (StepEnergyFinal).
+ * Al inyectar limpieza se eliminan StepEnergyFinal y StepChakrasFinal
+ * porque la sesión de limpieza salta directamente al cierre.
  */
 export function injectCleaningStep(baseSteps: WizardStepConfig[]): WizardStepConfig[] {
-  if (baseSteps.some((s) => s.component === 'StepCleaning')) return baseSteps;
-  const tailIdx = baseSteps.findIndex((s) => s.component === 'StepEnergyFinal');
-  if (tailIdx === -1) return [...baseSteps, S_CLEANING];
-  return [...baseSteps.slice(0, tailIdx), S_CLEANING, ...baseSteps.slice(tailIdx)];
+  // Filtrar pasos finales de energía/chakras — no aplican cuando hay limpieza
+  let steps = baseSteps.filter(
+    (s) => s.component !== 'StepEnergyFinal' && s.component !== 'StepChakrasFinal',
+  );
+  if (!steps.some((s) => s.component === 'StepCleaning')) {
+    const closeIdx = steps.findIndex((s) => s.component === 'StepClose');
+    if (closeIdx === -1) steps.push(S_CLEANING);
+    else steps = [...steps.slice(0, closeIdx), S_CLEANING, ...steps.slice(closeIdx)];
+  }
+  return steps;
 }

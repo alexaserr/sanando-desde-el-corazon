@@ -52,6 +52,10 @@ export interface StepTopicsProps {
   chakras: ChakraPosition[];
   onChange: (themes: ThemeEntry[]) => void;
   disabled?: boolean;
+  /** Show peticiones section (only for Medicina Cuántica) */
+  showPeticiones?: boolean;
+  peticiones?: string;
+  onPeticionesChange?: (val: string) => void;
 }
 
 // ─── StepTopics ───────────────────────────────────────────────────────────────
@@ -63,6 +67,9 @@ export function StepTopics({
   chakras,
   onChange,
   disabled = false,
+  showPeticiones = false,
+  peticiones,
+  onPeticionesChange,
 }: StepTopicsProps) {
   const [mode, setMode]               = useState<'existing' | 'new'>('new');
   const [themeCount, setThemeCount]   = useState(1);
@@ -366,6 +373,23 @@ export function StepTopics({
         <p className="text-xs text-gray-400 text-right">
           {themes.length} {themes.length === 1 ? 'tema' : 'temas'}
         </p>
+      )}
+
+      {/* Peticiones LNT (solo Medicina Cuántica) */}
+      {showPeticiones && (
+        <section className="mt-6 rounded-lg border border-gray-200 bg-white p-4">
+          <label className="mb-2 block text-xs font-semibold uppercase tracking-wide text-terra-700">
+            Peticiones LNT
+          </label>
+          <textarea
+            value={peticiones ?? ''}
+            onChange={(e) => onPeticionesChange?.(e.target.value)}
+            disabled={disabled}
+            rows={4}
+            placeholder="Peticiones para la sesión de Medicina Cuántica..."
+            className="w-full rounded-lg border border-gray-200 bg-[#FAF7F5] px-3 py-2 text-sm placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-[#C4704A]/30 focus:border-[#C4704A] disabled:opacity-50"
+          />
+        </section>
       )}
     </section>
   );

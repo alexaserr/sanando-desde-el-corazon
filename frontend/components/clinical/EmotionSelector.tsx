@@ -58,10 +58,10 @@ export default function EmotionSelector({
         type="button"
         disabled={disabled}
         onClick={() => setOpen((prev) => !prev)}
-        className="flex w-full items-center justify-between rounded-lg border border-[#EDE5E0] bg-white px-3 py-2 text-sm text-[#362017] shadow-sm transition-colors hover:border-[#B1481E] focus:outline-none focus:ring-2 focus:ring-[#B1481E]/30 disabled:cursor-not-allowed disabled:opacity-50"
-        style={{ fontFamily: 'Almarai, sans-serif', fontWeight: 400 }}
+        className="flex w-full items-center justify-between rounded-lg border border-[#EDE5E0] bg-white px-3 py-2 text-sm text-[#2C2220] shadow-sm transition-colors hover:border-[#C4704A] focus:outline-none focus:ring-2 focus:ring-[#C4704A]/30 disabled:cursor-not-allowed disabled:opacity-50"
+        style={{ fontFamily: 'Lato, sans-serif', fontWeight: 400 }}
       >
-        <span className={selected.length === 0 ? 'text-[#A9967E]' : 'text-[#362017]'}>
+        <span className={selected.length === 0 ? 'text-[#A9967E]' : 'text-[#2C2220]'}>
           {triggerLabel}
         </span>
         <ChevronDown
@@ -87,10 +87,10 @@ export default function EmotionSelector({
                     type="button"
                     onClick={() => setActiveCategory(idx)}
                     className={`flex items-center justify-between px-3 py-2.5 text-left text-sm transition-colors ${
-                      activeCategory === idx ? 'bg-[#F6EDEA]' : 'hover:bg-[#FBF7F5]'
+                      activeCategory === idx ? 'bg-[#FAF7F5]' : 'hover:bg-[#FBF7F5]'
                     }`}
                     style={{
-                      fontFamily: 'Almarai, sans-serif',
+                      fontFamily: 'Lato, sans-serif',
                       fontWeight: 700,
                       color: cat.color,
                       borderLeft: activeCategory === idx ? `3px solid ${cat.color}` : '3px solid transparent',
@@ -117,14 +117,14 @@ export default function EmotionSelector({
                 return (
                   <label
                     key={emotion}
-                    className="flex cursor-pointer items-center gap-2 rounded px-2 py-1.5 text-sm text-[#362017] transition-colors hover:bg-[#F6EDEA]"
-                    style={{ fontFamily: 'Almarai, sans-serif', fontWeight: 400 }}
+                    className="flex cursor-pointer items-center gap-2 rounded px-2 py-1.5 text-sm text-[#2C2220] transition-colors hover:bg-[#FAF7F5]"
+                    style={{ fontFamily: 'Lato, sans-serif', fontWeight: 400 }}
                   >
                     <input
                       type="checkbox"
                       checked={checked}
                       onChange={() => toggle(emotion)}
-                      className="h-4 w-4 rounded border-[#C4A98A] accent-[#B1481E]"
+                      className="h-4 w-4 rounded border-[#C4A98A] accent-[#C4704A]"
                     />
                     {emotion}
                   </label>
@@ -141,15 +141,15 @@ export default function EmotionSelector({
           {selected.map((emotion) => (
             <span
               key={emotion}
-              className="flex items-center gap-1 rounded-full bg-[#F6EDEA] px-2.5 py-0.5 text-xs text-[#362017]"
-              style={{ fontFamily: 'Almarai, sans-serif', fontWeight: 400 }}
+              className="flex items-center gap-1 rounded-full bg-[#FAF7F5] px-2.5 py-0.5 text-xs text-[#2C2220]"
+              style={{ fontFamily: 'Lato, sans-serif', fontWeight: 400 }}
             >
               {emotion}
               <button
                 type="button"
                 onClick={() => remove(emotion)}
                 disabled={disabled}
-                className="ml-0.5 rounded-full p-0.5 text-[#A9967E] transition-colors hover:text-[#B1481E] disabled:cursor-not-allowed"
+                className="ml-0.5 rounded-full p-0.5 text-[#A9967E] transition-colors hover:text-[#C4704A] disabled:cursor-not-allowed"
                 aria-label={`Quitar ${emotion}`}
               >
                 <X size={10} />

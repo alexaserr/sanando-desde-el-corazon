@@ -117,7 +117,7 @@ export function BlockageRow({
           onChange={(e) => handleSignificadoChange(e.target.value)}
           placeholder="Significado"
           disabled={disabled}
-          className="flex-1 min-h-[32px] rounded border-0 bg-[#F6EDEA] px-3 py-1 text-sm placeholder:text-gray-400 focus:outline-none focus:ring-1 focus:ring-terra-700 disabled:opacity-50 disabled:cursor-not-allowed"
+          className="flex-1 min-h-[32px] rounded border-0 bg-[#FAF7F5] px-3 py-1 text-sm placeholder:text-gray-400 focus:outline-none focus:ring-1 focus:ring-terra-700 disabled:opacity-50 disabled:cursor-not-allowed"
         />
         <input
           type="text"
@@ -125,7 +125,7 @@ export function BlockageRow({
           onChange={(e) => handleInterpretacionChange(e.target.value)}
           placeholder="Interpretación al tema"
           disabled={disabled}
-          className="flex-1 min-h-[32px] rounded border-0 bg-[#F6EDEA] px-3 py-1 text-sm placeholder:text-gray-400 focus:outline-none focus:ring-1 focus:ring-terra-700 disabled:opacity-50 disabled:cursor-not-allowed"
+          className="flex-1 min-h-[32px] rounded border-0 bg-[#FAF7F5] px-3 py-1 text-sm placeholder:text-gray-400 focus:outline-none focus:ring-1 focus:ring-terra-700 disabled:opacity-50 disabled:cursor-not-allowed"
         />
       </div>
     )}

@@ -4,48 +4,48 @@
 
 @layer base {
   :root {
-    --background: 0 0% 100%;       /* #FFFFFF white */
-    --foreground: 0 0% 0%;         /* #000000 body text */
-    --card: 0 0% 100%;
-    --card-foreground: 0 0% 0%;
-    --popover: 0 0% 100%;
-    --popover-foreground: 0 0% 0%;
-    --primary: 17 71% 41%;         /* #B1481E terra-700 */
-    --primary-foreground: 0 0% 100%;
-    --secondary: 15 40% 94%;       /* #F6EDEA terra-200 */
-    --secondary-foreground: 17 40% 15%;
-    --muted: 15 20% 92%;
-    --muted-foreground: 0 0% 40%;  /* #666666 */
-    --accent: 15 40% 94%;          /* #F6EDEA terra-200 */
-    --accent-foreground: 17 40% 15%;
+    --background: 30 33% 97%;      /* #FAF7F5 marfil */
+    --foreground: 8 10% 14%;       /* #2C2220 charcoal */
+    --card: 30 33% 97%;            /* #FAF7F5 marfil */
+    --card-foreground: 8 10% 14%;  /* #2C2220 charcoal */
+    --popover: 30 33% 97%;
+    --popover-foreground: 8 10% 14%;
+    --primary: 17 43% 53%;         /* #C4704A terra */
+    --primary-foreground: 30 33% 97%;
+    --secondary: 17 32% 70%;       /* #D4A592 arcilla */
+    --secondary-foreground: 8 10% 14%;
+    --muted: 20 25% 93%;           /* #F2E8E4 lino */
+    --muted-foreground: 10 12% 40%;
+    --accent: 20 25% 93%;          /* #F2E8E4 lino */
+    --accent-foreground: 8 10% 14%;
     --destructive: 0 43% 55%;      /* #C75050 error */
-    --destructive-foreground: 0 0% 100%;
-    --border: 15 25% 88%;          /* ~terra-300 */
-    --input: 15 25% 88%;
-    --ring: 17 71% 41%;            /* terra-700 para focus */
-    --radius: 0.5rem;
+    --destructive-foreground: 30 33% 97%;
+    --border: 17 32% 70%;          /* #D4A592 arcilla */
+    --input: 17 32% 70%;           /* #D4A592 arcilla */
+    --ring: 17 43% 53%;            /* #C4704A terra focus */
+    --radius: 0.375rem;            /* 6px max */
   }
 
   .dark {
-    --background: 17 40% 10%;
-    --foreground: 15 40% 96%;
-    --card: 17 35% 12%;
-    --card-foreground: 15 40% 96%;
-    --popover: 17 35% 12%;
-    --popover-foreground: 15 40% 96%;
-    --primary: 17 71% 55%;
-    --primary-foreground: 0 0% 100%;
-    --secondary: 17 30% 20%;
-    --secondary-foreground: 15 40% 96%;
-    --muted: 17 20% 20%;
+    --background: 8 10% 10%;
+    --foreground: 30 33% 97%;
+    --card: 8 10% 12%;
+    --card-foreground: 30 33% 97%;
+    --popover: 8 10% 12%;
+    --popover-foreground: 30 33% 97%;
+    --primary: 17 43% 58%;
+    --primary-foreground: 30 33% 97%;
+    --secondary: 17 25% 22%;
+    --secondary-foreground: 30 33% 97%;
+    --muted: 17 15% 20%;
     --muted-foreground: 15 15% 65%;
-    --accent: 17 30% 20%;
-    --accent-foreground: 15 40% 96%;
+    --accent: 17 25% 22%;
+    --accent-foreground: 30 33% 97%;
     --destructive: 0 43% 55%;
-    --destructive-foreground: 0 0% 100%;
-    --border: 17 20% 25%;
-    --input: 17 20% 25%;
-    --ring: 17 71% 55%;
+    --destructive-foreground: 30 33% 97%;
+    --border: 17 15% 25%;
+    --input: 17 15% 25%;
+    --ring: 17 43% 58%;
   }
 }
 
@@ -55,13 +55,16 @@
   }
   body {
     @apply bg-background text-foreground;
+    font-family: var(--font-lato), 'Lato', sans-serif;
     font-size: 15px;
     line-height: 1.6;
+    color: #2C2220;
+    background-color: #FAF7F5;
   }
   h1, h2, .font-display {
-    font-family: 'Playfair Display', Georgia, serif !important;
+    font-family: var(--font-playfair), 'Playfair Display', Georgia, serif;
     font-weight: 700;
-    color: #362017;
+    color: #2C2220;
   }
   h1 {
     font-size: clamp(2rem, 5vw, 2.5rem); /* 32–40px */
@@ -69,11 +72,13 @@
   h2 {
     font-size: clamp(1.5rem, 3vw, 1.75rem); /* 24–28px */
   }
-  h3 {
-    font-family: 'Almarai', system-ui, sans-serif;
+  h3, h4, h5, h6 {
+    font-family: var(--font-lato), 'Lato', sans-serif;
     font-weight: 700;
+    color: #2C2220;
+  }
+  h3 {
     font-size: clamp(1.125rem, 2vw, 1.25rem); /* 18–20px */
-    color: #362017;
   }
   .font-display {
     letter-spacing: -0.02em;
@@ -81,21 +86,21 @@
 
   /* Fix 5: Checkboxes y radios con paleta terra */
   input[type="checkbox"]:checked {
-    accent-color: #B1481E;
+    accent-color: #C4704A;
   }
   input[type="radio"]:checked {
-    accent-color: #B1481E;
+    accent-color: #C4704A;
   }
 
   /* Fix 6: Select dropdown con estética Squarespace */
   select {
-    background-color: #F6EDEA;
+    background-color: #FAF7F5;
     border: none;
     border-radius: 0;
     padding: 10px 12px;
   }
   option:checked {
-    background-color: #F6EDEA;
-    color: #362017;
+    background-color: #FAF7F5;
+    color: #2C2220;
   }
 }

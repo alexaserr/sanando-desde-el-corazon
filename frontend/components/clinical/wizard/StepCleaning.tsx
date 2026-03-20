@@ -216,14 +216,14 @@ function MaterialsDropdown({ selected, onChange, disabled = false }: MaterialsDr
           {MATERIALES.map((m) => (
             <label
               key={m}
-              className="flex cursor-pointer items-center gap-2 px-3 py-1.5 text-sm text-[#362017] hover:bg-[#F6EDEA]"
+              className="flex cursor-pointer items-center gap-2 px-3 py-1.5 text-sm text-[#2C2220] hover:bg-[#FAF7F5]"
             >
               <input
                 type="checkbox"
                 checked={selected.includes(m)}
                 onChange={() => toggle(m)}
                 className="h-4 w-4 rounded border-[#C4A98A]"
-                style={{ accentColor: '#B1481E' }}
+                style={{ accentColor: '#C4704A' }}
               />
               {m}
             </label>
@@ -272,7 +272,7 @@ const SELECT_CLASS =
   'min-h-[44px] w-full rounded border border-gray-300 bg-white px-2.5 py-1.5 text-sm focus:outline-none focus:ring-1 focus:ring-terra-700 disabled:opacity-50 disabled:cursor-not-allowed';
 
 const INPUT_CLASS =
-  'h-11 w-full rounded-lg border border-[#EDE5E0] bg-white px-3 text-sm text-[#362017] focus:outline-none focus:ring-2 focus:ring-[#B1481E]/30 focus:border-[#B1481E] disabled:opacity-50 disabled:cursor-not-allowed';
+  'h-11 w-full rounded-lg border border-[#EDE5E0] bg-white px-3 text-sm text-[#2C2220] focus:outline-none focus:ring-2 focus:ring-[#C4704A]/30 focus:border-[#C4704A] disabled:opacity-50 disabled:cursor-not-allowed';
 
 export function StepCleaning({
   rows,
@@ -365,7 +365,7 @@ export function StepCleaning({
       <div>
         <h2
           className="text-lg font-bold text-terra-900"
-          style={{ fontFamily: 'Almarai, sans-serif' }}
+          style={{ fontFamily: 'Lato, sans-serif' }}
         >
           Reporte de Limpieza
         </h2>
@@ -381,7 +381,7 @@ export function StepCleaning({
       >
         <p
           className="mb-3 text-xs font-semibold uppercase tracking-wide text-terra-700"
-          style={{ fontFamily: 'Almarai, sans-serif' }}
+          style={{ fontFamily: 'Lato, sans-serif' }}
         >
           Capas detectadas
         </p>
@@ -391,14 +391,14 @@ export function StepCleaning({
             const qtyDisabled = disabled || !chk.checked || isSinCapas;
             return (
               <div key={chk.label} className="flex items-center gap-3">
-                <label className="flex min-w-[220px] cursor-pointer items-center gap-2 text-sm text-[#362017] select-none">
+                <label className="flex min-w-[220px] cursor-pointer items-center gap-2 text-sm text-[#2C2220] select-none">
                   <input
                     type="checkbox"
                     checked={chk.checked}
                     disabled={disabled}
                     onChange={() => handleCheckToggle(idx)}
                     className="h-4 w-4 cursor-pointer disabled:cursor-not-allowed"
-                    style={{ accentColor: '#B1481E' }}
+                    style={{ accentColor: '#C4704A' }}
                   />
                   {chk.label}
                 </label>
@@ -426,7 +426,7 @@ export function StepCleaning({
       <section aria-label="Filas de limpieza">
         <p
           className="mb-3 text-xs font-semibold uppercase tracking-wide text-terra-700"
-          style={{ fontFamily: 'Almarai, sans-serif' }}
+          style={{ fontFamily: 'Lato, sans-serif' }}
         >
           Eventos de limpieza
         </p>
@@ -580,7 +580,7 @@ export function StepCleaning({
       <section aria-label="Mesa utilizada">
         <p
           className="mb-3 text-xs font-semibold uppercase tracking-wide text-terra-700"
-          style={{ fontFamily: 'Almarai, sans-serif' }}
+          style={{ fontFamily: 'Lato, sans-serif' }}
         >
           Mesa utilizada
         </p>
@@ -588,7 +588,7 @@ export function StepCleaning({
           {MESAS.map((mesa) => (
             <label
               key={mesa}
-              className="flex cursor-pointer items-center gap-2 text-sm text-[#362017] select-none"
+              className="flex cursor-pointer items-center gap-2 text-sm text-[#2C2220] select-none"
               style={{ minHeight: 44 }}
             >
               <input
@@ -597,7 +597,7 @@ export function StepCleaning({
                 disabled={disabled}
                 onChange={() => toggleMesa(mesa)}
                 className="h-4 w-4 cursor-pointer disabled:cursor-not-allowed"
-                style={{ accentColor: '#B1481E' }}
+                style={{ accentColor: '#C4704A' }}
               />
               {mesa}
             </label>
@@ -611,7 +611,7 @@ export function StepCleaning({
       <section aria-label="Beneficios al cliente">
         <label
           className="mb-2 block text-xs font-semibold uppercase tracking-wide text-terra-700"
-          style={{ fontFamily: 'Almarai, sans-serif' }}
+          style={{ fontFamily: 'Lato, sans-serif' }}
         >
           Beneficios al cliente
         </label>
@@ -621,8 +621,8 @@ export function StepCleaning({
           disabled={disabled}
           onChange={(e) => updateSummary({ beneficios: e.target.value })}
           placeholder="Describe los beneficios obtenidos durante la limpieza…"
-          className="w-full rounded-lg border border-[#EDE5E0] bg-white px-3 py-2 text-sm text-[#362017] placeholder-[#A9967E] shadow-sm focus:outline-none focus:ring-2 focus:ring-[#B1481E]/30 focus:border-[#B1481E] disabled:opacity-50 disabled:cursor-not-allowed resize-none"
-          style={{ fontFamily: 'Almarai, sans-serif' }}
+          className="w-full rounded-lg border border-[#EDE5E0] bg-white px-3 py-2 text-sm text-[#2C2220] placeholder-[#A9967E] shadow-sm focus:outline-none focus:ring-2 focus:ring-[#C4704A]/30 focus:border-[#C4704A] disabled:opacity-50 disabled:cursor-not-allowed resize-none"
+          style={{ fontFamily: 'Lato, sans-serif' }}
         />
       </section>
 

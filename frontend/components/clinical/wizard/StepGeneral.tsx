@@ -103,7 +103,7 @@ function Combobox({
           }}
           aria-haspopup="listbox"
           aria-expanded={open}
-          className="w-full flex items-center justify-between rounded-md border border-gray-300 bg-white px-3 py-2 text-sm text-left shadow-sm focus:outline-none focus:ring-2 focus:ring-[#4A1810] disabled:opacity-50 disabled:cursor-not-allowed"
+          className="w-full flex items-center justify-between rounded-md border border-gray-300 bg-white px-3 py-2 text-sm text-left shadow-sm focus:outline-none focus:ring-2 focus:ring-[#2C2220] disabled:opacity-50 disabled:cursor-not-allowed"
         >
           <span className={selected ? 'text-gray-900' : 'text-gray-400'}>
             {selected ? selected.label : placeholder}
@@ -133,7 +133,7 @@ function Combobox({
                 value={query}
                 onChange={(e) => setQuery(e.target.value)}
                 placeholder="Buscar…"
-                className="w-full rounded border border-gray-200 px-2 py-1.5 text-sm focus:outline-none focus:ring-1 focus:ring-[#4A1810]"
+                className="w-full rounded border border-gray-200 px-2 py-1.5 text-sm focus:outline-none focus:ring-1 focus:ring-[#2C2220]"
               />
             </div>
             <ul className="max-h-52 overflow-y-auto py-1">
@@ -154,7 +154,7 @@ function Combobox({
                       setQuery('');
                     }}
                     className={`px-3 py-2 text-sm cursor-pointer select-none hover:bg-gray-50 ${
-                      opt.value === value ? 'font-semibold text-[#4A1810] bg-amber-50' : 'text-gray-800'
+                      opt.value === value ? 'font-semibold text-[#2C2220] bg-amber-50' : 'text-gray-800'
                     }`}
                   >
                     {opt.label}
@@ -181,10 +181,10 @@ function YesNoPills({ value, onChange, disabled = false }: YesNoPillsProps) {
   function pillClass(option: boolean) {
     if (value === option) {
       return option
-        ? 'px-4 py-1.5 rounded-full text-sm font-medium transition-colors bg-[#4A1810] text-white'
-        : 'px-4 py-1.5 rounded-full text-sm font-medium transition-colors bg-gray-100 text-gray-600';
+        ? 'px-4 py-1.5 rounded-md text-sm font-medium transition-colors bg-[#2C2220] text-white'
+        : 'px-4 py-1.5 rounded-md text-sm font-medium transition-colors bg-gray-100 text-gray-600';
     }
-    return 'px-4 py-1.5 rounded-full text-sm font-medium transition-colors border border-gray-200 text-gray-400 hover:border-gray-300';
+    return 'px-4 py-1.5 rounded-md text-sm font-medium transition-colors border border-gray-200 text-gray-400 hover:border-gray-300';
   }
 
   return (
@@ -248,7 +248,7 @@ export function StepGeneral({
     <section aria-labelledby="step-general-heading" className="space-y-6">
       <h2
         id="step-general-heading"
-        className="text-base font-semibold text-[#4A1810]"
+        className="text-base font-semibold text-[#2C2220]"
       >
         Datos de sesión
       </h2>
@@ -295,7 +295,7 @@ export function StepGeneral({
           value={value.measured_at}
           disabled={disabled}
           onChange={(e) => update('measured_at', e.target.value)}
-          className="rounded-md border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#4A1810] disabled:opacity-50 disabled:cursor-not-allowed"
+          className="rounded-md border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#2C2220] disabled:opacity-50 disabled:cursor-not-allowed"
         />
       </div>
 
@@ -326,13 +326,13 @@ export function StepGeneral({
           onChange={(e) => update('notes', e.target.value)}
           rows={4}
           placeholder="Observaciones generales de la sesión…"
-          className="rounded-md border border-gray-300 px-3 py-2 text-sm resize-none focus:outline-none focus:ring-2 focus:ring-[#4A1810] disabled:opacity-50 disabled:cursor-not-allowed"
+          className="rounded-md border border-gray-300 px-3 py-2 text-sm resize-none focus:outline-none focus:ring-2 focus:ring-[#2C2220] disabled:opacity-50 disabled:cursor-not-allowed"
         />
       </div>
 
       {/* ─── Limpieza y Entidades ──────────────────────────────────────────── */}
       <div className="border-t border-gray-100 pt-6 mt-6">
-        <p className="font-semibold text-[#4A1810]">Limpieza y Entidades</p>
+        <p className="font-semibold text-[#2C2220]">Limpieza y Entidades</p>
         <p className="text-sm text-gray-500 mt-0.5 mb-5">
           Registra la información de limpieza detectada
         </p>
@@ -357,7 +357,7 @@ export function StepGeneral({
                 value={value.entities_count}
                 disabled={disabled}
                 onChange={(e) => update('entities_count', Math.max(0, parseInt(e.target.value, 10) || 0))}
-                className="w-20 h-10 text-center text-sm border border-gray-200 rounded focus:outline-none focus:ring-2 focus:ring-[#4A1810] disabled:opacity-50"
+                className="w-20 h-10 text-center text-sm border border-gray-200 rounded focus:outline-none focus:ring-2 focus:ring-[#2C2220] disabled:opacity-50"
               />
             </div>
           </div>
@@ -381,7 +381,7 @@ export function StepGeneral({
                 value={value.capas_count}
                 disabled={disabled}
                 onChange={(e) => update('capas_count', Math.max(0, parseInt(e.target.value, 10) || 0))}
-                className="w-20 h-10 text-center text-sm border border-gray-200 rounded focus:outline-none focus:ring-2 focus:ring-[#4A1810] disabled:opacity-50"
+                className="w-20 h-10 text-center text-sm border border-gray-200 rounded focus:outline-none focus:ring-2 focus:ring-[#2C2220] disabled:opacity-50"
               />
             </div>
           </div>
@@ -405,7 +405,7 @@ export function StepGeneral({
                 value={value.implants_count}
                 disabled={disabled}
                 onChange={(e) => update('implants_count', Math.max(0, parseInt(e.target.value, 10) || 0))}
-                className="w-20 h-10 text-center text-sm border border-gray-200 rounded focus:outline-none focus:ring-2 focus:ring-[#4A1810] disabled:opacity-50"
+                className="w-20 h-10 text-center text-sm border border-gray-200 rounded focus:outline-none focus:ring-2 focus:ring-[#2C2220] disabled:opacity-50"
               />
             </div>
           </div>
@@ -429,7 +429,7 @@ export function StepGeneral({
                 value={value.total_cleanings}
                 disabled={disabled}
                 onChange={(e) => update('total_cleanings', Math.max(0, parseInt(e.target.value, 10) || 0))}
-                className="w-20 h-10 text-center text-sm border border-gray-200 rounded focus:outline-none focus:ring-2 focus:ring-[#4A1810] disabled:opacity-50"
+                className="w-20 h-10 text-center text-sm border border-gray-200 rounded focus:outline-none focus:ring-2 focus:ring-[#2C2220] disabled:opacity-50"
               />
             </div>
           </div>
