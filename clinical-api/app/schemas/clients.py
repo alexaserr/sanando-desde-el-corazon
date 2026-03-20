@@ -194,6 +194,11 @@ class ClientResponse(BaseModel):
     motivation_visit: list[str] | None = None
     motivation_general: str | None = None
 
+    # Consentimiento y retención (NOM-004)
+    has_consent: bool = False
+    consent_pdf_path: str | None = None
+    archived_at: datetime | None = None
+
     # Timestamps
     created_at: datetime
     updated_at: datetime
