@@ -14,6 +14,13 @@ const BOND_ENERGY_OPTIONS = [
   'Sanación',
 ];
 
+const MEMBER_OPTIONS = [
+  'Mamá', 'Papá', 'Hermano', 'Hermana', 'Primo', 'Prima',
+  'Tío', 'Tía', 'Abuelo', 'Abuela', 'Tío abuelo', 'Tía abuela',
+  'Bisabuelo', 'Bisabuela', 'Tatarabuelo', 'Tatarabuela',
+  'Hermanastro', 'Hermanastra', 'Madrastra', 'Padrastro', 'Otro',
+];
+
 const ROLE_OPTIONS = [
   'El que da',
   'El que recibe',
@@ -218,14 +225,17 @@ function AncestorCard({ entry, index, onChange, onDelete, disabled }: AncestorCa
           {/* Miembro */}
           <div className="space-y-1">
             <label className="block text-xs font-semibold text-terra-700">Miembro</label>
-            <input
-              type="text"
+            <select
               value={entry.member}
               onChange={(e) => update('member', e.target.value)}
               disabled={disabled}
-              placeholder="Nombre del familiar"
               className="w-full rounded border border-gray-300 px-3 py-1.5 text-sm focus:outline-none focus:ring-1 focus:ring-terra-700 disabled:opacity-50"
-            />
+            >
+              <option value="">Seleccionar…</option>
+              {MEMBER_OPTIONS.map((opt) => (
+                <option key={opt} value={opt}>{opt}</option>
+              ))}
+            </select>
           </div>
 
           {/* Linaje */}
@@ -310,7 +320,6 @@ function AncestorCard({ entry, index, onChange, onDelete, disabled }: AncestorCa
 const CONCILIATION_FIELDS: { key: keyof AncestorConciliation; label: string }[] = [
   { key: 'healing_phrases',     label: '¿Qué frases sanadoras se deben usar?' },
   { key: 'conciliation_acts',   label: '¿Qué actos de conciliación se deben hacer?' },
-  { key: 'life_aspects_affected', label: '¿En qué aspectos de su vida afecta esto al paciente?' },
   { key: 'session_relationship',  label: '¿En qué se relaciona esta constelación a la sesión de hoy?' },
 ];
 

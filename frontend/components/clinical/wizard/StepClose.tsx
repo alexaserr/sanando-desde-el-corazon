@@ -1,6 +1,6 @@
 'use client';
 
-import { useId, useEffect } from 'react';
+import { useId, useEffect, useState, useMemo } from 'react';
 import type { CloseData, SessionSummary } from './types';
 
 // ─── Catálogo de precios por tipo de terapia ──────────────────────────────────
@@ -84,6 +84,19 @@ function SessionSummaryPanel({ summary }: SessionSummaryPanelProps) {
 
 // ─── StepClose ────────────────────────────────────────────────────────────────
 
+// ─── Helpers de formato ──────────────────────────────────────────────────────
+
+function formatMXN(amount: number): string {
+  return amount.toLocaleString('es-MX', {
+    style: 'currency',
+    currency: 'MXN',
+    minimumFractionDigits: 2,
+    maximumFractionDigits: 2,
+  });
+}
+
+// ─── Props ───────────────────────────────────────────────────────────────────
+
 export interface StepCloseProps {
   value: CloseData;
   onChange: (field: keyof CloseData, val: string) => void;
@@ -92,6 +105,10 @@ export interface StepCloseProps {
   onCloseSession: () => void;
   disabled?: boolean;
   isClosing?: boolean;
+  /** true cuando la terapia es "Limpieza Energética" o StepCleaning fue inyectado. */
+  isCleaningSession?: boolean;
+  /** Número de limpiezas requeridas (de StepCleaning). */
+  limpiezasRequeridas?: number;
 }
 
 export function StepClose({
@@ -101,20 +118,39 @@ export function StepClose({
   onCloseSession,
   disabled = false,
   isClosing = false,
+  isCleaningSession = false,
+  limpiezasRequeridas = 0,
 }: StepCloseProps) {
   const costId         = useId();
   const paymentNotesId = useId();
 
-  // Auto-rellenar el costo al entrar al paso 7 o al cambiar el tipo de terapia
+  // ─── Estado del cálculo de limpieza ──────────────────────────────────────────
+  const [porcentajePago, setPorcentajePago] = useState(100);
+  const [incluyeIva, setIncluyeIva]         = useState(false);
+
+  const costoBase     = limpiezasRequeridas * 1300;
+  const costoAjustado = costoBase * (porcentajePago / 100);
+  const costoFinal    = incluyeIva ? costoAjustado * 1.16 : costoAjustado;
+
+  // Sincronizar costo final de limpieza con el campo cost del formulario
+  useEffect(() => {
+    if (isCleaningSession) {
+      onChange('cost', String(Math.round(costoFinal * 100) / 100));
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [costoFinal, isCleaningSession]);
+
+  // Auto-rellenar el costo al entrar al paso 7 o al cambiar el tipo de terapia (solo no-limpieza)
   const suggestedPrice = PRICE_CATALOG[summary.therapyTypeName];
   useEffect(() => {
+    if (isCleaningSession) return;
     const price = PRICE_CATALOG[summary.therapyTypeName];
     if (price !== undefined && (value.cost === '' || value.cost === '0')) {
       onChange('cost', String(price));
     }
     // Solo ejecutar cuando cambia el tipo de terapia, no en cada cambio de costo
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [summary.therapyTypeName]);
+  }, [summary.therapyTypeName, isCleaningSession]);
 
   return (
     <section aria-labelledby="step-close-heading" className="space-y-6">
@@ -133,6 +169,85 @@ export function StepClose({
       {/* Resumen visual */}
       <SessionSummaryPanel summary={summary} />
 
+      {/* Cálculo de Limpieza (solo para sesiones de limpieza) */}
+      {isCleaningSession && (
+        <div className="bg-white border border-gray-200 rounded-lg p-5 space-y-4">
+          <h3 className="text-sm font-semibold text-[#4A1810]">
+            Cálculo de Limpieza
+          </h3>
+
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            {/* Limpiezas requeridas (read-only) */}
+            <div className="flex flex-col gap-1">
+              <span className="text-sm text-gray-500">Limpiezas requeridas</span>
+              <span className="text-sm font-medium text-gray-800">{limpiezasRequeridas}</span>
+            </div>
+
+            {/* Costo base (display only) */}
+            <div className="flex flex-col gap-1">
+              <span className="text-sm text-gray-500">Costo base</span>
+              <span className="text-sm font-medium text-gray-800">{formatMXN(costoBase)}</span>
+            </div>
+          </div>
+
+          {/* Porcentaje que puede pagar — slider */}
+          <div className="flex flex-col gap-2">
+            <div className="flex items-center justify-between">
+              <span className="text-sm text-gray-500">Porcentaje que puede pagar</span>
+              <span className="text-sm font-semibold text-[#4A1810]">{porcentajePago}%</span>
+            </div>
+            <input
+              type="range"
+              min={0}
+              max={100}
+              step={1}
+              value={porcentajePago}
+              disabled={disabled || isClosing}
+              onChange={(e) => setPorcentajePago(Number(e.target.value))}
+              className="w-full h-2 rounded-lg appearance-none cursor-pointer accent-[#4A1810] disabled:opacity-50 disabled:cursor-not-allowed"
+              style={{
+                background: `linear-gradient(to right, #4A1810 0%, #8B4513 ${porcentajePago}%, #e5e7eb ${porcentajePago}%)`,
+              }}
+            />
+          </div>
+
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            {/* Costo ajustado */}
+            <div className="flex flex-col gap-1">
+              <span className="text-sm text-gray-500">Costo ajustado</span>
+              <span className="text-sm font-medium text-gray-800">{formatMXN(costoAjustado)}</span>
+            </div>
+
+            {/* +IVA toggle */}
+            <div className="flex items-center gap-3">
+              <span className="text-sm text-gray-500">+IVA</span>
+              <button
+                type="button"
+                role="switch"
+                aria-checked={incluyeIva}
+                disabled={disabled || isClosing}
+                onClick={() => setIncluyeIva((prev) => !prev)}
+                className={`relative inline-flex h-6 w-11 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-[#4A1810] focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed ${
+                  incluyeIva ? 'bg-[#4A1810]' : 'bg-gray-200'
+                }`}
+              >
+                <span
+                  className={`pointer-events-none inline-block h-5 w-5 rounded-full bg-white shadow ring-0 transition-transform duration-200 ${
+                    incluyeIva ? 'translate-x-5' : 'translate-x-0'
+                  }`}
+                />
+              </button>
+            </div>
+          </div>
+
+          {/* Costo final */}
+          <div className="flex items-center justify-between pt-2 border-t border-gray-100">
+            <span className="text-sm text-gray-500">Costo final</span>
+            <span className="text-2xl font-bold text-[#4A1810]">{formatMXN(costoFinal)}</span>
+          </div>
+        </div>
+      )}
+
       {/* Formulario de cierre */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
         {/* Costo */}
@@ -150,15 +265,20 @@ export function StepClose({
               min={0}
               step={0.01}
               value={value.cost}
-              disabled={disabled || isClosing}
+              disabled={disabled || isClosing || isCleaningSession}
               onChange={(e) => onChange('cost', e.target.value)}
               placeholder="0.00"
               className="w-full rounded-md border border-gray-300 pl-7 pr-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#4A1810] disabled:opacity-50 disabled:cursor-not-allowed"
             />
           </div>
-          {suggestedPrice !== undefined && (
+          {!isCleaningSession && suggestedPrice !== undefined && (
             <p className="text-xs text-gray-400 mt-0.5">
               Precio sugerido: ${suggestedPrice.toLocaleString('es-MX')} MXN
+            </p>
+          )}
+          {isCleaningSession && (
+            <p className="text-xs text-gray-400 mt-0.5">
+              Calculado automáticamente desde la sección de limpieza
             </p>
           )}
         </div>

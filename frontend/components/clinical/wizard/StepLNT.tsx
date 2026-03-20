@@ -102,7 +102,7 @@ function LntCard({ entry, index, onChange, onDelete, disabled = false }: LntCard
             value={entry.initial_energy}
             onChange={(v) => onChange({ initial_energy: v })}
             phase="initial"
-            max={100}
+            max={14}
             disabled={disabled}
           />
           <EnergySlider
@@ -111,7 +111,7 @@ function LntCard({ entry, index, onChange, onDelete, disabled = false }: LntCard
             compareValue={entry.initial_energy}
             onChange={(v) => onChange({ final_energy: v })}
             phase="final"
-            max={100}
+            max={14}
             disabled={disabled}
           />
         </div>
@@ -162,8 +162,8 @@ export function StepLNT({
       {
         _localId: crypto.randomUUID(),
         theme_organ: '',
-        initial_energy: 50,
-        final_energy: 50,
+        initial_energy: 7,
+        final_energy: 7,
         healing_energy_body: false,
         healing_spiritual_body: false,
         healing_physical_body: false,

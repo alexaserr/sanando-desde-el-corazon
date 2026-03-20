@@ -120,3 +120,14 @@ export const WIZARD_CONFIGS: Record<string, TherapyWizardConfig> = {
 export function getWizardConfig(therapyTypeName: string): TherapyWizardConfig {
   return WIZARD_CONFIGS[therapyTypeName] ?? WIZARD_CONFIGS['Sanación Energética'];
 }
+
+/**
+ * Inyecta StepCleaning en el arreglo de pasos si no está presente.
+ * Se inserta justo antes de TAIL (StepEnergyFinal).
+ */
+export function injectCleaningStep(baseSteps: WizardStepConfig[]): WizardStepConfig[] {
+  if (baseSteps.some((s) => s.component === 'StepCleaning')) return baseSteps;
+  const tailIdx = baseSteps.findIndex((s) => s.component === 'StepEnergyFinal');
+  if (tailIdx === -1) return [...baseSteps, S_CLEANING];
+  return [...baseSteps.slice(0, tailIdx), S_CLEANING, ...baseSteps.slice(tailIdx)];
+}
