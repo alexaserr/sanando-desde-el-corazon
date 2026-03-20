@@ -128,9 +128,11 @@ export function StepClose({
   const [porcentajePago, setPorcentajePago] = useState(100);
   const [incluyeIva, setIncluyeIva]         = useState(false);
 
-  const costoBase     = limpiezasRequeridas * 1300;
-  const costoAjustado = costoBase * (porcentajePago / 100);
-  const costoFinal    = incluyeIva ? costoAjustado * 1.16 : costoAjustado;
+  const therapyBasePrice   = PRICE_CATALOG[summary.therapyTypeName] ?? 0;
+  const cleaningSurcharge  = limpiezasRequeridas * 1300;
+  const costoBase          = therapyBasePrice + cleaningSurcharge;
+  const costoAjustado      = costoBase * (porcentajePago / 100);
+  const costoFinal         = incluyeIva ? costoAjustado * 1.16 : costoAjustado;
 
   // Sincronizar costo final de limpieza con el campo cost del formulario
   useEffect(() => {
@@ -177,17 +179,23 @@ export function StepClose({
           </h3>
 
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-            {/* Limpiezas requeridas (read-only) */}
+            {/* Costo de la cita */}
             <div className="flex flex-col gap-1">
-              <span className="text-sm text-gray-500">Limpiezas requeridas</span>
-              <span className="text-sm font-medium text-gray-800">{limpiezasRequeridas}</span>
+              <span className="text-sm text-gray-500">Costo de la cita</span>
+              <span className="text-sm font-medium text-gray-800">{formatMXN(therapyBasePrice)}</span>
             </div>
 
-            {/* Costo base (display only) */}
+            {/* Costo de limpiezas */}
             <div className="flex flex-col gap-1">
-              <span className="text-sm text-gray-500">Costo base</span>
-              <span className="text-sm font-medium text-gray-800">{formatMXN(costoBase)}</span>
+              <span className="text-sm text-gray-500">Costo de limpiezas ({limpiezasRequeridas} × $1,300)</span>
+              <span className="text-sm font-medium text-gray-800">{formatMXN(cleaningSurcharge)}</span>
             </div>
+          </div>
+
+          {/* Subtotal */}
+          <div className="flex items-center justify-between py-2 border-b border-gray-100">
+            <span className="text-sm text-gray-500">Subtotal</span>
+            <span className="text-sm font-semibold text-gray-800">{formatMXN(costoBase)}</span>
           </div>
 
           {/* Porcentaje que puede pagar — slider */}

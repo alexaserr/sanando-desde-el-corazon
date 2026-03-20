@@ -190,6 +190,11 @@ export default function NuevaSessionPage() {
     return wizardConfig.steps;
   }, [wizardConfig.steps, hasEntitiesFlag]);
 
+  const isMedCuantica = useMemo(() => {
+    const therapy = catalogs?.therapyTypes.find((t) => t.id === generalData.therapy_type_id);
+    return therapy?.name === 'Medicina Cuántica';
+  }, [catalogs, generalData.therapy_type_id]);
+
   // Auto-rellenar costo por defecto al llegar al paso de cierre
   useEffect(() => {
     if (activeSteps[currentStep - 1]?.component === 'StepClose' && closeData.cost === '') {
@@ -316,6 +321,11 @@ export default function NuevaSessionPage() {
       await saveThemeEntries(sid, { entries, topic_progress: topicProgress });
     }
 
+    // Si es Medicina Cuántica y hay peticiones, guardarlas via endpoint LNT
+    if (isMedCuantica && lntPeticiones.trim()) {
+      await saveLntEntries(sid, { entries: [], peticiones: lntPeticiones });
+    }
+
     // Persist secondary theme names as client_topics (if not already existing)
     if (generalData.client_id) {
       const secondaryThemes = themes.filter(
@@ -437,7 +447,7 @@ export default function NuevaSessionPage() {
     }
   }, [
     currentStep, activeSteps, sessionId, generalData, energyInitial, chakraInitial,
-    themes, energyFinal, chakraFinal, lntEntries,
+    themes, energyFinal, chakraFinal, lntEntries, isMedCuantica, lntPeticiones,
     setSessionId, markStepComplete, setStep,
   ]);
 
@@ -491,7 +501,7 @@ export default function NuevaSessionPage() {
     } finally {
       setIsSaving(false);
     }
-  }, [sessionId, currentStep, activeSteps, energyInitial, chakraInitial, themes, energyFinal, chakraFinal, lntEntries]);
+  }, [sessionId, currentStep, activeSteps, energyInitial, chakraInitial, themes, energyFinal, chakraFinal, lntEntries, isMedCuantica, lntPeticiones]);
 
   const handleCloseSession = useCallback(async () => {
     if (!sessionId) return;
@@ -618,6 +628,9 @@ export default function NuevaSessionPage() {
             chakras={catalogs.chakras}
             onChange={handleThemesChange}
             disabled={isSaving}
+            showPeticiones={isMedCuantica}
+            peticiones={lntPeticiones}
+            onPeticionesChange={setLntPeticiones}
           />
         )}
 
