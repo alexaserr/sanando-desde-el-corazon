@@ -557,7 +557,7 @@ async def export_session_pdf(
     events_data = [
         {
             "manifest": _esc(ev.manifestation),
-            "work_done": _esc(ev.work_done),
+            "work_done": _esc((ev.work_done or "").replace("|", ", ")),
             "materials": _esc((ev.materials_used or "").replace("|", ", ")),
             "origin": _esc(ev.origin),
         }
