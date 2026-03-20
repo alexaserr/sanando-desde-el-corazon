@@ -201,23 +201,22 @@ def _section_cleaning(
     if limpiezas_req is not None:
         meta.append(f"<strong>Limpiezas requeridas:</strong> {limpiezas_req}")
     if mesa:
-        meta.append(f"<strong>Mesa utilizada:</strong> {_esc(mesa)}")
+        mesa_display = mesa.replace("|", ", ")
+        meta.append(f"<strong>Mesa utilizada:</strong> {_esc(mesa_display)}")
     if beneficios:
         meta.append(f"<strong>Beneficios:</strong> {_esc(beneficios)}")
     if meta:
         parts.append(f'<p class="meta">{" &nbsp;|&nbsp; ".join(meta)}</p>')
     if events:
         header = (
-            "<tr><th>Capa</th><th>Cantidad</th><th>Color aura</th>"
-            "<th>Limp. req.</th><th>Manifestación</th><th>Materiales</th>"
-            "<th>Origen</th><th>Persona</th><th>Área</th></tr>"
+            "<tr><th>#</th><th>Manifestación</th><th>Trabajo realizado</th>"
+            "<th>Materiales</th><th>Origen</th></tr>"
         )
         rows = ""
-        for ev in events:
+        for idx, ev in enumerate(events, 1):
             rows += "<tr>"
-            rows += f"<td>{ev['layer']}</td><td>{ev['qty']}</td><td>{ev['aura']}</td>"
-            rows += f"<td>{ev['req']}</td><td>{ev['manifest']}</td><td>{ev['materials']}</td>"
-            rows += f"<td>{ev['origin']}</td><td>{ev['person']}</td><td>{ev['area']}</td>"
+            rows += f"<td>{idx}</td><td>{ev['manifest']}</td><td>{ev['work_done']}</td>"
+            rows += f"<td>{ev['materials']}</td><td>{ev['origin']}</td>"
             rows += "</tr>"
         parts.append(f"<table>{header}{rows}</table>")
     return "".join(parts)
@@ -557,15 +556,10 @@ async def export_session_pdf(
     active_events = [e for e in session.cleaning_events if e.deleted_at is None]
     events_data = [
         {
-            "layer": _esc(ev.layer),
-            "qty": str(ev.quantity) if ev.quantity is not None else "—",
-            "aura": _esc(ev.aura_color),
-            "req": str(ev.cleanings_required) if ev.cleanings_required is not None else "—",
             "manifest": _esc(ev.manifestation),
-            "materials": _esc(ev.materials_used),
+            "work_done": _esc(ev.work_done),
+            "materials": _esc((ev.materials_used or "").replace("|", ", ")),
             "origin": _esc(ev.origin),
-            "person": _esc(ev.person),
-            "area": _esc(ev.life_area),
         }
         for ev in active_events
     ]
