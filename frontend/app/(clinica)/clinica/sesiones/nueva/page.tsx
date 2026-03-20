@@ -31,6 +31,8 @@ import {
   createClientTopic,
   saveThemeEntries,
   saveLntEntries,
+  saveCleaningEntries,
+  saveAncestors,
 } from '@/lib/api/clinical';
 
 import type { TherapyType, ChakraPosition, EnergyDimension, ClientListItem, ClientTopic } from '@/types/api';
@@ -383,6 +385,26 @@ export default function NuevaSessionPage() {
       } else if (stepComponent === 'StepEnergyInitial') {
         if (!sessionId) throw new Error('Sesión no iniciada');
         await saveEnergyReadings(sessionId, 'initial', energyInitial);
+        // Save ancestors if any were entered
+        if (ancestors.length > 0) {
+          await saveAncestors(sessionId, {
+            ancestors: ancestors.map((a) => ({
+              member: a.member,
+              lineage: a.lineage,
+              bond_energy: a.bond_energy,
+              ancestor_roles: a.ancestor_roles,
+              consultant_roles: a.consultant_roles,
+              energy_expressions: a.energy_expressions,
+              family_traumas: a.family_traumas,
+            })),
+            conciliation: {
+              healing_phrases: ancestorConciliation.healing_phrases,
+              conciliation_acts: ancestorConciliation.conciliation_acts,
+              life_aspects_affected: ancestorConciliation.life_aspects_affected,
+              session_relationship: ancestorConciliation.session_relationship,
+            },
+          });
+        }
         markStepComplete(currentStep);
         setStep(currentStep + 1);
 
@@ -420,7 +442,20 @@ export default function NuevaSessionPage() {
         setStep(currentStep + 1);
 
       } else if (stepComponent === 'StepCleaning') {
-        // StepCleaning — se implementará con su propio endpoint
+        if (!sessionId) throw new Error('Sesión no iniciada');
+        const events = cleaningRows.map((r) => ({
+          manifestation: r.manifestation,
+          work_done: r.work_done === 'Otro' && r.work_done_other ? r.work_done_other : r.work_done,
+          materials_used: r.materials.join('|'),
+          origin: r.origin,
+        }));
+        await saveCleaningEntries(sessionId, {
+          events,
+          capas: cleaningSummary.capas,
+          limpiezas_requeridas: cleaningSummary.limpiezas_requeridas,
+          mesa_utilizada: cleaningSummary.mesa_utilizada,
+          beneficios: cleaningSummary.beneficios,
+        });
         markStepComplete(currentStep);
         setStep(currentStep + 1);
 
@@ -448,6 +483,7 @@ export default function NuevaSessionPage() {
   }, [
     currentStep, activeSteps, sessionId, generalData, energyInitial, chakraInitial,
     themes, energyFinal, chakraFinal, lntEntries, isMedCuantica, lntPeticiones,
+    cleaningRows, cleaningSummary, ancestors, ancestorConciliation,
     setSessionId, markStepComplete, setStep,
   ]);
 
@@ -494,14 +530,27 @@ export default function NuevaSessionPage() {
             })),
           });
         }
+      } else if (stepComponent === 'StepCleaning') {
+        const events = cleaningRows.map((r) => ({
+          manifestation: r.manifestation,
+          work_done: r.work_done === 'Otro' && r.work_done_other ? r.work_done_other : r.work_done,
+          materials_used: r.materials.join('|'),
+          origin: r.origin,
+        }));
+        await saveCleaningEntries(sessionId, {
+          events,
+          capas: cleaningSummary.capas,
+          limpiezas_requeridas: cleaningSummary.limpiezas_requeridas,
+          mesa_utilizada: cleaningSummary.mesa_utilizada,
+          beneficios: cleaningSummary.beneficios,
+        });
       }
-      // StepCleaning — se implementará con su propio endpoint
     } catch (err) {
       setStepError(err instanceof Error ? err.message : 'Error al guardar borrador.');
     } finally {
       setIsSaving(false);
     }
-  }, [sessionId, currentStep, activeSteps, energyInitial, chakraInitial, themes, energyFinal, chakraFinal, lntEntries, isMedCuantica, lntPeticiones]);
+  }, [sessionId, currentStep, activeSteps, energyInitial, chakraInitial, themes, energyFinal, chakraFinal, lntEntries, isMedCuantica, lntPeticiones, cleaningRows, cleaningSummary]);
 
   const handleCloseSession = useCallback(async () => {
     if (!sessionId) return;

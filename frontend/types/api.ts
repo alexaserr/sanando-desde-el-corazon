@@ -200,6 +200,9 @@ export interface TopicPayload {
 export interface CloseSessionPayload {
   cost: number;
   payment_notes?: string;
+  porcentaje_pago?: number;
+  incluye_iva?: boolean;
+  costo_calculado?: number;
 }
 
 // ─── Temas del paciente ────────────────────────────────────────────────────────
