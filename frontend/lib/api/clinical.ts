@@ -229,6 +229,69 @@ export async function getThemeEntries(sessionId: string): Promise<SessionThemeEn
 
 // ─── Catálogo de órganos por chakra ───────────────────────────────────────────
 
+// ─── Cleaning ─────────────────────────────────────────────────────────────────
+
+export interface CleaningEventPayload {
+  manifestation: string;
+  work_done: string;
+  materials_used: string;  // pipe-delimited
+  origin: string;
+}
+
+export interface SaveCleaningPayload {
+  events: CleaningEventPayload[];
+  capas: number;
+  limpiezas_requeridas: number;
+  mesa_utilizada: string;
+  beneficios: string;
+}
+
+export async function saveCleaningEntries(
+  sessionId: string,
+  payload: SaveCleaningPayload,
+): Promise<unknown> {
+  return apiClient.put<unknown, SaveCleaningPayload>(
+    `/api/v1/clinical/sessions/${sessionId}/cleanings`,
+    payload,
+  );
+}
+
+// ─── Ancestors ────────────────────────────────────────────────────────────────
+
+export interface AncestorItemPayload {
+  member: string;
+  lineage: string;
+  bond_energy: string[];
+  ancestor_roles: string[];
+  consultant_roles: string[];
+  energy_expressions: { number: number; expression: string }[];
+  family_traumas: { number: number; trauma: string }[];
+}
+
+export interface AncestorConciliationPayload {
+  healing_phrases: string;
+  conciliation_acts: string;
+  life_aspects_affected: string;
+  session_relationship: string;
+}
+
+export interface SaveAncestorsPayload {
+  ancestors: AncestorItemPayload[];
+  conciliation: AncestorConciliationPayload;
+}
+
+export async function saveAncestors(
+  sessionId: string,
+  payload: SaveAncestorsPayload,
+): Promise<unknown> {
+  return apiClient.put<unknown, SaveAncestorsPayload>(
+    `/api/v1/clinical/sessions/${sessionId}/ancestors`,
+    payload,
+  );
+}
+
+// ─── Catálogo de órganos por chakra ───────────────────────────────────────────
+
 export async function getChakraOrgans(): Promise<ChakraOrgan[]> {
   try {
     return await apiClient.get<ChakraOrgan[]>('/api/v1/catalogs/chakra-organs');

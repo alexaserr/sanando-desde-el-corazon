@@ -123,13 +123,17 @@ export function getWizardConfig(therapyTypeName: string): TherapyWizardConfig {
 
 /**
  * Inyecta StepCleaning en el arreglo de pasos si no está presente.
- * Al inyectar limpieza se eliminan StepEnergyFinal y StepChakrasFinal
- * porque la sesión de limpieza salta directamente al cierre.
+ * Al inyectar limpieza se eliminan StepTopics, StepLNT, StepEnergyFinal
+ * y StepChakrasFinal — la sesión de limpieza salta directamente al cierre.
  */
 export function injectCleaningStep(baseSteps: WizardStepConfig[]): WizardStepConfig[] {
-  // Filtrar pasos finales de energía/chakras — no aplican cuando hay limpieza
+  // Remove ALL step-4 variants + final energy/chakra steps
   let steps = baseSteps.filter(
-    (s) => s.component !== 'StepEnergyFinal' && s.component !== 'StepChakrasFinal',
+    (s) =>
+      s.component !== 'StepEnergyFinal' &&
+      s.component !== 'StepChakrasFinal' &&
+      s.component !== 'StepTopics' &&
+      s.component !== 'StepLNT',
   );
   if (!steps.some((s) => s.component === 'StepCleaning')) {
     const closeIdx = steps.findIndex((s) => s.component === 'StepClose');
