@@ -23,7 +23,13 @@ export async function loginUser(email: string, password: string): Promise<User> 
 }
 
 export async function logoutUser(): Promise<void> {
-  await apiClient.post<void>("/api/v1/auth/logout");
+  // Clear local state FIRST — guarantees user is logged out even if API fails
+  useAuthStore.getState().logout();
+  try {
+    await apiClient.post<void>("/api/v1/auth/logout");
+  } catch {
+    // Ignore — local state already cleared, server token will expire naturally
+  }
 }
 
 export async function getMe(): Promise<User> {

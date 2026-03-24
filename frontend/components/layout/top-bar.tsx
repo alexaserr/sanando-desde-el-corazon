@@ -8,15 +8,11 @@ import { Button } from "@/components/ui/button";
 
 export function TopBar() {
   const router = useRouter();
-  const { user, logout } = useAuthStore();
+  const { user } = useAuthStore();
 
   const handleLogout = async () => {
-    try {
-      await logoutUser();
-    } finally {
-      logout();
-      router.replace("/login");
-    }
+    await logoutUser();
+    router.replace("/login");
   };
 
   return (
