@@ -22,6 +22,7 @@ export default function SecurityPage() {
   const codeInputRef = useRef<HTMLInputElement>(null);
 
   // Redirect non-admin users
+  console.log('SEGURIDAD user:', user?.role);
   const isAdmin = user?.role === 'admin';
   const has2fa = user?.has_2fa ?? false;
 
@@ -107,7 +108,7 @@ export default function SecurityPage() {
   if (!user) {
     return (
       <div className="flex items-center justify-center py-20">
-        <div className="h-8 w-8 animate-spin rounded-full border-2 border-terra-200 border-t-terra-700" />
+        <div className="h-8 w-8 animate-spin rounded-full border-2 border-terra-200 border-t-[#C4704A]" />
       </div>
     );
   }
