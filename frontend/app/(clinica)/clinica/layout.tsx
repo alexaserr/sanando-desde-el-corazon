@@ -77,12 +77,22 @@ export default function ClinicaLayout({
             <h2 className="text-lg font-semibold text-[#2C2220]">Sesión expirada</h2>
             <p className="text-sm text-[#4A3628] mt-1">Tu sesión ha expirado. Inicia sesión de nuevo.</p>
           </div>
-          <a
-            href="/login"
+          <button
+            onClick={async () => {
+              try {
+                await fetch('/api/v1/auth/logout', {
+                  method: 'POST',
+                  credentials: 'include',
+                });
+              } catch {
+                // Ignore — server might reject, but we still want to navigate
+              }
+              window.location.href = '/login';
+            }}
             className="bg-[#C4704A] text-white rounded-md px-6 py-2 text-sm font-medium hover:bg-[#A85C3A] transition-colors"
           >
             Iniciar sesión
-          </a>
+          </button>
         </div>
       </div>
     );

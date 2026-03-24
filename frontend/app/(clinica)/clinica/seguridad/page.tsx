@@ -22,7 +22,6 @@ export default function SecurityPage() {
   const codeInputRef = useRef<HTMLInputElement>(null);
 
   // Redirect non-admin users
-  console.log('SEGURIDAD user:', user?.role);
   const isAdmin = user?.role === 'admin';
   const has2fa = user?.has_2fa ?? false;
 
