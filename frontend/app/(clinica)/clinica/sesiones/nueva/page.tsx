@@ -14,6 +14,7 @@ import { StepClose }          from '@/components/clinical/wizard/StepClose';
 import { StepCleaning }      from '@/components/clinical/wizard/StepCleaning';
 import { StepLNT }           from '@/components/clinical/wizard/StepLNT';
 
+import { useAuthStore } from '@/store/auth';
 import { useWizardStore } from '@/lib/stores/wizardStore';
 import { getWizardConfig, injectCleaningStep } from '@/lib/data/wizard-config';
 import {
@@ -67,7 +68,7 @@ function defaultGeneralData(): GeneralData {
   const pad = (n: number) => String(n).padStart(2, '0');
   const measured_at = `${now.getFullYear()}-${pad(now.getMonth() + 1)}-${pad(now.getDate())}T${pad(now.getHours())}:${pad(now.getMinutes())}`;
   return {
-    client_id: '', therapy_type_id: '', measured_at, general_energy: 50, notes: '',
+    client_id: '', therapy_type_id: '', measured_at, general_energy: 7, notes: '',
     has_entities: null, entities_count: 0,
     has_capas: null, capas_count: 0,
     has_implants: null, implants_count: 0,
@@ -95,6 +96,9 @@ export default function NuevaSessionPage() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const clientIdParam = searchParams.get('client_id');
+
+  // Auth — read once, re-renders when store hydrates
+  const user = useAuthStore((s) => s.user);
 
   // Wizard store
   const { currentStep, sessionId, setStep, markStepComplete, setSessionId, reset } =
@@ -226,6 +230,16 @@ export default function NuevaSessionPage() {
       prev.map((r) => (r.chakra_position_id === chakraPositionId ? { ...r, value } : r)),
     );
   }
+
+  const handleDimensionRenamed = useCallback((id: string, newName: string) => {
+    setCatalogs((prev) => {
+      if (!prev) return prev;
+      return {
+        ...prev,
+        dimensions: prev.dimensions.map((d) => d.id === id ? { ...d, name: newName } : d),
+      };
+    });
+  }, []);
 
   const handleNewDimension = useCallback((dim: { id: string; name: string }) => {
     setCatalogs((prev) => {
@@ -671,6 +685,8 @@ export default function NuevaSessionPage() {
             conciliation={ancestorConciliation}
             onConciliationChange={setAncestorConciliation}
             onDimensionCreated={handleNewDimension}
+            onDimensionRenamed={handleDimensionRenamed}
+            isAdmin={user?.role === 'admin'}
           />
         )}
 

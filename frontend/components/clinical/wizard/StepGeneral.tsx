@@ -309,7 +309,7 @@ export function StepGeneral({
           value={value.general_energy}
           onChange={(v) => update('general_energy', v)}
           phase="initial"
-          max={100}
+          max={14}
           disabled={disabled}
         />
       </div>

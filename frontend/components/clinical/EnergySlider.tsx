@@ -15,6 +15,8 @@ export interface EnergySliderProps {
   showDelta?: boolean;
   /** Mostrar u ocultar visualmente el label (sigue presente para accesibilidad). */
   showLabel?: boolean;
+  /** Mostrar u ocultar el input numérico (útil cuando el padre lo renderiza aparte). */
+  showInput?: boolean;
 }
 
 // terra-700 — color de relleno del thumb (alineado con Squarespace)
@@ -84,6 +86,7 @@ export function EnergySlider({
   disabled = false,
   showDelta,
   showLabel = true,
+  showInput = true,
 }: EnergySliderProps) {
   // useId genera IDs únicos estables en SSR/CSR — React 18+
   const uid = useId();
@@ -213,33 +216,37 @@ export function EnergySlider({
       `}</style>
 
       {/* Fila de label + input numérico + delta */}
-      <div className={`flex items-center gap-2 ${showLabel ? 'justify-between' : 'justify-end'}`}>
-        {/* Label — siempre presente en el DOM para accesibilidad */}
-        <label
-          htmlFor={sliderId}
-          className={`text-sm font-medium leading-none truncate select-none ${showLabel ? '' : 'sr-only'}`}
-          style={showLabel ? { color: phaseColor } : undefined}
-        >
-          {label}
-        </label>
+      {(showLabel || showInput) && (
+        <div className={`flex items-center gap-2 ${showLabel ? 'justify-between' : 'justify-end'}`}>
+          {/* Label — siempre presente en el DOM para accesibilidad */}
+          <label
+            htmlFor={sliderId}
+            className={`text-sm font-medium leading-none truncate select-none ${showLabel ? '' : 'sr-only'}`}
+            style={showLabel ? { color: phaseColor } : undefined}
+          >
+            {label}
+          </label>
 
-        <div className="flex items-center gap-1.5 shrink-0">
-          {/* Input numérico bidireccional */}
-          <input
-            type="number"
-            min={min}
-            max={max}
-            step={effectiveStep}
-            value={inputStr}
-            onChange={handleInputChange}
-            onBlur={handleInputBlur}
-            disabled={disabled}
-            aria-label={`${label} valor numérico`}
-            className="w-16 h-8 text-center text-sm border border-terra-200 rounded-md tabular-nums disabled:opacity-50 disabled:cursor-not-allowed focus:outline-none focus:border-terra-700 focus:ring-1 focus:ring-terra-700/20"
-          />
-          {shouldShowDelta && <DeltaBadge delta={delta} />}
+          {showInput && (
+            <div className="flex items-center gap-1.5 shrink-0">
+              {/* Input numérico bidireccional */}
+              <input
+                type="number"
+                min={min}
+                max={max}
+                step={effectiveStep}
+                value={inputStr}
+                onChange={handleInputChange}
+                onBlur={handleInputBlur}
+                disabled={disabled}
+                aria-label={`${label} valor numérico`}
+                className="w-16 h-8 text-center text-sm border border-terra-200 rounded-md tabular-nums disabled:opacity-50 disabled:cursor-not-allowed focus:outline-none focus:border-terra-700 focus:ring-1 focus:ring-terra-700/20"
+              />
+              {shouldShowDelta && <DeltaBadge delta={delta} />}
+            </div>
+          )}
         </div>
-      </div>
+      )}
 
       {/* Track con gradiente + input range superpuesto */}
       <div

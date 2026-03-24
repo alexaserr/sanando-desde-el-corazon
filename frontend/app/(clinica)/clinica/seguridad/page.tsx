@@ -104,6 +104,14 @@ export default function SecurityPage() {
     }
   }
 
+  if (!user) {
+    return (
+      <div className="flex items-center justify-center py-20">
+        <div className="h-8 w-8 animate-spin rounded-full border-2 border-terra-200 border-t-terra-700" />
+      </div>
+    );
+  }
+
   if (!isAdmin) {
     return (
       <div className="flex flex-col items-center justify-center py-20 text-center">

@@ -1,11 +1,10 @@
 'use client';
 
 import { useMemo, useCallback, useState } from 'react';
-import { Plus } from 'lucide-react';
+import { Plus, Pencil, Check, X } from 'lucide-react';
 import { EnergySlider } from '../EnergySlider';
 import { StepAncestors } from './StepAncestors';
-import { createEnergyDimension } from '@/lib/api/clinical';
-import { useAuthStore } from '@/store/auth';
+import { createEnergyDimension, renameEnergyDimension } from '@/lib/api/clinical';
 import type { EnergyDimension, EnergyReading, AncestorEntry, AncestorConciliation } from './types';
 
 export interface StepEnergyInitialProps {
@@ -22,6 +21,81 @@ export interface StepEnergyInitialProps {
   onConciliationChange: (conciliation: AncestorConciliation) => void;
   /** Callback cuando se crea una nueva dimensión desde el formulario inline. */
   onDimensionCreated?: (dim: { id: string; name: string }) => void;
+  /** Callback cuando se renombra una dimensión existente (admin only). */
+  onDimensionRenamed?: (id: string, newName: string) => void;
+  /** Whether the current user is admin (controls rename/create UI). */
+  isAdmin?: boolean;
+}
+
+// ─── Inline editable label for dimension names (admin only) ──────────────────
+
+interface EditableDimensionLabelProps {
+  dimensionId: string;
+  name: string;
+  isAdmin: boolean;
+  onRename: (id: string, newName: string) => void;
+}
+
+function EditableDimensionLabel({ dimensionId, name, isAdmin, onRename }: EditableDimensionLabelProps) {
+  const [editing, setEditing] = useState(false);
+  const [draft, setDraft] = useState(name);
+
+  function save() {
+    const trimmed = draft.trim();
+    if (trimmed && trimmed !== name) {
+      onRename(dimensionId, trimmed);
+      renameEnergyDimension(dimensionId, trimmed).catch(() => {
+        // Silently fail — local state already updated
+      });
+    }
+    setEditing(false);
+  }
+
+  function cancel() {
+    setDraft(name);
+    setEditing(false);
+  }
+
+  if (!isAdmin || !editing) {
+    return (
+      <span className="inline-flex items-center gap-1.5 group">
+        <span className="text-sm font-medium text-[#2C2220]">{name}</span>
+        {isAdmin && (
+          <button
+            type="button"
+            onClick={() => { setDraft(name); setEditing(true); }}
+            className="opacity-0 group-hover:opacity-100 text-[#4A3628]/40 hover:text-[#C4704A] transition-opacity"
+            title="Renombrar dimensión"
+          >
+            <Pencil className="w-3 h-3" />
+          </button>
+        )}
+      </span>
+    );
+  }
+
+  return (
+    <span className="inline-flex items-center gap-1.5">
+      <input
+        autoFocus
+        type="text"
+        value={draft}
+        onChange={(e) => setDraft(e.target.value)}
+        onKeyDown={(e) => {
+          if (e.key === 'Enter') save();
+          if (e.key === 'Escape') cancel();
+        }}
+        onBlur={save}
+        className="w-40 bg-[#FAF7F5] border-b border-[#D4A592] rounded-none px-1 py-0.5 text-sm text-[#2C2220] focus:outline-none focus:border-[#C4704A] transition-colors"
+      />
+      <button type="button" onMouseDown={save} className="text-emerald-600 hover:text-emerald-700">
+        <Check className="w-3.5 h-3.5" />
+      </button>
+      <button type="button" onMouseDown={cancel} className="text-[#4A3628]/40 hover:text-red-500">
+        <X className="w-3.5 h-3.5" />
+      </button>
+    </span>
+  );
 }
 
 export function StepEnergyInitial({
@@ -34,6 +108,8 @@ export function StepEnergyInitial({
   conciliation,
   onConciliationChange,
   onDimensionCreated,
+  onDimensionRenamed,
+  isAdmin = false,
 }: StepEnergyInitialProps) {
   const [isAncestorsOpen, setIsAncestorsOpen] = useState(false);
 
@@ -42,9 +118,6 @@ export function StepEnergyInitial({
   const [newDimName, setNewDimName] = useState('');
   const [newDimError, setNewDimError] = useState<string | null>(null);
   const [isCreating, setIsCreating] = useState(false);
-
-  const user = useAuthStore((s) => s.user);
-  const isAdmin = user?.role === 'admin';
 
   // Índice por dimension_id para O(1) lookup al renderizar
   const readingMap = useMemo(
@@ -89,6 +162,14 @@ export function StepEnergyInitial({
   const mfBalanced = sumMF === 100;
 
   const ancestorBadge = ancestors.length > 0 ? ancestors.length : null;
+
+  // Handler para renombrar dimensión
+  const handleRenameDimension = useCallback(
+    (id: string, newName: string) => {
+      onDimensionRenamed?.(id, newName);
+    },
+    [onDimensionRenamed],
+  );
 
   // Handler para crear nueva dimensión
   const handleCreateDimension = useCallback(async () => {
@@ -156,8 +237,33 @@ export function StepEnergyInitial({
                 key={dim.id}
                 className="bg-white rounded-lg border border-gray-100 shadow-sm p-4"
               >
+                {/* Row: editable name + number input */}
+                <div className="flex items-center justify-between mb-1">
+                  <EditableDimensionLabel
+                    dimensionId={dim.id}
+                    name={dim.name}
+                    isAdmin={isAdmin}
+                    onRename={handleRenameDimension}
+                  />
+                  <input
+                    type="number"
+                    min={0}
+                    max={100}
+                    value={readingMap.get(dim.id) ?? 0}
+                    onChange={(e) => {
+                      const n = Number(e.target.value);
+                      if (!isNaN(n) && n >= 0 && n <= 100) handleChange(dim.id, n);
+                    }}
+                    disabled={disabled}
+                    aria-label={`${dim.name} valor numérico`}
+                    className="w-16 h-8 text-center text-sm border border-terra-200 rounded-md tabular-nums disabled:opacity-50 disabled:cursor-not-allowed focus:outline-none focus:border-terra-700 focus:ring-1 focus:ring-terra-700/20"
+                  />
+                </div>
+                {/* Slider only — label and input hidden, handled above */}
                 <EnergySlider
                   label={dim.name}
+                  showLabel={false}
+                  showInput={false}
                   value={readingMap.get(dim.id) ?? 0}
                   onChange={(v) => handleChange(dim.id, v)}
                   phase="initial"
