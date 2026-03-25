@@ -3,8 +3,8 @@
 import { useState, useEffect, useRef } from 'react';
 import { Shield, ShieldCheck, Copy, Check, Loader2 } from 'lucide-react';
 import { apiClient, ApiError } from '@/lib/api/client';
+import { getMe } from '@/lib/api/auth';
 import { useAuthStore } from '@/store/auth';
-import type { User } from '@/types/api';
 
 interface SetupData {
   secret: string;
@@ -22,7 +22,6 @@ export default function SecurityPage() {
   const codeInputRef = useRef<HTMLInputElement>(null);
 
   // Redirect non-admin users
-  console.log('SEGURIDAD user:', user?.role);
   const isAdmin = user?.role === 'admin';
   const has2fa = user?.has_2fa ?? false;
 
@@ -30,9 +29,9 @@ export default function SecurityPage() {
   useEffect(() => {
     async function refreshUser() {
       try {
-        const res = await apiClient.get<User>('/api/v1/auth/me');
+        const me = await getMe();
         if (accessToken) {
-          setAuth(res, accessToken);
+          setAuth(me, accessToken);
         }
       } catch {
         // Silently fail — user data from store is still valid
@@ -69,9 +68,9 @@ export default function SecurityPage() {
       setCode('');
       // Refresh user to update has_2fa
       try {
-        const me = await apiClient.get<User>('/api/v1/auth/me');
+        const freshUser = await getMe();
         if (accessToken) {
-          setAuth(me, accessToken);
+          setAuth(freshUser, accessToken);
         }
       } catch {
         // User will see success anyway
