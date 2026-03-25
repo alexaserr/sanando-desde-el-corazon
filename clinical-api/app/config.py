@@ -46,6 +46,7 @@ class Settings(BaseSettings):
     REDIS_DB_SESSIONS: int = Field(default=0)
     REDIS_DB_CACHE: int = Field(default=1)
     REDIS_DB_RATE_LIMIT: int = Field(default=2)
+    LOGIN_RATE_LIMIT: str = Field(default="5/15minutes")
 
     # ── MinIO ─────────────────────────────────────────────────
     MINIO_ENDPOINT: str = Field(...)

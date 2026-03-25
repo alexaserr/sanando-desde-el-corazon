@@ -4,6 +4,8 @@ Router de catálogos estáticos: terapias, chakras, dimensiones energéticas.
 Los catálogos se cachean en memoria (módulo-level) al primer acceso,
 ya que son datos de referencia que no cambian en runtime.
 """
+from uuid import UUID
+
 from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 from fastapi import APIRouter, Depends, HTTPException, status
@@ -112,6 +114,35 @@ async def create_energy_dimension(
         is_active=True,
     )
     db.add(dimension)
+    await db.commit()
+    await db.refresh(dimension)
+
+    # Invalidar cache
+    _cache.pop("energy_dimensions", None)
+
+    return DimensionResponse.model_validate(dimension)
+
+
+@router.patch(
+    "/energy-dimensions/{dimension_id}",
+    response_model=DimensionResponse,
+    summary="Renombrar dimensión energética (solo admin)",
+)
+async def update_energy_dimension(
+    dimension_id: UUID,
+    body: DimensionCreate,
+    db: AsyncSession = Depends(get_db),
+    _: User = Depends(require_role(UserRole.admin)),
+) -> DimensionResponse:
+    dimension = (
+        await db.execute(
+            select(EnergyDimension).where(EnergyDimension.id == dimension_id)
+        )
+    ).scalar_one_or_none()
+    if not dimension:
+        raise HTTPException(status_code=404, detail="Dimensión no encontrada")
+
+    dimension.name = body.name
     await db.commit()
     await db.refresh(dimension)
 

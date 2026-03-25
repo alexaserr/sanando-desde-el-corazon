@@ -211,7 +211,7 @@ async def me(
 
 
 @router.post("/login", response_model=LoginResponse)
-@limiter.limit("5 per 15 minutes")
+@limiter.limit(settings.LOGIN_RATE_LIMIT)
 async def login(
     request: Request,
     body: LoginRequest,

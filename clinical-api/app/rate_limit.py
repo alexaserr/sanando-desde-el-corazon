@@ -9,9 +9,10 @@ from slowapi.util import get_remote_address
 from app.config import get_settings
 
 _settings = get_settings()
-_redis_storage = (
-    f"{_settings.REDIS_URL}/{_settings.REDIS_DB_RATE_LIMIT}"
-)
+
+# REDIS_URL puede incluir /0 al final — reemplazar con el DB correcto
+_base = _settings.REDIS_URL.rsplit("/", 1)[0]
+_redis_storage = f"{_base}/{_settings.REDIS_DB_RATE_LIMIT}"
 
 limiter = Limiter(
     key_func=get_remote_address,
