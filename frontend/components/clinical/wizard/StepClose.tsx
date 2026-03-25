@@ -1,6 +1,6 @@
 'use client';
 
-import { useId, useEffect, useState, useMemo } from 'react';
+import { useId, useEffect, useState } from 'react';
 import type { CloseData, SessionSummary } from './types';
 
 // ─── Catálogo de precios por tipo de terapia ──────────────────────────────────
