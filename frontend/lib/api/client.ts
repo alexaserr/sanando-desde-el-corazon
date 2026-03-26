@@ -81,11 +81,11 @@ async function request<TResponse>(
         })
           .then((res) => {
             if (!res.ok) throw new Error("Refresh failed");
-            return res.json() as Promise<{ data: { access_token: string } }>;
+            return res.json() as Promise<{ access_token: string }>;
           })
-          .then(({ data }) => {
-            useAuthStore.getState().setAccessToken(data.access_token);
-            return data.access_token;
+          .then(({ access_token }) => {
+            useAuthStore.getState().setAccessToken(access_token);
+            return access_token;
           })
           .finally(() => {
             refreshPromise = null;

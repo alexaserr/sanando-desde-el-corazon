@@ -1,0 +1,30 @@
+# Frontend standalone + Cloudflare Tunnel
+# Usa la red del stack existente (sdc-dev) para alcanzar clinical-api, etc.
+#
+# Uso:
+#   docker compose -f docker-compose.tunnel.yml up -d --build
+
+services:
+  frontend-standalone:
+    build:
+      context: .
+      dockerfile: Dockerfile.standalone
+    restart: unless-stopped
+    ports:
+      - "127.0.0.1:3002:3002"
+    networks:
+      - sdc-network
+
+  cloudflared:
+    image: cloudflare/cloudflared:latest
+    restart: unless-stopped
+    command: tunnel --no-autoupdate run --token ${CLOUDFLARED_TOKEN}
+    networks:
+      - sdc-network
+    depends_on:
+      - frontend-standalone
+
+networks:
+  sdc-network:
+    external: true
+    name: sdc-dev_backend

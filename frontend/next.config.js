@@ -16,19 +16,19 @@ const nextConfig = {
     return [
       {
         source: "/api/v1/:path*",
-        destination: `${process.env.NEXT_PUBLIC_CLINICAL_API_URL || "http://localhost:8001"}/api/v1/:path*`,
+        destination: `${process.env.CLINICAL_API_INTERNAL_URL || "http://clinical-api:8001"}/api/v1/:path*`,
       },
       {
         source: "/api/clinical/:path*",
-        destination: `${process.env.NEXT_PUBLIC_CLINICAL_API_URL || "http://localhost:8001"}/:path*`,
+        destination: `${process.env.CLINICAL_API_INTERNAL_URL || "http://clinical-api:8001"}/:path*`,
       },
       {
         source: "/api/portal/:path*",
-        destination: `${process.env.NEXT_PUBLIC_PORTAL_API_URL || "http://localhost:8002"}/:path*`,
+        destination: `${process.env.PORTAL_API_INTERNAL_URL || "http://portal-api:8002"}/:path*`,
       },
       {
         source: "/api/podcast/:path*",
-        destination: `${process.env.NEXT_PUBLIC_PODCAST_API_URL || "http://localhost:8003"}/:path*`,
+        destination: `${process.env.PODCAST_API_INTERNAL_URL || "http://podcast-api:8003"}/:path*`,
       },
     ];
   },

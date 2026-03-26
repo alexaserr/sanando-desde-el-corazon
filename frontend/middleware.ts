@@ -16,8 +16,12 @@ export function middleware(request: NextRequest) {
   }
 
   // /login: si ya hay sesión activa, redirigir a /clinica
+  // Excepción: ?session=expired indica que el refresh token ya no es válido
+  // (cookie HttpOnly sigue presente pero el token expiró/fue revocado)
   if (pathname === "/login" && hasRefreshToken) {
-    return NextResponse.redirect(new URL("/clinica", request.url));
+    if (request.nextUrl.searchParams.get("session") !== "expired") {
+      return NextResponse.redirect(new URL("/clinica", request.url));
+    }
   }
 
   return NextResponse.next();

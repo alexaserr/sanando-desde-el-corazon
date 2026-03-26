@@ -33,8 +33,8 @@ export default function ClinicaLayout({
 
         if (!refreshRes.ok) throw new Error('Refresh failed');
 
-        const refreshData = (await refreshRes.json()) as { data: { access_token: string } };
-        const newToken = refreshData.data?.access_token;
+        const refreshData = (await refreshRes.json()) as { access_token: string };
+        const newToken = refreshData.access_token;
 
         if (!newToken) throw new Error('No token');
 
@@ -77,22 +77,12 @@ export default function ClinicaLayout({
             <h2 className="text-lg font-semibold text-[#2C2220]">Sesión expirada</h2>
             <p className="text-sm text-[#4A3628] mt-1">Tu sesión ha expirado. Inicia sesión de nuevo.</p>
           </div>
-          <button
-            onClick={async () => {
-              try {
-                await fetch('/api/v1/auth/logout', {
-                  method: 'POST',
-                  credentials: 'include',
-                });
-              } catch {
-                // Ignore — server might reject, but we still want to navigate
-              }
-              window.location.href = '/login';
-            }}
-            className="bg-[#C4704A] text-white rounded-md px-6 py-2 text-sm font-medium hover:bg-[#A85C3A] transition-colors"
+          <a
+            href="/login?session=expired"
+            className="inline-block bg-[#C4704A] text-white rounded-md px-6 py-2 text-sm font-medium hover:bg-[#A85C3A] transition-colors"
           >
             Iniciar sesión
-          </button>
+          </a>
         </div>
       </div>
     );

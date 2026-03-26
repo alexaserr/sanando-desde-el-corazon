@@ -23,10 +23,16 @@ export async function loginUser(email: string, password: string): Promise<User> 
 }
 
 export async function logoutUser(): Promise<void> {
-  // Clear local state FIRST — guarantees user is logged out even if API fails
+  // Capture token BEFORE clearing state — POST /logout requires Bearer auth
+  // so the server can clear the HttpOnly refresh_token cookie.
+  const token = useAuthStore.getState().accessToken;
   useAuthStore.getState().logout();
   try {
-    await apiClient.post<void>("/api/v1/auth/logout");
+    await fetch("/api/v1/auth/logout", {
+      method: "POST",
+      credentials: "include",
+      headers: token ? { Authorization: `Bearer ${token}` } : {},
+    });
   } catch {
     // Ignore — local state already cleared, server token will expire naturally
   }

@@ -5,7 +5,7 @@ import EmotionSelector from '@/components/clinical/EmotionSelector';
 
 // ─── Tipos locales ───────────────────────────────────────────────────────────
 
-type MaritalStatus = 'single' | 'married' | 'divorced' | 'widowed' | 'common_law' | 'other';
+type MaritalStatus = 'soltero' | 'casado' | 'divorciado' | 'viudo' | 'union_libre';
 
 interface FormData {
   // Sección 1 — Datos personales
@@ -57,12 +57,11 @@ const INITIAL: FormData = {
 };
 
 const MARITAL_OPTIONS: { value: MaritalStatus; label: string }[] = [
-  { value: 'single', label: 'Soltero/a' },
-  { value: 'married', label: 'Casado/a' },
-  { value: 'divorced', label: 'Divorciado/a' },
-  { value: 'widowed', label: 'Viudo/a' },
-  { value: 'common_law', label: 'Unión libre' },
-  { value: 'other', label: 'Otro' },
+  { value: 'soltero', label: 'Soltero/a' },
+  { value: 'casado', label: 'Casado/a' },
+  { value: 'divorciado', label: 'Divorciado/a' },
+  { value: 'viudo', label: 'Viudo/a' },
+  { value: 'union_libre', label: 'Unión libre' },
 ];
 
 // ─── Componentes auxiliares ──────────────────────────────────────────────────
@@ -134,17 +133,26 @@ export default function RegistroPage() {
       setError('El nombre completo es obligatorio.');
       return;
     }
+    if (!form.email.trim()) {
+      setError('El correo electrónico es obligatorio.');
+      return;
+    }
+    if (!form.phone.trim() || form.phone.replace(/\D/g, '').length < 10) {
+      setError('El teléfono es obligatorio (mínimo 10 dígitos).');
+      return;
+    }
 
     setSubmitting(true);
     setError(null);
 
-    // TODO: El endpoint POST /api/v1/clinical/clients requiere autenticación.
-    // Se necesita crear un endpoint público POST /api/v1/public/register en el backend
-    // que acepte el registro sin token JWT.
+    // Separar condiciones/medicamentos/dolores en arrays (una línea por elemento)
+    const toArray = (text: string): string[] =>
+      text.split('\n').map((s) => s.trim()).filter(Boolean);
+
     const payload = {
       full_name: form.full_name.trim(),
-      email: form.email.trim() || null,
-      phone: form.phone.trim() || null,
+      email: form.email.trim(),
+      phone: form.phone.trim(),
       birth_date: form.birth_date || null,
       marital_status: form.marital_status || null,
       birth_place: form.birth_place.trim() || null,
@@ -155,16 +163,13 @@ export default function RegistroPage() {
       birth_order: form.birth_order ? parseInt(form.birth_order, 10) : null,
       family_abortions: form.family_abortions ? parseInt(form.family_abortions, 10) : null,
       deaths_before_41: form.deaths_before_41.trim() || null,
-      predominant_emotions: form.predominant_emotions.length > 0 ? form.predominant_emotions : null,
-      motivation_visit: form.motivation_visit.trim() ? [form.motivation_visit.trim()] : null,
+      predominant_emotions: form.predominant_emotions.length > 0 ? form.predominant_emotions : [],
+      motivation_visit: form.motivation_visit.trim() ? [form.motivation_visit.trim()] : [],
       motivation_general: form.motivation_general.trim() || null,
-      important_notes: [
-        form.conditions.trim() ? `Padecimientos: ${form.conditions.trim()}` : '',
-        form.medications.trim() ? `Medicamentos: ${form.medications.trim()}` : '',
-        form.pains.trim() ? `Dolores recurrentes: ${form.pains.trim()}` : '',
-      ]
-        .filter(Boolean)
-        .join('\n') || null,
+      medical_conditions: toArray(form.conditions),
+      medications: toArray(form.medications),
+      body_pains: toArray(form.pains),
+      important_notes: null,
     };
 
     try {
@@ -221,6 +226,11 @@ export default function RegistroPage() {
   return (
     <div className="min-h-screen bg-[#FAF7F5] px-4 py-8">
       <div className="mx-auto w-full max-w-[640px]">
+        {/* Logo */}
+        <div className="flex justify-center mb-6">
+          <img src="/logo_SDC.svg" alt="Sanando desde el Corazón" className="h-24 w-auto" />
+        </div>
+
         {/* Header */}
         <div className="mb-8 text-center">
           <h1
@@ -255,7 +265,7 @@ export default function RegistroPage() {
                 />
               </div>
               <div>
-                <Label htmlFor="email">Email</Label>
+                <Label htmlFor="email" required>Email</Label>
                 <input
                   id="email"
                   type="email"
@@ -266,7 +276,7 @@ export default function RegistroPage() {
                 />
               </div>
               <div>
-                <Label htmlFor="phone">Teléfono</Label>
+                <Label htmlFor="phone" required>Teléfono</Label>
                 <input
                   id="phone"
                   type="tel"
@@ -419,7 +429,7 @@ export default function RegistroPage() {
                   className={TEXTAREA_CLS}
                   value={form.conditions}
                   onChange={setStr('conditions')}
-                  placeholder="¿Padece alguna enfermedad diagnosticada?"
+                  placeholder="Una por línea (ej: Diabetes, Hipertensión)"
                 />
               </div>
               <div>
@@ -430,7 +440,7 @@ export default function RegistroPage() {
                   className={TEXTAREA_CLS}
                   value={form.medications}
                   onChange={setStr('medications')}
-                  placeholder="¿Toma algún medicamento actualmente?"
+                  placeholder="Uno por línea (ej: Metformina, Losartán)"
                 />
               </div>
               <div>
@@ -441,7 +451,7 @@ export default function RegistroPage() {
                   className={TEXTAREA_CLS}
                   value={form.pains}
                   onChange={setStr('pains')}
-                  placeholder="Describa cualquier dolor recurrente..."
+                  placeholder="Uno por línea (ej: Dolor de cabeza, Dolor lumbar)"
                 />
               </div>
             </div>

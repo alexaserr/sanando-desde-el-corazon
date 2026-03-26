@@ -1,18 +1,18 @@
 "use client";
 
-import { useRouter } from "next/navigation";
 import { LogOut, User } from "lucide-react";
 import { useAuthStore } from "@/store/auth";
 import { logoutUser } from "@/lib/api/auth";
 import { Button } from "@/components/ui/button";
 
 export function TopBar() {
-  const router = useRouter();
   const { user } = useAuthStore();
 
   const handleLogout = async () => {
     await logoutUser();
-    router.replace("/login");
+    // window.location.href for reliable navigation on Safari mobile
+    // (router.push/replace fails in async callbacks on some mobile browsers)
+    window.location.href = "/login";
   };
 
   return (

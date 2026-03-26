@@ -26,7 +26,7 @@ export const metadata: Metadata = {
   title: 'Sanando desde el Corazón',
   description: 'Plataforma clínica de sanación energética',
   icons: {
-    icon: '/favicon.svg',
+    icon: { url: "/favicon.svg", type: "image/svg+xml" },
   },
   openGraph: {
     title: 'Sanando desde el Corazón',

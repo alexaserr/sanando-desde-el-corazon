@@ -7,6 +7,7 @@ import {
   LayoutDashboard,
   Users,
   UserPlus,
+  UserCog,
   CalendarDays,
   PlusCircle,
   Shield,
@@ -24,6 +25,7 @@ const navItems = [
   { href: "/clinica/sesiones",      label: "Sesiones",       icon: CalendarDays,    exact: true,  adminOnly: false },
   { href: "/clinica/sesiones/nueva", label: "Nueva sesión",  icon: PlusCircle,      exact: false, adminOnly: false },
   { href: "/clinica/seguridad",     label: "Seguridad",      icon: Shield,          exact: true,  adminOnly: true  },
+  { href: "/clinica/usuarios",     label: "Usuarios",       icon: UserCog,         exact: true,  adminOnly: true  },
 ];
 
 export function SidebarNav() {
