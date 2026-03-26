@@ -3,8 +3,22 @@
 import { useId } from 'react';
 import { EnergySlider } from '../EnergySlider';
 import { getOrgansByChakraPosition } from '@/lib/data/chakra-organs';
+import { ORGAN_MEANINGS } from '@/lib/data/organ-meanings';
 import type { BlockageData } from './types';
 import type { ChakraPosition } from '@/types/api';
+
+/** Strip diacritics for fuzzy matching against ORGAN_MEANINGS keys. */
+function stripAccents(s: string): string {
+  return s.normalize('NFD').replace(/[\u0300-\u036f]/g, '');
+}
+
+function lookupMeaning(organName: string): string | undefined {
+  const key = organName.toLowerCase().trim();
+  if (ORGAN_MEANINGS[key]) return ORGAN_MEANINGS[key];
+  const plain = stripAccents(key);
+  if (ORGAN_MEANINGS[plain]) return ORGAN_MEANINGS[plain];
+  return undefined;
+}
 
 export interface BlockageRowProps {
   label: string;
@@ -32,7 +46,12 @@ export function BlockageRow({
   }
 
   function handleOrganChange(organName: string) {
-    onChange({ ...value, organ_name: organName });
+    const meaning = organName ? lookupMeaning(organName) : undefined;
+    onChange({
+      ...value,
+      organ_name: organName,
+      significado: meaning ?? value.significado ?? '',
+    });
   }
 
   function handleEnergyChange(energy: number) {
