@@ -7,18 +7,18 @@
 services:
   frontend-standalone:
     build:
-      context: .
-      dockerfile: Dockerfile.standalone
+      context: ./frontend-standalone
+      dockerfile: Dockerfile
     restart: unless-stopped
     ports:
-      - "127.0.0.1:3002:3002"
+      - "127.0.0.1:3003:3002"
     networks:
       - sdc-network
 
   cloudflared:
     image: cloudflare/cloudflared:latest
     restart: unless-stopped
-    command: tunnel --no-autoupdate run --token ${CLOUDFLARED_TOKEN}
+    command: tunnel --no-autoupdate --protocol http2 run --token ${CLOUDFLARED_TOKEN}
     networks:
       - sdc-network
     depends_on:

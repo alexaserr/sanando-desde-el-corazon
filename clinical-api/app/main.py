@@ -98,8 +98,11 @@ def create_app() -> FastAPI:
     from app.routers.topics import router_clinical as topics_clinical_router
     from app.routers.topics import router_catalogs as topics_catalogs_router
     from app.routers.pdf import router as pdf_router
+    from app.routers.admin_users import router as admin_users_router
+    from app.routers.public import router as public_router
 
     app.include_router(auth_router)
+    app.include_router(admin_users_router)
     app.include_router(clients_router)
     app.include_router(sessions_router)
     app.include_router(catalogs_router)
@@ -107,6 +110,7 @@ def create_app() -> FastAPI:
     app.include_router(topics_clinical_router)
     app.include_router(topics_catalogs_router)
     app.include_router(pdf_router)
+    app.include_router(public_router)
 
     return app
 

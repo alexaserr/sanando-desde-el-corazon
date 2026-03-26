@@ -192,7 +192,9 @@ class Client(Base, UUIDPrimaryKeyMixin, TimestampMixin, SoftDeleteMixin):
     birth_order: Mapped[int | None] = mapped_column(SmallInteger, nullable=True)   # "Número de hijo"
     predominant_emotions: Mapped[dict[str, Any] | None] = mapped_column(JSONB, nullable=True)
     family_abortions: Mapped[int | None] = mapped_column(SmallInteger, nullable=True)
+    family_abortions_detail: Mapped[str | None] = mapped_column(Text, nullable=True)
     deaths_before_41: Mapped[str | None] = mapped_column(Text, nullable=True)
+    num_children_detail: Mapped[str | None] = mapped_column(Text, nullable=True)
     important_notes: Mapped[str | None] = mapped_column(Text, nullable=True)
 
     # Motivación de consulta
@@ -281,6 +283,7 @@ class FamilyMember(Base, UUIDPrimaryKeyMixin, TimestampMixin, SoftDeleteMixin):
         Enum(FamilyType, name="family_type_enum"), nullable=False
     )
     description: Mapped[str] = mapped_column(Text, nullable=False)
+    dynamics: Mapped[str | None] = mapped_column(Text, nullable=True)
 
     client: Mapped["Client"] = relationship(back_populates="family_members")
 
