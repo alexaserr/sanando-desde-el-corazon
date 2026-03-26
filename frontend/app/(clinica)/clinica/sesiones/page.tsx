@@ -2,8 +2,9 @@
 
 import { useState, useEffect, useCallback } from "react";
 import { useRouter } from "next/navigation";
-import { PlusCircle, ChevronLeft, ChevronRight, AlertCircle, CalendarPlus } from "lucide-react";
+import { PlusCircle, ChevronLeft, ChevronRight, AlertCircle, CalendarPlus, Trash2 } from "lucide-react";
 import { apiClient } from "@/lib/api/client";
+import { useAuthStore } from "@/store/auth";
 import { formatDate, formatCurrency } from "@/lib/utils/formatters";
 import type { SessionListItem } from "@/types/api";
 
@@ -49,10 +50,26 @@ function TableSkeleton() {
 
 export default function SessionsPage() {
   const router = useRouter();
+  const { user } = useAuthStore();
+  const isAdmin = user?.role === "admin";
   const [page, setPage] = useState(1);
   const [data, setData] = useState<SessionsResponse | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+
+  async function handleDeleteSession(e: React.MouseEvent, sessionId: string) {
+    e.stopPropagation();
+    const confirmed = window.confirm(
+      "¿Estás seguro de que deseas eliminar esta sesión? Esta acción no se puede deshacer.",
+    );
+    if (!confirmed) return;
+    try {
+      await apiClient.delete(`/api/v1/clinical/sessions/${sessionId}`);
+      fetchSessions(page);
+    } catch (err) {
+      console.error("Delete session failed:", err);
+    }
+  }
 
   const fetchSessions = useCallback(async (p: number) => {
     setLoading(true);
@@ -152,6 +169,7 @@ export default function SessionsPage() {
                       {h}
                     </th>
                   ))}
+                  {isAdmin && <th className="w-10" />}
                 </tr>
               </thead>
               <tbody>
@@ -173,6 +191,17 @@ export default function SessionsPage() {
                     <td className="px-4 py-3 text-[#C4704A] font-medium">
                       {s.cost != null ? formatCurrency(s.cost) : "—"}
                     </td>
+                    {isAdmin && (
+                      <td className="px-2 py-3">
+                        <button
+                          onClick={(e) => handleDeleteSession(e, s.id)}
+                          className="p-1.5 rounded text-red-400 hover:text-red-600 hover:bg-red-50 transition-colors"
+                          title="Eliminar sesión"
+                        >
+                          <Trash2 className="h-4 w-4" />
+                        </button>
+                      </td>
+                    )}
                   </tr>
                 ))}
               </tbody>

@@ -1089,3 +1089,41 @@ async def save_organs(
 
     await db.commit()
     return await _get_wizard_state(session_id, db)
+
+
+@router.delete(
+    "/{session_id}",
+    status_code=status.HTTP_204_NO_CONTENT,
+    summary="Soft delete de sesión (solo admin)",
+)
+async def delete_session(
+    session_id: UUID,
+    request: Request,
+    db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(require_role(UserRole.admin)),
+) -> None:
+    """Soft delete: marca deleted_at = NOW(). Solo admin."""
+    result = await db.execute(
+        update(Session)
+        .where(Session.id == session_id, Session.deleted_at.is_(None))
+        .values(deleted_at=func.now())
+        .returning(Session.id)
+    )
+    if result.scalar_one_or_none() is None:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Sesión no encontrada",
+        )
+
+    await write_audit_log(
+        db,
+        table_name="sessions",
+        record_id=session_id,
+        action=AuditAction.DELETE,
+        changed_by=current_user.id,
+        new_data={"deleted_at": "NOW()"},
+        ip_address=request.client.host if request.client else None,
+        user_agent=request.headers.get("user-agent"),
+    )
+
+    await db.commit()

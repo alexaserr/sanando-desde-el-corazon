@@ -16,11 +16,13 @@ import {
   PlusCircle,
   X,
   Zap,
+  Trash2,
   AlertCircle,
   AlertTriangle,
   RefreshCw,
 } from "lucide-react";
 import { apiClient } from "@/lib/api/client";
+import { useAuthStore } from "@/store/auth";
 import { getClientTopics, completeClientTopic } from "@/lib/api/clinical";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
@@ -443,6 +445,9 @@ function TopicsTabContent({
 export default function PacienteDetailPage() {
   const params = useParams<{ id: string }>();
   const router = useRouter();
+  const { user } = useAuthStore();
+  const isAdmin = user?.role === "admin";
+  const [isDeleting, setIsDeleting] = useState(false);
 
   const [tab, setTab] = useState<Tab>("datos");
   const [client, setClient] = useState<Client | null>(null);
@@ -466,6 +471,22 @@ export default function PacienteDetailPage() {
       console.error('Failed to mark consent:', err);
     } finally {
       setIsMarkingConsent(false);
+    }
+  }
+
+  async function handleDeleteClient() {
+    if (!client || isDeleting) return;
+    const confirmed = window.confirm(
+      "¿Estás seguro de que deseas eliminar a este paciente y todo su historial? Esta acción no se puede deshacer.",
+    );
+    if (!confirmed) return;
+    setIsDeleting(true);
+    try {
+      await apiClient.delete(`/api/v1/clinical/clients/${client.id}`);
+      router.push("/clinica/pacientes");
+    } catch (err) {
+      console.error("Delete client failed:", err);
+      setIsDeleting(false);
     }
   }
 
@@ -615,6 +636,16 @@ export default function PacienteDetailPage() {
               >
                 <Phone className="h-4 w-4" />
               </a>
+            )}
+            {isAdmin && (
+              <button
+                onClick={handleDeleteClient}
+                disabled={isDeleting}
+                className="flex items-center gap-2 px-4 h-10 rounded text-sm font-medium text-red-500 hover:bg-red-50 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                <Trash2 className="h-4 w-4" />
+                {isDeleting ? "Eliminando..." : "Eliminar paciente"}
+              </button>
             )}
           </div>
         </div>

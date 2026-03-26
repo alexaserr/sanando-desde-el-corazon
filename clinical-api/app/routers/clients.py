@@ -519,3 +519,44 @@ async def upload_consent_document(
 
     await db.commit()
     return {"status": "ok", "has_consent": True}
+
+
+@router.delete(
+    "/{client_id}",
+    status_code=status.HTTP_204_NO_CONTENT,
+    summary="Soft delete de cliente (solo admin)",
+)
+async def delete_client(
+    client_id: UUID,
+    request: Request,
+    db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(require_role(UserRole.admin)),
+) -> None:
+    """Soft delete: marca deleted_at = NOW(). Solo admin."""
+    ip = request.client.host if request.client else None
+    ua = request.headers.get("user-agent")
+
+    result = await db.execute(
+        update(Client)
+        .where(Client.id == client_id, Client.deleted_at.is_(None))
+        .values(deleted_at=func.now())
+        .returning(Client.id)
+    )
+    if result.scalar_one_or_none() is None:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Cliente no encontrado",
+        )
+
+    await write_audit_log(
+        db,
+        table_name="clients",
+        record_id=client_id,
+        action=AuditAction.DELETE,
+        changed_by=current_user.id,
+        new_data={"deleted_at": "NOW()"},
+        ip_address=ip,
+        user_agent=ua,
+    )
+
+    await db.commit()

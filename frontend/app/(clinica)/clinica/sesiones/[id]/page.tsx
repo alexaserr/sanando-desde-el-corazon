@@ -2,8 +2,9 @@
 
 import { useState, useEffect } from 'react';
 import { useParams, useRouter } from 'next/navigation';
-import { ArrowLeft, Download, Zap, ChevronDown, AlertCircle, RefreshCw } from 'lucide-react';
+import { ArrowLeft, Download, Trash2, Zap, ChevronDown, AlertCircle, RefreshCw } from 'lucide-react';
 import { apiClient } from '@/lib/api/client';
+import { useAuthStore } from '@/store/auth';
 import { getChakraColor } from '@/components/clinical/chakra-colors';
 import { formatDateTime, formatCurrency } from '@/lib/utils/formatters';
 
@@ -260,10 +261,13 @@ function notEmpty<T>(arr: T[] | undefined | null): arr is T[] {
 export default function SessionDetailPage() {
   const params = useParams<{ id: string }>();
   const router = useRouter();
+  const { user } = useAuthStore();
+  const isAdmin = user?.role === 'admin';
   const [session, setSession] = useState<SessionFullDetail | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [isDownloading, setIsDownloading] = useState(false);
+  const [isDeleting, setIsDeleting] = useState(false);
 
   async function handleDownloadPdf() {
     if (!session || isDownloading) return;
@@ -283,6 +287,22 @@ export default function SessionDetailPage() {
       console.error('PDF download failed:', err);
     } finally {
       setIsDownloading(false);
+    }
+  }
+
+  async function handleDeleteSession() {
+    if (!session || isDeleting) return;
+    const confirmed = window.confirm(
+      '¿Estás seguro de que deseas eliminar esta sesión? Esta acción no se puede deshacer.',
+    );
+    if (!confirmed) return;
+    setIsDeleting(true);
+    try {
+      await apiClient.delete(`/api/v1/clinical/sessions/${session.id}`);
+      router.push('/clinica/sesiones');
+    } catch (err) {
+      console.error('Delete session failed:', err);
+      setIsDeleting(false);
     }
   }
 
@@ -367,14 +387,26 @@ export default function SessionDetailPage() {
           <ArrowLeft className="h-4 w-4" />
           Volver al paciente
         </button>
-        <button
-          onClick={handleDownloadPdf}
-          disabled={isDownloading}
-          className="flex items-center gap-2 rounded-md bg-[#C4704A] px-4 h-9 text-sm font-medium text-white hover:bg-[#B5613B] transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-        >
-          <Download size={16} strokeWidth={1.5} />
-          {isDownloading ? 'Descargando...' : 'Descargar PDF'}
-        </button>
+        <div className="flex items-center gap-2">
+          <button
+            onClick={handleDownloadPdf}
+            disabled={isDownloading}
+            className="flex items-center gap-2 rounded-md bg-[#C4704A] px-4 h-9 text-sm font-medium text-white hover:bg-[#B5613B] transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+          >
+            <Download size={16} strokeWidth={1.5} />
+            {isDownloading ? 'Descargando...' : 'Descargar PDF'}
+          </button>
+          {isAdmin && (
+            <button
+              onClick={handleDeleteSession}
+              disabled={isDeleting}
+              className="flex items-center gap-2 rounded-md px-4 h-9 text-sm font-medium text-red-500 hover:bg-red-50 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+              <Trash2 size={16} strokeWidth={1.5} />
+              {isDeleting ? 'Eliminando...' : 'Eliminar sesión'}
+            </button>
+          )}
+        </div>
       </div>
 
       {/* ── Encabezado ── */}

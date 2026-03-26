@@ -2,8 +2,9 @@
 
 import { useState, useEffect, useCallback, useRef } from "react";
 import { useRouter } from "next/navigation";
-import { Search, ChevronLeft, ChevronRight, UserSearch, UserPlus, AlertCircle, RefreshCw } from "lucide-react";
+import { Search, ChevronLeft, ChevronRight, UserSearch, UserPlus, Trash2, AlertCircle, RefreshCw } from "lucide-react";
 import { apiClient } from "@/lib/api/client";
+import { useAuthStore } from "@/store/auth";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import type { Client, PaginatedResponse } from "@/types/api";
@@ -24,6 +25,8 @@ function SkeletonRow() {
 
 export default function PacientesPage() {
   const router = useRouter();
+  const { user } = useAuthStore();
+  const isAdmin = user?.role === "admin";
   const [clients, setClients] = useState<Client[]>([]);
   const [total, setTotal] = useState(0);
   const [page, setPage] = useState(1);
@@ -97,6 +100,20 @@ export default function PacientesPage() {
     fetchClients(search, 1);
   };
 
+  async function handleDeleteClient(e: React.MouseEvent, clientId: string) {
+    e.stopPropagation();
+    const confirmed = window.confirm(
+      "¿Estás seguro de que deseas eliminar a este paciente y todo su historial? Esta acción no se puede deshacer.",
+    );
+    if (!confirmed) return;
+    try {
+      await apiClient.delete(`/api/v1/clinical/clients/${clientId}`);
+      fetchClients(query, page);
+    } catch (err) {
+      console.error("Delete client failed:", err);
+    }
+  }
+
   const from = total === 0 ? 0 : (page - 1) * PAGE_SIZE + 1;
   const to = Math.min(page * PAGE_SIZE, total);
   const totalPages = Math.ceil(total / PAGE_SIZE);
@@ -146,6 +163,7 @@ export default function PacientesPage() {
               <th className="px-5 py-3 text-left font-medium hidden sm:table-cell">Email</th>
               <th className="px-5 py-3 text-left font-medium hidden md:table-cell">Teléfono</th>
               <th className="px-5 py-3 text-left font-medium hidden md:table-cell">Profesión</th>
+              {isAdmin && <th className="w-10" />}
             </tr>
           </thead>
           <tbody>
@@ -197,6 +215,17 @@ export default function PacientesPage() {
                   <td className="px-5 py-4 text-terra-500 hidden md:table-cell">
                     {client.profession ?? "—"}
                   </td>
+                  {isAdmin && (
+                    <td className="px-2 py-4">
+                      <button
+                        onClick={(e) => handleDeleteClient(e, client.id)}
+                        className="p-1.5 rounded text-red-400 hover:text-red-600 hover:bg-red-50 transition-colors"
+                        title="Eliminar paciente"
+                      >
+                        <Trash2 className="h-4 w-4" />
+                      </button>
+                    </td>
+                  )}
                 </tr>
               ))
             )}
