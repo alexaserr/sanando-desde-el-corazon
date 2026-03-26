@@ -1,6 +1,6 @@
 'use client';
 
-import { useId } from 'react';
+import { useId, useRef, useEffect, useCallback } from 'react';
 import { EnergySlider } from '../EnergySlider';
 import { getOrgansByChakraPosition } from '@/lib/data/chakra-organs';
 import { ORGAN_MEANINGS } from '@/lib/data/organ-meanings';
@@ -18,6 +18,42 @@ function lookupMeaning(organName: string): string | undefined {
   const plain = stripAccents(key);
   if (ORGAN_MEANINGS[plain]) return ORGAN_MEANINGS[plain];
   return undefined;
+}
+
+function AutoResizeTextarea({
+  value,
+  onChange,
+  placeholder,
+  disabled,
+}: {
+  value: string;
+  onChange: (e: React.ChangeEvent<HTMLTextAreaElement>) => void;
+  placeholder: string;
+  disabled: boolean;
+}) {
+  const ref = useRef<HTMLTextAreaElement>(null);
+
+  const resize = useCallback(() => {
+    const el = ref.current;
+    if (!el) return;
+    el.style.height = 'auto';
+    el.style.height = `${el.scrollHeight}px`;
+  }, []);
+
+  useEffect(() => { resize(); }, [value, resize]);
+
+  return (
+    <textarea
+      ref={ref}
+      rows={1}
+      value={value}
+      onChange={onChange}
+      onInput={resize}
+      placeholder={placeholder}
+      disabled={disabled}
+      className="w-full min-h-[32px] resize-none overflow-hidden rounded border-0 bg-[#FAF7F5] px-3 py-1 text-sm placeholder:text-gray-400 focus:outline-none focus:ring-1 focus:ring-terra-700 disabled:opacity-50 disabled:cursor-not-allowed"
+    />
+  );
 }
 
 export interface BlockageRowProps {
@@ -129,14 +165,12 @@ export function BlockageRow({
     </div>
 
     {showTextFields && (
-      <div className="flex flex-col sm:flex-row gap-2 pl-[80px]">
-        <input
-          type="text"
+      <div className="flex flex-col gap-2 pl-[80px]">
+        <AutoResizeTextarea
           value={value.significado ?? ''}
           onChange={(e) => handleSignificadoChange(e.target.value)}
           placeholder="Significado"
           disabled={disabled}
-          className="flex-1 min-h-[32px] rounded border-0 bg-[#FAF7F5] px-3 py-1 text-sm placeholder:text-gray-400 focus:outline-none focus:ring-1 focus:ring-terra-700 disabled:opacity-50 disabled:cursor-not-allowed"
         />
         <input
           type="text"
