@@ -408,18 +408,22 @@ export default function NuevaSessionPage() {
 
     try {
       if (stepComponent === 'StepGeneral') {
-        // POST /sessions + PATCH /sessions/{id}/general
-        const session = await createSession({
-          client_id:        generalData.client_id,
-          therapy_type_id:  generalData.therapy_type_id,
-          measured_at:      generalData.measured_at
-            ? new Date(generalData.measured_at).toISOString()
-            : undefined,
-          notes: generalData.notes || undefined,
-        });
-        setSessionId(session.id);
+        // Create session only once; subsequent visits just update general data
+        let sid = sessionId;
+        if (!sid) {
+          const session = await createSession({
+            client_id:        generalData.client_id,
+            therapy_type_id:  generalData.therapy_type_id,
+            measured_at:      generalData.measured_at
+              ? new Date(generalData.measured_at).toISOString()
+              : undefined,
+            notes: generalData.notes || undefined,
+          });
+          sid = session.id;
+          setSessionId(sid);
+        }
 
-        await updateSessionGeneral(session.id, {
+        await updateSessionGeneral(sid, {
           general_energy_level: generalData.general_energy,
           notes: generalData.notes || undefined,
           entities_count: generalData.has_entities === true ? generalData.entities_count : null,

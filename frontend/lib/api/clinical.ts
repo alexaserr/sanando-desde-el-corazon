@@ -301,9 +301,9 @@ export async function saveCleaningGroups(
   sessionId: string,
   groups: CleaningGroupPayload[],
 ): Promise<unknown> {
-  return apiClient.put<unknown, CleaningGroupPayload[]>(
+  return apiClient.put<unknown, { groups: CleaningGroupPayload[] }>(
     `/api/v1/clinical/sessions/${sessionId}/cleaning-groups`,
-    groups,
+    { groups },
   );
 }
 
@@ -356,10 +356,18 @@ export async function saveProtections(
     protections: ProtectionPayload[];
   },
 ): Promise<unknown> {
-  // Guardar protecciones
+  // Map frontend fields to backend ProtectionItem schema
+  const backendProtections = payload.protections.map((p) => ({
+    recipient_type: 'patient' as const,
+    recipient_name: p.person_name || null,
+    quantity: p.quantity,
+    cost_per_unit: 1200,
+  }));
+
+  // Guardar protecciones (wrapped in { protections: [...] })
   await apiClient.put<unknown>(
     `/api/v1/clinical/sessions/${sessionId}/protections`,
-    payload.protections,
+    { protections: backendProtections },
   );
   // Actualizar flags en general
   return apiClient.patch(
