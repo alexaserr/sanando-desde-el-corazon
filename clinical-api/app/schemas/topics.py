@@ -73,6 +73,10 @@ class ThemeEntryItem(BaseModel):
     adulthood_description: str | None = None
     adulthood_emotions: str | None = None
 
+    # Edades numéricas — migración 0013
+    childhood_age: Decimal | None = Field(None, ge=0, le=18)
+    adulthood_age: Decimal | None = Field(None, ge=0, le=120)
+
 
 class TopicProgressUpdate(BaseModel):
     """Actualización de progreso de un tema al guardar la sesión."""
@@ -108,6 +112,10 @@ class ThemeEntryResponse(BaseModel):
     adulthood_situation: str | None = None
     adulthood_description: str | None = None
     adulthood_emotions: str | None = None
+
+    # Edades numéricas — migración 0013
+    childhood_age: Decimal | None = None
+    adulthood_age: Decimal | None = None
 
     created_at: datetime
     updated_at: datetime

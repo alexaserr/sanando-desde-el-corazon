@@ -1,0 +1,74 @@
+<style>
+.phase{display:flex;gap:12px;margin:8px 0}
+.phase-card{flex:1;border-radius:var(--border-radius-lg);padding:14px;border:0.5px solid var(--color-border-tertiary);background:var(--color-background-secondary)}
+.phase-label{font-size:11px;font-weight:500;text-transform:uppercase;letter-spacing:0.08em;color:var(--color-text-tertiary);margin-bottom:6px}
+.phase-title{font-size:14px;font-weight:500;color:var(--color-text-primary);margin-bottom:8px}
+.phase-row{font-size:12px;color:var(--color-text-secondary);margin-bottom:4px;line-height:1.5}
+.phase-row b{color:var(--color-text-primary);font-weight:500}
+.row-label{font-size:11px;font-weight:500;color:var(--color-text-tertiary);text-transform:uppercase;letter-spacing:0.06em;min-width:80px;text-align:right;padding-right:8px}
+.journey-grid{display:grid;grid-template-columns:80px repeat(5,1fr);gap:0;margin-top:16px}
+.journey-cell{padding:10px;border-bottom:0.5px solid var(--color-border-tertiary);font-size:12px;color:var(--color-text-secondary);line-height:1.6}
+.journey-header{font-weight:500;color:var(--color-text-primary);font-size:13px;padding:10px;border-bottom:1px solid var(--color-border-secondary);text-align:center}
+.journey-row-label{font-size:11px;font-weight:500;color:var(--color-text-tertiary);text-transform:uppercase;letter-spacing:0.05em;padding:10px 8px 10px 0;border-bottom:0.5px solid var(--color-border-tertiary);text-align:right;display:flex;align-items:center;justify-content:flex-end}
+.arrow-row{display:flex;align-items:center;justify-content:center;padding:4px 0}
+.arrow-row svg{width:100%;height:20px}
+.emo{font-size:14px;text-align:center;display:block;margin-bottom:2px}
+</style>
+
+<div class="journey-grid">
+<!-- Headers -->
+<div></div>
+<div class="journey-header">Descubrimiento</div>
+<div class="journey-header">Registro</div>
+<div class="journey-header">Primera sesión</div>
+<div class="journey-header">Integración</div>
+<div class="journey-header">Continuidad</div>
+
+<!-- Touchpoint -->
+<div class="journey-row-label">Touchpoint</div>
+<div class="journey-cell">Podcast, redes sociales, referido personal, sitio web</div>
+<div class="journey-cell">Formulario /registro (público, sin login)</div>
+<div class="journey-cell">Centro físico o sesión a distancia con Tanya</div>
+<div class="journey-cell">Plataforma digital + prácticas de yoga por tema</div>
+<div class="journey-cell">Portal de miembros, comunidad, agenda online</div>
+
+<!-- Acción -->
+<div class="journey-row-label">Acción</div>
+<div class="journey-cell">Escucha podcast, lee blog, visita sitio</div>
+<div class="journey-cell">Llena formulario de intake (5 secciones, emociones Plutchik)</div>
+<div class="journey-cell">Sesión completa: radiestesia, identificación, liberación</div>
+<div class="journey-cell">Accede a práctica de yoga diseñada para su bloqueo específico</div>
+<div class="journey-cell">Toma cursos, agenda citas, participa en comunidad</div>
+
+<!-- Emoción -->
+<div class="journey-row-label">Emoción</div>
+<div class="journey-cell"><span class="emo">Curiosidad</span>¿Esto funciona? ¿Es para mí?</div>
+<div class="journey-cell"><span class="emo">Esperanza</span>Me siento escuchado, alguien entiende</div>
+<div class="journey-cell"><span class="emo">Apertura</span>Sentí algo moverse, quiero entender más</div>
+<div class="journey-cell"><span class="emo">Conexión</span>Mi cuerpo procesa lo que liberé</div>
+<div class="journey-cell"><span class="emo">Confianza</span>Tengo un sistema que me sostiene</div>
+
+<!-- Tech -->
+<div class="journey-row-label">Sistema</div>
+<div class="journey-cell">Directus CMS (blog), PeerTube (podcast)</div>
+<div class="journey-cell">POST /public/register → pgcrypto → Brevo email</div>
+<div class="journey-cell">Wizard 9 terapias, expediente clínico NOM-004</div>
+<div class="journey-cell">Portal cursos, video PeerTube, progreso guardado</div>
+<div class="journey-cell">Membresías Stripe, Cal.com, Discourse SSO</div>
+
+<!-- Pain points -->
+<div class="journey-row-label">Pain point</div>
+<div class="journey-cell">Escepticismo inicial, falta de referencia</div>
+<div class="journey-cell">Formulario largo (5 secciones)</div>
+<div class="journey-cell">Vulnerabilidad emocional post-sesión</div>
+<div class="journey-cell">Disciplina para mantener práctica diaria</div>
+<div class="journey-cell">Costo acumulado de membresía + sesiones</div>
+
+<!-- Oportunidad -->
+<div class="journey-row-label">Solución</div>
+<div class="journey-cell">Contenido educativo gratuito genera confianza</div>
+<div class="journey-cell">Accordion progresivo, guardado automático</div>
+<div class="journey-cell">Yoga inmediato como herramienta de contención</div>
+<div class="journey-cell">Notificaciones, prácticas cortas de 10-15 min</div>
+<div class="journey-cell">Paquetes integrales con precio preferencial</div>
+</div>

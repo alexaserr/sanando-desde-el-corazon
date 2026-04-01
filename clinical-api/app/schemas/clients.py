@@ -102,6 +102,7 @@ class ClientCreate(BaseModel):
     family_abortions: int | None = Field(None, ge=0)
     deaths_before_41: str | None = None
     important_notes: str | None = None
+    is_animal: bool = False
 
     # Motivación de consulta
     motivation_visit: list[str] | None = None
@@ -147,6 +148,7 @@ class ClientUpdate(BaseModel):
     family_abortions: int | None = Field(None, ge=0)
     deaths_before_41: str | None = None
     important_notes: str | None = None
+    is_animal: bool | None = None
 
     # Motivación
     motivation_visit: list[str] | None = None
@@ -189,6 +191,7 @@ class ClientResponse(BaseModel):
     family_abortions: int | None = None
     deaths_before_41: str | None = None
     important_notes: str | None = None
+    is_animal: bool = False
 
     # Motivación
     motivation_visit: list[str] | None = None

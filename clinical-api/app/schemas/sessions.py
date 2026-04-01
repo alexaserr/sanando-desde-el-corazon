@@ -14,6 +14,7 @@ from pydantic import BaseModel, Field
 
 from app.db.models import OrganSourceType
 from app.schemas.ancestors import AncestorConciliationResponse, AncestorResponse
+from app.schemas.cleaning_groups import CleaningGroupOutput
 
 
 # ── Lecturas energéticas ──────────────────────────────────────
@@ -146,6 +147,10 @@ class CleaningEventItem(BaseModel):
     person: str | None = Field(None, max_length=200)
     work_done: str | None = None
     life_area: str | None = Field(None, max_length=100)
+    # Campos migración 0013
+    cleaning_group_id: UUID | None = None
+    manifestation_value: Decimal | None = None
+    manifestation_unit: str | None = Field("number", max_length=10)
 
 
 class CleaningEventsUpdate(BaseModel):
@@ -166,6 +171,10 @@ class CleaningEventResponse(BaseModel):
     person: str | None = None
     work_done: str | None = None
     life_area: str | None = None
+    # Campos migración 0013
+    cleaning_group_id: UUID | None = None
+    manifestation_value: Decimal | None = None
+    manifestation_unit: str | None = None
     deleted_at: datetime | None = None
 
     model_config = {"from_attributes": True}
@@ -284,6 +293,9 @@ class SessionGeneralUpdate(BaseModel):
     porcentaje_pago: Decimal | None = Field(None, ge=0, le=100)
     incluye_iva: bool | None = None
     costo_calculado: Decimal | None = Field(None, ge=0)
+    # Campos migración 0013
+    has_protection: bool | None = None
+    protection_charged: bool | None = None
 
 
 class SessionCloseRequest(BaseModel):
@@ -320,6 +332,8 @@ class SessionResponse(BaseModel):
     porcentaje_pago: Decimal | None = None
     incluye_iva: bool | None = None
     costo_calculado: Decimal | None = None
+    has_protection: bool | None = None
+    protection_charged: bool | None = None
     created_at: datetime
     updated_at: datetime
     deleted_at: datetime | None = None
@@ -332,6 +346,7 @@ class SessionResponse(BaseModel):
     cleaning_events: list[CleaningEventResponse] = []
     affectations: list[AffectationResponse] = []
     organs: list[OrganResponse] = []
+    cleaning_groups: list[CleaningGroupOutput] = []
     ancestors: list[AncestorResponse] = []
     ancestor_conciliation: AncestorConciliationResponse | None = None
 

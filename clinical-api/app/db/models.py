@@ -196,6 +196,7 @@ class Client(Base, UUIDPrimaryKeyMixin, TimestampMixin, SoftDeleteMixin):
     deaths_before_41: Mapped[str | None] = mapped_column(Text, nullable=True)
     num_children_detail: Mapped[str | None] = mapped_column(Text, nullable=True)
     important_notes: Mapped[str | None] = mapped_column(Text, nullable=True)
+    is_animal: Mapped[bool] = mapped_column(Boolean, default=False, server_default="false", nullable=False)
 
     # Motivación de consulta
     motivation_visit: Mapped[dict[str, Any] | None] = mapped_column(JSONB, nullable=True)   # array de texto libre
@@ -362,6 +363,12 @@ class Session(Base, UUIDPrimaryKeyMixin, TimestampMixin, SoftDeleteMixin):
     theme_entries: Mapped[list["SessionThemeEntry"]] = relationship(back_populates="session")
     ancestors: Mapped[list["SessionAncestor"]] = relationship(back_populates="session")
     ancestor_conciliation: Mapped["SessionAncestorConciliation | None"] = relationship(back_populates="session", uselist=False)
+    cleaning_groups: Mapped[list["SessionCleaningGroup"]] = relationship(back_populates="session", cascade="all, delete-orphan")
+    protections: Mapped[list["SessionProtection"]] = relationship(back_populates="session", cascade="all, delete-orphan")
+
+    # Campos de protección — migración 0013
+    has_protection: Mapped[bool] = mapped_column(Boolean, nullable=True, default=False)
+    protection_charged: Mapped[bool] = mapped_column(Boolean, nullable=True, default=False)
 
     __table_args__ = (
         Index("ix_sessions_client_id", "client_id"),
@@ -526,7 +533,15 @@ class SessionCleaningEvent(Base, UUIDPrimaryKeyMixin, TimestampMixin, SoftDelete
     work_done: Mapped[str | None] = mapped_column(Text, nullable=True)
     life_area: Mapped[str | None] = mapped_column(String(100), nullable=True)
 
+    # Campos migración 0013
+    cleaning_group_id: Mapped[UUID | None] = mapped_column(
+        PG_UUID(as_uuid=True), ForeignKey("session_cleaning_groups.id", ondelete="SET NULL"), nullable=True
+    )
+    manifestation_value: Mapped[Decimal | None] = mapped_column(Numeric(10, 2), nullable=True)
+    manifestation_unit: Mapped[str | None] = mapped_column(String(10), nullable=True, default="number")
+
     session: Mapped["Session"] = relationship(back_populates="cleaning_events")
+    cleaning_group: Mapped["SessionCleaningGroup | None"] = relationship(back_populates="cleaning_events")
 
     __table_args__ = (Index("ix_session_cleaning_events_session_id", "session_id"),)
 
@@ -687,6 +702,10 @@ class SessionThemeEntry(Base, UUIDPrimaryKeyMixin, TimestampMixin, SoftDeleteMix
     significado: Mapped[str | None] = mapped_column(Text, nullable=True)
     interpretacion_tema: Mapped[str | None] = mapped_column(Text, nullable=True)
 
+    # Edades numéricas — migración 0013
+    childhood_age: Mapped[Decimal | None] = mapped_column(Numeric(4, 1), nullable=True)
+    adulthood_age: Mapped[Decimal | None] = mapped_column(Numeric(5, 1), nullable=True)
+
     session: Mapped["Session"] = relationship(back_populates="theme_entries")
     client_topic: Mapped["ClientTopic"] = relationship(back_populates="theme_entries")
 
@@ -758,6 +777,68 @@ class SessionAncestorConciliation(Base, UUIDPrimaryKeyMixin, TimestampMixin, Sof
     __table_args__ = (
         Index("ix_session_ancestor_conciliation_session_id", "session_id"),
     )
+
+
+# ══════════════════════════════════════════════════════════════
+# GRUPOS DE LIMPIEZA Y PROTECCIONES (migración 0013)
+# ══════════════════════════════════════════════════════════════
+
+class SessionCleaningGroup(Base, UUIDPrimaryKeyMixin, SoftDeleteMixin):
+    """
+    Grupo de limpieza por destinatario (paciente, familiar, casa, otro).
+    Un grupo agrupa varios cleaning_events dirigidos al mismo destinatario.
+    Nota: la migración 0013 solo tiene created_at y deleted_at (sin updated_at).
+    """
+    __tablename__ = "session_cleaning_groups"
+
+    session_id: Mapped[UUID] = mapped_column(
+        PG_UUID(as_uuid=True), ForeignKey("sessions.id", ondelete="CASCADE"), nullable=False
+    )
+    target_type: Mapped[str] = mapped_column(String(20), nullable=False)
+    target_name: Mapped[str | None] = mapped_column(String(200), nullable=True)
+    family_member_id: Mapped[UUID | None] = mapped_column(
+        PG_UUID(as_uuid=True), ForeignKey("family_members.id", ondelete="SET NULL"), nullable=True
+    )
+    cleanings_required: Mapped[int | None] = mapped_column(Integer, nullable=True, default=0)
+    is_charged: Mapped[bool | None] = mapped_column(Boolean, nullable=True, default=True)
+    cost_per_cleaning: Mapped[Decimal | None] = mapped_column(Numeric(10, 2), nullable=True, default=Decimal("1300.00"))
+    layers: Mapped[dict | None] = mapped_column(JSONB, default=list, server_default=text("'[]'::jsonb"), nullable=True)
+    mesa_utilizada: Mapped[str | None] = mapped_column(Text, nullable=True)
+    beneficios: Mapped[str | None] = mapped_column(Text, nullable=True)
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), server_default=func.now(), nullable=False
+    )
+
+    session: Mapped["Session"] = relationship(back_populates="cleaning_groups")
+    cleaning_events: Mapped[list["SessionCleaningEvent"]] = relationship(back_populates="cleaning_group")
+
+    __table_args__ = (Index("ix_session_cleaning_groups_session", "session_id"),)
+
+
+class SessionProtection(Base, UUIDPrimaryKeyMixin):
+    """
+    Protecciones energéticas por destinatario (paciente, familiar, otro).
+    Nota: la migración 0013 solo tiene created_at (sin updated_at ni deleted_at).
+    """
+    __tablename__ = "session_protections"
+
+    session_id: Mapped[UUID] = mapped_column(
+        PG_UUID(as_uuid=True), ForeignKey("sessions.id", ondelete="CASCADE"), nullable=False
+    )
+    recipient_type: Mapped[str] = mapped_column(String(20), nullable=False)
+    recipient_name: Mapped[str | None] = mapped_column(String(200), nullable=True)
+    family_member_id: Mapped[UUID | None] = mapped_column(
+        PG_UUID(as_uuid=True), ForeignKey("family_members.id", ondelete="SET NULL"), nullable=True
+    )
+    quantity: Mapped[int] = mapped_column(Integer, nullable=False, default=1)
+    cost_per_unit: Mapped[Decimal | None] = mapped_column(Numeric(10, 2), nullable=True, default=Decimal("1200.00"))
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), server_default=func.now(), nullable=False
+    )
+
+    session: Mapped["Session"] = relationship(back_populates="protections")
+
+    __table_args__ = (Index("ix_session_protections_session", "session_id"),)
 
 
 # ══════════════════════════════════════════════════════════════

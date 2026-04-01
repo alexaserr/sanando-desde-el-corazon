@@ -16,11 +16,12 @@ Sub-endpoints (sin número de paso fijo):
 Cada paso hace autosave y retorna WizardStepResponse con el progreso.
 """
 from datetime import date, datetime, timezone
+from decimal import Decimal
 from typing import Any
 from uuid import UUID
 
 from fastapi import APIRouter, Depends, HTTPException, Query, Request, status
-from sqlalchemy import LargeBinary, asc, cast, desc, func, insert, select, update
+from sqlalchemy import LargeBinary, asc, cast, delete as sa_delete, desc, func, insert, select, update
 from sqlalchemy.dialects.postgresql import insert as pg_insert
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
@@ -35,9 +36,11 @@ from app.db.models import (
     SessionAncestorConciliation,
     SessionChakraReading,
     SessionCleaningEvent,
+    SessionCleaningGroup,
     SessionEnergyReading,
     SessionLnt,
     SessionOrgan,
+    SessionProtection,
     SessionTopic,
     TherapyType,
     User,
@@ -50,6 +53,16 @@ from app.schemas.ancestors import (
     AncestorResponse,
     AncestorsGetResponse,
     AncestorsUpdate,
+)
+from app.schemas.cleaning_groups import (
+    CleaningEventOutput,
+    CleaningGroupOutput,
+    CleaningGroupsGetResponse,
+    CleaningGroupsUpdate,
+    LayerEntry,
+    ProtectionResponse,
+    ProtectionsGetResponse,
+    ProtectionsUpdate,
 )
 from app.schemas.sessions import (
     AffectationResponse,
@@ -316,6 +329,56 @@ async def _replace_soft_delete(
         db.add(model(session_id=session_id, **row_data))
 
 
+# ── Helpers: mapeo DB ↔ frontend para cleaning groups ────────
+
+
+def _pipe_join(items: list[str]) -> str | None:
+    """Join list of strings with pipe delimiter for DB storage."""
+    filtered = [s for s in items if s]
+    return "|".join(filtered) if filtered else None
+
+
+def _pipe_split(value: str | None) -> list[str]:
+    """Split pipe-delimited DB string into list."""
+    if not value:
+        return []
+    return [s for s in value.split("|") if s]
+
+
+def _event_db_to_output(ev: SessionCleaningEvent) -> CleaningEventOutput:
+    """Map DB cleaning event to frontend output format."""
+    return CleaningEventOutput(
+        id=ev.id,
+        name=ev.manifestation or "",
+        value=ev.energy_level,
+        unit="numero",
+        work_done=ev.work_done or "",
+        work_done_custom=None,
+        materials=_pipe_split(ev.materials_used),
+        origins=_pipe_split(ev.origin),
+        is_auto_injected=ev.creation_moment == "auto",
+    )
+
+
+def _group_db_to_output(g: SessionCleaningGroup) -> CleaningGroupOutput:
+    """Map DB cleaning group to frontend output format."""
+    active_events = [e for e in g.cleaning_events if e.deleted_at is None]
+    layers_raw = g.layers if isinstance(g.layers, list) else []
+    return CleaningGroupOutput(
+        id=g.id,
+        target_type=g.target_type or "paciente",
+        target_name=g.target_name or "",
+        family_member_id=g.family_member_id,
+        layers=[LayerEntry(**entry) for entry in layers_raw],
+        events=[_event_db_to_output(e) for e in active_events],
+        cleanings_required=g.cleanings_required or 0,
+        mesa_utilizada=_pipe_split(g.mesa_utilizada),
+        beneficios=g.beneficios or "",
+        is_charged=g.is_charged if g.is_charged is not None else True,
+        cost_per_cleaning=g.cost_per_cleaning or Decimal("1300.00"),
+    )
+
+
 async def _build_session_response(session_id: UUID, db: AsyncSession) -> SessionResponse:
     """Carga la sesión con todos sus sub-datos expandidos."""
     session = (
@@ -330,6 +393,7 @@ async def _build_session_response(session_id: UUID, db: AsyncSession) -> Session
                 selectinload(Session.cleaning_events),
                 selectinload(Session.affectations),
                 selectinload(Session.organs),
+                selectinload(Session.cleaning_groups).selectinload(SessionCleaningGroup.cleaning_events),
                 selectinload(Session.ancestors),
                 selectinload(Session.ancestor_conciliation),
             )
@@ -410,6 +474,7 @@ async def _build_session_response(session_id: UUID, db: AsyncSession) -> Session
         topics=[TopicResponse.model_validate(t) for t in session.topics if t.deleted_at is None],
         lnt_entries=[LNTResponse.model_validate(l) for l in active_lnt],
         cleaning_events=[CleaningEventResponse.model_validate(e) for e in session.cleaning_events if e.deleted_at is None],
+        cleaning_groups=[_group_db_to_output(g) for g in session.cleaning_groups if g.deleted_at is None],
         affectations=[AffectationResponse.model_validate(a) for a in session.affectations if a.deleted_at is None],
         organs=[OrganResponse.model_validate(o) for o in session.organs if o.deleted_at is None],
         ancestors=[AncestorResponse.model_validate(a) for a in session.ancestors if a.deleted_at is None],
@@ -1089,6 +1154,178 @@ async def save_organs(
 
     await db.commit()
     return await _get_wizard_state(session_id, db)
+
+
+# ── Grupos de limpieza ───────────────────────────────────────
+
+
+@router.get(
+    "/{session_id}/cleaning-groups",
+    response_model=CleaningGroupsGetResponse,
+    summary="Obtener grupos de limpieza con sus cleaning events anidados",
+)
+async def get_cleaning_groups(
+    session_id: UUID,
+    db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(require_role(UserRole.therapist, UserRole.admin)),
+) -> CleaningGroupsGetResponse:
+    session = await _get_session_or_404(session_id, db)
+    if current_user.role == UserRole.therapist and session.therapist_id != current_user.id:
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="No tienes acceso a esta sesión")
+
+    groups = (
+        await db.execute(
+            select(SessionCleaningGroup)
+            .where(
+                SessionCleaningGroup.session_id == session_id,
+                SessionCleaningGroup.deleted_at.is_(None),
+            )
+            .options(selectinload(SessionCleaningGroup.cleaning_events))
+            .order_by(SessionCleaningGroup.created_at)
+        )
+    ).scalars().unique().all()
+
+    return CleaningGroupsGetResponse(
+        groups=[_group_db_to_output(g) for g in groups],
+    )
+
+
+@router.put(
+    "/{session_id}/cleaning-groups",
+    response_model=CleaningGroupsGetResponse,
+    summary="Guardar grupos de limpieza (reemplaza existentes)",
+)
+async def save_cleaning_groups(
+    session_id: UUID,
+    data: CleaningGroupsUpdate,
+    request: Request,
+    db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(require_role(UserRole.therapist, UserRole.admin)),
+) -> CleaningGroupsGetResponse:
+    await _get_session_or_404(session_id, db)
+
+    now = func.now()
+
+    # Soft-delete cleaning_events existentes (antes de los groups por FK)
+    await db.execute(
+        update(SessionCleaningEvent)
+        .where(SessionCleaningEvent.session_id == session_id, SessionCleaningEvent.deleted_at.is_(None))
+        .values(deleted_at=now)
+    )
+    # Soft-delete cleaning_groups existentes
+    await db.execute(
+        update(SessionCleaningGroup)
+        .where(SessionCleaningGroup.session_id == session_id, SessionCleaningGroup.deleted_at.is_(None))
+        .values(deleted_at=now)
+    )
+
+    # Insertar nuevos grupos con sus eventos anidados
+    total_events = 0
+    for group_data in data.groups:
+        group = SessionCleaningGroup(
+            session_id=session_id,
+            target_type=group_data.target_type,
+            target_name=group_data.target_name,
+            family_member_id=group_data.family_member_id,
+            cleanings_required=group_data.cleanings_required,
+            is_charged=group_data.is_charged,
+            cost_per_cleaning=group_data.cost_per_cleaning,
+            layers=[entry.model_dump() for entry in group_data.layers],
+            mesa_utilizada=_pipe_join(group_data.mesa_utilizada),
+            beneficios=group_data.beneficios or None,
+        )
+        db.add(group)
+        await db.flush()  # materializar group.id
+
+        for ev_data in group_data.events:
+            work_done = ev_data.work_done_custom if ev_data.work_done_custom else ev_data.work_done
+            db.add(SessionCleaningEvent(
+                session_id=session_id,
+                cleaning_group_id=group.id,
+                manifestation=ev_data.name or None,
+                manifestation_value=ev_data.value,
+                manifestation_unit=ev_data.unit,
+                work_done=work_done or None,
+                materials_used=_pipe_join(ev_data.materials),
+                origin=_pipe_join(ev_data.origins),
+                person=group_data.target_name or None,
+                layer=None,
+                quantity=None,
+                creation_moment="auto" if ev_data.is_auto_injected else None,
+            ))
+            total_events += 1
+
+    await write_audit_log(
+        db, "session_cleaning_groups", session_id, AuditAction.UPDATE, current_user.id,
+        new_data={"groups_count": len(data.groups), "events_count": total_events},
+        ip_address=request.client.host if request.client else None,
+        user_agent=request.headers.get("user-agent"),
+    )
+
+    await db.commit()
+    return await get_cleaning_groups(session_id, db, current_user)
+
+
+# ── Protecciones (migración 0013) ────────────────────────────
+
+
+@router.get(
+    "/{session_id}/protections",
+    response_model=ProtectionsGetResponse,
+    summary="Obtener protecciones de la sesión",
+)
+async def get_protections(
+    session_id: UUID,
+    db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(require_role(UserRole.therapist, UserRole.admin)),
+) -> ProtectionsGetResponse:
+    session = await _get_session_or_404(session_id, db)
+    if current_user.role == UserRole.therapist and session.therapist_id != current_user.id:
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="No tienes acceso a esta sesión")
+
+    protections = (
+        await db.execute(
+            select(SessionProtection)
+            .where(SessionProtection.session_id == session_id)
+            .order_by(SessionProtection.created_at)
+        )
+    ).scalars().all()
+
+    return ProtectionsGetResponse(
+        protections=[ProtectionResponse.model_validate(p) for p in protections],
+    )
+
+
+@router.put(
+    "/{session_id}/protections",
+    response_model=ProtectionsGetResponse,
+    summary="Guardar protecciones (reemplaza existentes)",
+)
+async def save_protections(
+    session_id: UUID,
+    data: ProtectionsUpdate,
+    request: Request,
+    db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(require_role(UserRole.therapist, UserRole.admin)),
+) -> ProtectionsGetResponse:
+    await _get_session_or_404(session_id, db)
+
+    # SessionProtection no tiene deleted_at — delete físico y re-insert
+    await db.execute(
+        sa_delete(SessionProtection).where(SessionProtection.session_id == session_id)
+    )
+    for row_data in data.protections:
+        db.add(SessionProtection(session_id=session_id, **row_data.model_dump()))
+
+    await write_audit_log(
+        db, "session_protections", session_id, AuditAction.UPDATE, current_user.id,
+        new_data={"count": len(data.protections)},
+        ip_address=request.client.host if request.client else None,
+        user_agent=request.headers.get("user-agent"),
+    )
+
+    await db.commit()
+    return await get_protections(session_id, db, current_user)
 
 
 @router.delete(
