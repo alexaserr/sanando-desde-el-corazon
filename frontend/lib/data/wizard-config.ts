@@ -65,7 +65,7 @@ const S_CLOSE: WizardStepConfig = {
 };
 
 const BASE = [S_GENERAL, S_CHAKRAS_INITIAL, S_ENERGY_INITIAL];
-const TAIL = [S_CHAKRAS_FINAL, S_ENERGY_FINAL, S_CLOSE];
+const TAIL = [S_ENERGY_FINAL, S_CHAKRAS_FINAL, S_CLOSE];
 
 // ─── Configuraciones por tipo de terapia ──────────────────────────────────────
 
@@ -82,7 +82,7 @@ export const WIZARD_CONFIGS: Record<string, TherapyWizardConfig> = {
   },
   'Medicina Cuántica': {
     therapyName: 'Medicina Cuántica',
-    steps: [...BASE, S_TOPICS, S_LNT, ...TAIL],
+    steps: [...BASE, S_TOPICS, ...TAIL],
     defaultCost: 1600,
   },
   'Terapia LNT': {
