@@ -112,6 +112,20 @@ interface AncestorConciliationItem {
   session_relationship: string | null;
 }
 
+interface ProtectionItem {
+  id: string;
+  person_name: string;
+  quantity: number;
+}
+
+interface CleaningGroupItem {
+  id: string;
+  target_name: string;
+  cleanings_required: number;
+  cost_per_cleaning: number;
+  is_charged: boolean;
+}
+
 interface SessionFullDetail {
   id: string;
   client_id: string | null;
@@ -134,6 +148,16 @@ interface SessionFullDetail {
   limpiezas_requeridas: number | null;
   mesa_utilizada: string | null;
   beneficios: string | null;
+  // Protección
+  has_protection: boolean | null;
+  protection_charged: boolean | null;
+  protections: ProtectionItem[];
+  // Grupos de limpieza
+  cleaning_groups: CleaningGroupItem[];
+  // Costos calculados
+  porcentaje_pago: number | null;
+  incluye_iva: boolean | null;
+  costo_calculado: number | null;
   created_at: string;
   updated_at: string;
   energy_readings: EnergyReading[];
@@ -372,6 +396,11 @@ export default function SessionDetailPage() {
 
   const hasAncestorData = activeAncestors.length > 0 || session.ancestor_conciliation != null;
 
+  const hasProtectionData = session.has_protection === true && Array.isArray(session.protections) && session.protections.length > 0;
+
+  // Grupos de limpieza (puede venir vacío si el backend aún no los soporta)
+  const cleaningGroupsData = Array.isArray(session.cleaning_groups) ? session.cleaning_groups : [];
+
   // ¿Tiene mediciones finales? Si no, es sesión de limpieza (solo mostrar iniciales)
   const hasFinalEnergy = energyRows.some((r) => r.final_value != null);
   const hasFinalChakra = chakraRows.some((r) => r.final_value != null);
@@ -458,6 +487,35 @@ export default function SessionDetailPage() {
           {session.bud && <MetaBadge label="Bud" value={session.bud} />}
           {session.bud_chakra && <MetaBadge label="Chakra Bud" value={session.bud_chakra} />}
         </div>
+
+        {/* Toggles: Entidades / Bajo astral / Implantes */}
+        {(session.entities_count != null || session.capas != null || session.implants_count != null) && (
+          <div className="flex flex-wrap gap-4 mb-4">
+            <div className="flex items-center gap-2 text-sm">
+              <span className={`w-2.5 h-2.5 rounded-full shrink-0 ${session.entities_count != null && session.entities_count > 0 ? 'bg-green-500' : 'bg-gray-300'}`} />
+              <span className="text-terra-700">Entidades:</span>
+              <span className="font-medium text-terra-900">
+                {session.entities_count != null && session.entities_count > 0
+                  ? `Sí (${session.entities_count})`
+                  : 'No'}
+              </span>
+            </div>
+            <div className="flex items-center gap-2 text-sm">
+              <span className={`w-2.5 h-2.5 rounded-full shrink-0 ${session.capas != null && session.capas > 0 ? 'bg-green-500' : 'bg-gray-300'}`} />
+              <span className="text-terra-700">Trabajos de bajo astral:</span>
+              <span className="font-medium text-terra-900">
+                {session.capas != null && session.capas > 0 ? 'Sí' : 'No'}
+              </span>
+            </div>
+            <div className="flex items-center gap-2 text-sm">
+              <span className={`w-2.5 h-2.5 rounded-full shrink-0 ${session.implants_count != null && session.implants_count > 0 ? 'bg-green-500' : 'bg-gray-300'}`} />
+              <span className="text-terra-700">Implantes:</span>
+              <span className="font-medium text-terra-900">
+                {session.implants_count != null && session.implants_count > 0 ? 'Sí' : 'No'}
+              </span>
+            </div>
+          </div>
+        )}
 
         {session.notes && (
           <div className="mb-3">
@@ -694,13 +752,13 @@ export default function SessionDetailPage() {
         <CollapsibleCard title="Reporte de Limpieza">
           {/* Resumen de limpieza */}
           <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 mb-4">
-            {session.capas != null && (
+            {session.capas != null && session.capas > 0 && (
               <div className="bg-terra-50 rounded-lg p-3">
                 <p className="text-xs uppercase tracking-wide text-terra-500 font-medium">Capas</p>
                 <p className="text-xl font-bold text-terra-900">{session.capas}</p>
               </div>
             )}
-            {session.limpiezas_requeridas != null && (
+            {session.limpiezas_requeridas != null && session.limpiezas_requeridas > 0 && (
               <div className="bg-terra-50 rounded-lg p-3">
                 <p className="text-xs uppercase tracking-wide text-terra-500 font-medium">Limpiezas requeridas</p>
                 <p className="text-xl font-bold text-terra-900">{session.limpiezas_requeridas}</p>
@@ -726,41 +784,154 @@ export default function SessionDetailPage() {
             </div>
           )}
 
-          {/* Tabla de eventos de limpieza */}
-          {activeCleanings.length > 0 ? (
-            <div>
-              <h3 className="text-sm font-semibold text-terra-700 mb-3 uppercase tracking-wide">
-                Eventos de limpieza
-              </h3>
-              <div className="overflow-x-auto">
-                <table className="w-full text-sm">
-                  <thead>
-                    <tr className="border-b border-terra-100 text-xs uppercase tracking-wide text-terra-500">
-                      <th className="text-left py-2 pr-3 font-medium w-8">#</th>
-                      <th className="text-left py-2 pr-3 font-medium">Manifestación</th>
-                      <th className="text-left py-2 pr-3 font-medium">Trabajo realizado</th>
-                      <th className="text-left py-2 pr-3 font-medium">Materiales</th>
-                      <th className="text-left py-2 font-medium">Origen</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {activeCleanings.map((ev, idx) => (
-                      <tr key={ev.id} className="border-b border-terra-50 hover:bg-terra-50/30 align-top">
-                        <td className="py-2.5 pr-3 text-terra-400 font-medium">{idx + 1}</td>
-                        <td className="py-2.5 pr-3 text-terra-800">{ev.manifestation || '—'}</td>
-                        <td className="py-2.5 pr-3 text-terra-800">{ev.work_done ? pipesToDisplay(ev.work_done) : '—'}</td>
-                        <td className="py-2.5 pr-3 text-terra-800">
-                          {ev.materials_used ? pipesToDisplay(ev.materials_used) : '—'}
-                        </td>
-                        <td className="py-2.5 text-terra-800">{ev.origin || '—'}</td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
+          {/* Eventos de limpieza — agrupados por persona */}
+          {activeCleanings.length > 0 ? (() => {
+            // Agrupar por persona (o "Sin persona" si no tiene)
+            const groupedByPerson = activeCleanings.reduce<Record<string, typeof activeCleanings>>((acc, ev) => {
+              const key = ev.person || 'Paciente';
+              if (!acc[key]) acc[key] = [];
+              acc[key].push(ev);
+              return acc;
+            }, {});
+            const personKeys = Object.keys(groupedByPerson);
+
+            return (
+              <div className="space-y-4">
+                {personKeys.map((personName, gIdx) => {
+                  const events = groupedByPerson[personName];
+                  return (
+                    <div key={personName} className="border border-terra-100 rounded-lg overflow-hidden">
+                      {/* Header del grupo */}
+                      <div className="bg-terra-50 px-4 py-3 flex items-center justify-between">
+                        <div className="flex items-center gap-2">
+                          <span className="text-sm font-semibold text-terra-900">
+                            Grupo {gIdx + 1}: {personName}
+                          </span>
+                        </div>
+                        <span className="text-xs text-terra-500">
+                          {events.length} {events.length === 1 ? 'evento' : 'eventos'}
+                        </span>
+                      </div>
+
+                      {/* Eventos del grupo */}
+                      <div className="divide-y divide-terra-50">
+                        {events.map((ev, idx) => (
+                          <div key={ev.id} className="px-4 py-3 space-y-2 border-l-4 border-[#D4A592]">
+                            <div className="flex items-center gap-2">
+                              <span className="text-xs font-medium text-terra-500">Evento {idx + 1}</span>
+                              {ev.energy_level != null && (
+                                <span className="text-xs text-terra-400">— Energía: {ev.energy_level}</span>
+                              )}
+                            </div>
+
+                            {/* Capas */}
+                            {ev.layer && (
+                              <div>
+                                <span className="text-xs text-gray-500 mr-1.5">Capas:</span>
+                                <span className="inline-flex items-center text-xs bg-amber-50 text-amber-800 border border-amber-200 rounded-full px-2.5 py-0.5">
+                                  {ev.layer}{ev.quantity != null ? ` ×${ev.quantity}` : ''}
+                                </span>
+                              </div>
+                            )}
+
+                            {/* Manifestación */}
+                            {ev.manifestation && (
+                              <div>
+                                <span className="text-xs text-gray-500 mr-1.5">Manifestación:</span>
+                                <div className="inline-flex flex-wrap gap-1">
+                                  {ev.manifestation.split('|').map((m) => m.trim()).filter(Boolean).map((m, mi) => (
+                                    <span key={mi} className="inline-flex items-center text-xs bg-rose-50 text-rose-700 border border-rose-200 rounded-full px-2.5 py-0.5">
+                                      {m}
+                                    </span>
+                                  ))}
+                                </div>
+                              </div>
+                            )}
+
+                            {/* Trabajo realizado */}
+                            {ev.work_done && (
+                              <div>
+                                <span className="text-xs text-gray-500 mr-1.5">Trabajo realizado:</span>
+                                <div className="inline-flex flex-wrap gap-1">
+                                  {ev.work_done.split('|').map((w) => w.trim()).filter(Boolean).map((w, wi) => (
+                                    <span key={wi} className="inline-flex items-center text-xs bg-blue-50 text-blue-700 border border-blue-200 rounded-full px-2.5 py-0.5">
+                                      {w}
+                                    </span>
+                                  ))}
+                                </div>
+                              </div>
+                            )}
+
+                            {/* Materiales */}
+                            {ev.materials_used && (
+                              <div>
+                                <span className="text-xs text-gray-500 mr-1.5">Materiales:</span>
+                                <div className="inline-flex flex-wrap gap-1">
+                                  {ev.materials_used.split('|').map((m) => m.trim()).filter(Boolean).map((m, mi) => (
+                                    <span key={mi} className="inline-flex items-center text-xs bg-green-50 text-green-700 border border-green-200 rounded-full px-2.5 py-0.5">
+                                      {m}
+                                    </span>
+                                  ))}
+                                </div>
+                              </div>
+                            )}
+
+                            {/* Origen */}
+                            {ev.origin && (
+                              <div>
+                                <span className="text-xs text-gray-500 mr-1.5">Origen:</span>
+                                <div className="inline-flex flex-wrap gap-1">
+                                  {ev.origin.split('|').map((o) => o.trim()).filter(Boolean).map((o, oi) => (
+                                    <span key={oi} className="inline-flex items-center text-xs bg-orange-50 text-orange-700 border border-orange-200 rounded-full px-2.5 py-0.5">
+                                      {o}
+                                    </span>
+                                  ))}
+                                </div>
+                              </div>
+                            )}
+
+                            {/* Área de vida */}
+                            {ev.life_area && (
+                              <div>
+                                <span className="text-xs text-gray-500 mr-1.5">Área de vida:</span>
+                                <span className="text-sm text-terra-700">{ev.life_area}</span>
+                              </div>
+                            )}
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            );
+          })() : (
+            <p className="text-sm text-gray-400 italic">Sin eventos de limpieza registrados</p>
+          )}
+
+          {/* Resumen de costos de limpieza */}
+          {cleaningGroupsData.length > 0 && (
+            <div className="mt-4 pt-4 border-t border-terra-100">
+              <FieldLabel>Costos de limpieza</FieldLabel>
+              <div className="space-y-1 mt-2">
+                {cleaningGroupsData.map((g) => {
+                  const groupCost = g.cleanings_required * g.cost_per_cleaning;
+                  return (
+                    <div
+                      key={g.id}
+                      className={`flex items-center justify-between py-1 text-sm ${
+                        g.is_charged ? 'text-terra-800' : 'text-gray-400 line-through'
+                      }`}
+                    >
+                      <span>
+                        {g.target_name} — {g.cleanings_required} limp. × {formatCurrency(g.cost_per_cleaning)}
+                      </span>
+                      <span className="font-medium">{formatCurrency(groupCost)}</span>
+                    </div>
+                  );
+                })}
               </div>
             </div>
-          ) : (
-            <p className="text-sm text-gray-400 italic">Sin eventos de limpieza registrados</p>
           )}
         </CollapsibleCard>
       )}
@@ -980,14 +1151,115 @@ export default function SessionDetailPage() {
         </CollapsibleCard>
       )}
 
-      {/* ── 9. Cierre / Pago ── */}
-      {(session.cost != null || session.payment_notes) && (
+      {/* ── 9. Protección ── */}
+      {hasProtectionData && (
+        <CollapsibleCard title="Protección" defaultOpen={false}>
+          <div className="space-y-3">
+            <div className="flex flex-wrap gap-1.5">
+              {session.protections.map((p) => (
+                <span
+                  key={p.id}
+                  className="inline-flex items-center gap-1.5 text-sm bg-terra-50 text-terra-700 border border-terra-200 rounded-lg px-3 py-1.5"
+                >
+                  {p.person_name}
+                  <span className="text-xs text-terra-500">×{p.quantity}</span>
+                </span>
+              ))}
+            </div>
+            <p className="text-sm text-terra-600">
+              {session.protection_charged
+                ? 'Se cobró protección'
+                : 'No se cobró protección'}
+            </p>
+          </div>
+        </CollapsibleCard>
+      )}
+
+      {/* ── 10. Cierre / Pago ── */}
+      {(session.cost != null || session.payment_notes || session.costo_calculado != null) && (
         <CollapsibleCard title="Cierre y pago">
-          <div className="flex flex-wrap gap-6">
+          <div className="space-y-3">
+            {/* Terapia base */}
+            {session.therapy_type_name && (
+              <div className="flex items-center justify-between py-1 text-sm">
+                <span className="text-terra-600">Terapia base</span>
+                <span className="font-medium text-terra-800">
+                  {session.therapy_type_name}
+                </span>
+              </div>
+            )}
+
+            {/* Limpiezas cobradas — desglose por grupo */}
+            {cleaningGroupsData.length > 0 && (
+              <div className="space-y-1">
+                <FieldLabel>Limpiezas</FieldLabel>
+                {cleaningGroupsData.map((g) => {
+                  const groupCost = g.cleanings_required * g.cost_per_cleaning;
+                  return (
+                    <div
+                      key={g.id}
+                      className={`flex items-center justify-between py-1 text-sm ${
+                        g.is_charged ? 'text-[#2C2220]' : 'text-[#B7BFB3] line-through'
+                      }`}
+                    >
+                      <span>
+                        {g.is_charged ? '☑' : '☐'} {g.target_name} ({g.cleanings_required} × {formatCurrency(g.cost_per_cleaning)})
+                      </span>
+                      <span className="font-medium">{formatCurrency(groupCost)}</span>
+                    </div>
+                  );
+                })}
+              </div>
+            )}
+
+            {/* Protecciones */}
+            {hasProtectionData && session.protection_charged && (
+              <div className="space-y-1">
+                <FieldLabel>Protecciones</FieldLabel>
+                {session.protections.map((p) => (
+                  <div key={p.id} className="flex items-center justify-between py-1 text-sm text-[#2C2220]">
+                    <span>{p.person_name} ({p.quantity} × {formatCurrency(1200)})</span>
+                    <span className="font-medium">{formatCurrency(p.quantity * 1200)}</span>
+                  </div>
+                ))}
+              </div>
+            )}
+
+            {/* Porcentaje de pago */}
+            {session.porcentaje_pago != null && session.porcentaje_pago !== 100 && (
+              <div className="flex items-center justify-between py-1 text-sm text-terra-600">
+                <span>Porcentaje de pago</span>
+                <span className="font-medium">{session.porcentaje_pago}%</span>
+              </div>
+            )}
+
+            {/* IVA */}
+            {session.incluye_iva && (
+              <div className="flex items-center justify-between py-1 text-sm text-terra-600">
+                <span>IVA</span>
+                <span className="font-medium">Incluido</span>
+              </div>
+            )}
+
+            {/* Total calculado */}
+            {session.costo_calculado != null && (
+              <div className="flex items-center justify-between py-1 text-sm text-terra-600 border-t border-terra-50">
+                <span>Subtotal calculado</span>
+                <span className="font-medium">{formatCurrency(session.costo_calculado)}</span>
+              </div>
+            )}
+
+            {/* Total final */}
             {session.cost != null && (
-              <MetaBadge label="Costo" value={formatCurrency(session.cost)} />
+              <div className="flex items-center justify-between pt-3 border-t border-[#D4A592]">
+                <span className="text-lg font-semibold text-[#2C2220]">Total</span>
+                <span className="text-lg font-semibold text-[#2C2220]">
+                  {formatCurrency(session.cost)}
+                </span>
+              </div>
             )}
           </div>
+
           {session.payment_notes && (
             <div className="mt-3">
               <FieldLabel>Notas de pago</FieldLabel>

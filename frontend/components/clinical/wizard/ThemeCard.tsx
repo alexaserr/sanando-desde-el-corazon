@@ -224,6 +224,25 @@ export function ThemeCard({ theme, index, chakras, onChange, onDelete, disabled 
             />
           </section>
 
+          {/* Interpretación general del tema */}
+          <div className="flex flex-col gap-1">
+            <label
+              className="text-xs font-normal text-[#4A3628] uppercase tracking-wide select-none"
+              style={{ fontFamily: 'Lato, sans-serif', letterSpacing: '0.1em' }}
+            >
+              Interpretación del tema
+            </label>
+            <textarea
+              value={theme.interpretacion_tema ?? ''}
+              onChange={(e) => onChange({ interpretacion_tema: e.target.value })}
+              placeholder="Interpretación general del tema…"
+              disabled={disabled}
+              rows={3}
+              className="w-full rounded-none border-0 border-b border-[#D4A592] bg-[#FAF7F5] px-3 py-2 text-sm text-[#2C2220] placeholder-[#A9967E] focus:outline-none focus:ring-0 focus:border-b-2 focus:border-[#C4704A] disabled:opacity-50 disabled:cursor-not-allowed resize-y"
+              style={{ fontFamily: 'Lato, sans-serif' }}
+            />
+          </div>
+
           <hr className="border-gray-100" />
 
           {/* Toggle tema secundario */}
@@ -307,6 +326,57 @@ export function ThemeCard({ theme, index, chakras, onChange, onDelete, disabled 
           </div>
 
           <hr className="border-gray-100" />
+
+          {/* Edades Infancia / Adultez */}
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <div className="flex flex-col gap-1">
+              <label
+                className="text-xs font-normal text-[#4A3628] uppercase tracking-wide select-none"
+                style={{ fontFamily: 'Lato, sans-serif', letterSpacing: '0.1em' }}
+              >
+                Edad Infancia
+              </label>
+              <input
+                type="number"
+                step="any"
+                min={0}
+                value={theme.childhood_age ?? ''}
+                onChange={(e) => {
+                  const raw = e.target.value;
+                  onChange({ childhood_age: raw === '' ? null : Number(raw) });
+                }}
+                placeholder="Ej: 3.5"
+                disabled={disabled}
+                className="w-full rounded-none border-0 border-b border-[#D4A592] bg-[#FAF7F5] px-3 py-2 text-sm text-[#2C2220] placeholder-[#A9967E] focus:outline-none focus:ring-0 focus:border-b-2 focus:border-[#C4704A] disabled:opacity-50 disabled:cursor-not-allowed"
+                style={{ fontFamily: 'Lato, sans-serif' }}
+              />
+              {theme.childhood_age != null && theme.childhood_age > 9 && (
+                <span className="text-xs text-red-600">La edad de infancia debe ser ≤ 9</span>
+              )}
+            </div>
+            <div className="flex flex-col gap-1">
+              <label
+                className="text-xs font-normal text-[#4A3628] uppercase tracking-wide select-none"
+                style={{ fontFamily: 'Lato, sans-serif', letterSpacing: '0.1em' }}
+              >
+                Edad Adultez
+              </label>
+              <input
+                type="number"
+                step="any"
+                min={0}
+                value={theme.adulthood_age ?? ''}
+                onChange={(e) => {
+                  const raw = e.target.value;
+                  onChange({ adulthood_age: raw === '' ? null : Number(raw) });
+                }}
+                placeholder="Ej: 27"
+                disabled={disabled}
+                className="w-full rounded-none border-0 border-b border-[#D4A592] bg-[#FAF7F5] px-3 py-2 text-sm text-[#2C2220] placeholder-[#A9967E] focus:outline-none focus:ring-0 focus:border-b-2 focus:border-[#C4704A] disabled:opacity-50 disabled:cursor-not-allowed"
+                style={{ fontFamily: 'Lato, sans-serif' }}
+              />
+            </div>
+          </div>
 
           {/* Secciones etarias */}
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">

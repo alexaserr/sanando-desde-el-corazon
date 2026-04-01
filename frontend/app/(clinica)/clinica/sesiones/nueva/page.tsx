@@ -11,7 +11,7 @@ import { StepTopics }         from '@/components/clinical/wizard/StepTopics';
 import { StepEnergyFinal }    from '@/components/clinical/wizard/StepEnergyFinal';
 import { StepChakrasFinal }   from '@/components/clinical/wizard/StepChakrasFinal';
 import { StepClose }          from '@/components/clinical/wizard/StepClose';
-import { StepCleaning }      from '@/components/clinical/wizard/StepCleaning';
+import { StepCleaning, newCleaningGroup } from '@/components/clinical/wizard/StepCleaning';
 import { StepLNT }           from '@/components/clinical/wizard/StepLNT';
 
 import { useAuthStore } from '@/store/auth';
@@ -32,8 +32,9 @@ import {
   createClientTopic,
   saveThemeEntries,
   saveLntEntries,
-  saveCleaningEntries,
+  saveCleaningGroups,
   saveAncestors,
+  saveProtections,
 } from '@/lib/api/clinical';
 
 import type { TherapyType, ChakraPosition, EnergyDimension, ClientListItem, ClientTopic } from '@/types/api';
@@ -44,8 +45,8 @@ import type {
   ThemeEntry,
   CloseData,
   SessionSummary,
-  CleaningRow,
-  CleaningSummary,
+  CleaningGroup,
+  ProtectionEntry,
   LntEntry,
   AncestorEntry,
   AncestorConciliation,
@@ -119,16 +120,18 @@ export default function NuevaSessionPage() {
   const [energyFinal, setEnergyFinal]               = useState<EnergyReading[]>([]);
   const [chakraFinal, setChakraFinal]               = useState<WizardChakraReading[]>([]);
   const [closeData, setCloseData]                   = useState<CloseData>(defaultCloseData);
-  const [cleaningRows, setCleaningRows]             = useState<CleaningRow[]>([]);
-  const [cleaningSummary, setCleaningSummary]       = useState<CleaningSummary>({
-    capas: 0, limpiezas_requeridas: 0, mesa_utilizada: '', beneficios: '',
-  });
+  const [cleaningGroups, setCleaningGroups]         = useState<CleaningGroup[]>([]);
   const [lntEntries, setLntEntries]                 = useState<LntEntry[]>([]);
   const [lntPeticiones, setLntPeticiones]           = useState('');
   const [ancestors, setAncestors]                   = useState<AncestorEntry[]>([]);
   const [ancestorConciliation, setAncestorConciliation] = useState<AncestorConciliation>({
     healing_phrases: '', conciliation_acts: '', life_aspects_affected: '', session_relationship: '',
   });
+
+  // Protección
+  const [protections, setProtections]                   = useState<ProtectionEntry[]>([]);
+  const [hasProtection, setHasProtection]               = useState(false);
+  const [protectionCharged, setProtectionCharged]       = useState(false);
 
   // Flag: entidades/capas/implantes detectados → inyectar StepCleaning
   const [hasEntitiesFlag, setHasEntitiesFlag] = useState(false);
@@ -208,6 +211,23 @@ export default function NuevaSessionPage() {
     }
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [currentStep, activeSteps, wizardConfig.defaultCost]);
+
+  // Nombre del paciente actual para el grupo de limpieza
+  const selectedClient = useMemo(() => {
+    return catalogs?.clients.find((c) => c.id === generalData.client_id) ?? null;
+  }, [catalogs, generalData.client_id]);
+
+  const patientName = selectedClient?.full_name ?? '';
+  const isAnimal = selectedClient?.is_animal ?? false;
+
+  // Inicializar grupos de limpieza cuando se activa el paso
+  useEffect(() => {
+    const hasCleaning = activeSteps.some((s) => s.component === 'StepCleaning');
+    if (hasCleaning && cleaningGroups.length === 0 && patientName) {
+      setCleaningGroups([newCleaningGroup('paciente', patientName)]);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [activeSteps, patientName]);
 
   // ─── Helpers de estado de pasos ───────────────────────────────────────────────
 
@@ -301,7 +321,7 @@ export default function NuevaSessionPage() {
           initial_energy: b.energy,
           final_energy: b.final_energy ?? null,
           significado: b.significado || null,
-          interpretacion_tema: b.interpretacion_tema || null,
+          interpretacion_tema: i === 0 ? (t.interpretacion_tema || null) : null,
         };
       }).filter((r): r is NonNullable<typeof r> => r !== null);
 
@@ -322,18 +342,20 @@ export default function NuevaSessionPage() {
       }] : [];
 
       const a = t.adulthood;
-      const adultRow = (a.situation || a.description || a.emotions || a.place || a.people) ? [{
+      const adultRow = (a.situation || a.description || a.emotions || a.place || a.people || t.adulthood_age != null) ? [{
         client_topic_id: t.topic_id,
         entry_type: 'edad_adulta' as const,
         adult_theme: a.situation || a.description || null,
+        adult_age: t.adulthood_age ?? null,
         emotions: a.emotions || null,
       }] : [];
 
       const c = t.childhood;
-      const childRow = (c.situation || c.description || c.emotions || c.place || c.people) ? [{
+      const childRow = (c.situation || c.description || c.emotions || c.place || c.people || t.childhood_age != null) ? [{
         client_topic_id: t.topic_id,
         entry_type: 'edad_infancia' as const,
         child_theme: c.situation || c.description || null,
+        child_age: t.childhood_age ?? null,
       }] : [];
 
       return [...blockageRows, ...resultantRow, ...secondaryRow, ...adultRow, ...childRow];
@@ -469,19 +491,30 @@ export default function NuevaSessionPage() {
 
       } else if (stepComponent === 'StepCleaning') {
         if (!sessionId) throw new Error('Sesión no iniciada');
-        const events = cleaningRows.map((r) => ({
-          manifestation: r.manifestation,
-          work_done: r.work_done.map((w) => w === 'Otro' && r.work_done_other ? r.work_done_other : w).join('|'),
-          materials_used: r.materials.join('|'),
-          origin: r.origin,
-        }));
-        await saveCleaningEntries(sessionId, {
-          events,
-          capas: cleaningSummary.capas,
-          limpiezas_requeridas: cleaningSummary.limpiezas_requeridas,
-          mesa_utilizada: cleaningSummary.mesa_utilizada,
-          beneficios: cleaningSummary.beneficios,
-        });
+        await saveCleaningGroups(
+          sessionId,
+          cleaningGroups.map((g) => ({
+            target_type: g.target_type,
+            target_name: g.target_name,
+            family_member_id: g.family_member_id,
+            layers: g.layers,
+            events: g.events.map((ev) => ({
+              name: ev.name,
+              value: ev.value,
+              unit: ev.unit,
+              work_done: ev.work_done,
+              work_done_custom: ev.work_done_custom,
+              materials: ev.materials,
+              origins: ev.origins,
+              is_auto_injected: ev.is_auto_injected ?? false,
+            })),
+            cleanings_required: g.cleanings_required,
+            mesa_utilizada: g.mesa_utilizada,
+            beneficios: g.beneficios,
+            is_charged: g.is_charged,
+            cost_per_cleaning: g.cost_per_cleaning,
+          })),
+        );
         markStepComplete(currentStep);
         setStep(currentStep + 1);
 
@@ -509,7 +542,7 @@ export default function NuevaSessionPage() {
   }, [
     currentStep, activeSteps, sessionId, generalData, energyInitial, chakraInitial,
     themes, energyFinal, chakraFinal, lntEntries, isMedCuantica, lntPeticiones,
-    cleaningRows, cleaningSummary, ancestors, ancestorConciliation,
+    cleaningGroups, ancestors, ancestorConciliation,
     setSessionId, markStepComplete, setStep,
   ]);
 
@@ -557,26 +590,37 @@ export default function NuevaSessionPage() {
           });
         }
       } else if (stepComponent === 'StepCleaning') {
-        const events = cleaningRows.map((r) => ({
-          manifestation: r.manifestation,
-          work_done: r.work_done.map((w) => w === 'Otro' && r.work_done_other ? r.work_done_other : w).join('|'),
-          materials_used: r.materials.join('|'),
-          origin: r.origin,
-        }));
-        await saveCleaningEntries(sessionId, {
-          events,
-          capas: cleaningSummary.capas,
-          limpiezas_requeridas: cleaningSummary.limpiezas_requeridas,
-          mesa_utilizada: cleaningSummary.mesa_utilizada,
-          beneficios: cleaningSummary.beneficios,
-        });
+        await saveCleaningGroups(
+          sessionId,
+          cleaningGroups.map((g) => ({
+            target_type: g.target_type,
+            target_name: g.target_name,
+            family_member_id: g.family_member_id,
+            layers: g.layers,
+            events: g.events.map((ev) => ({
+              name: ev.name,
+              value: ev.value,
+              unit: ev.unit,
+              work_done: ev.work_done,
+              work_done_custom: ev.work_done_custom,
+              materials: ev.materials,
+              origins: ev.origins,
+              is_auto_injected: ev.is_auto_injected ?? false,
+            })),
+            cleanings_required: g.cleanings_required,
+            mesa_utilizada: g.mesa_utilizada,
+            beneficios: g.beneficios,
+            is_charged: g.is_charged,
+            cost_per_cleaning: g.cost_per_cleaning,
+          })),
+        );
       }
     } catch (err) {
       setStepError(err instanceof Error ? err.message : 'Error al guardar borrador.');
     } finally {
       setIsSaving(false);
     }
-  }, [sessionId, currentStep, activeSteps, energyInitial, chakraInitial, themes, energyFinal, chakraFinal, lntEntries, isMedCuantica, lntPeticiones, cleaningRows, cleaningSummary]);
+  }, [sessionId, currentStep, activeSteps, energyInitial, chakraInitial, themes, energyFinal, chakraFinal, lntEntries, isMedCuantica, lntPeticiones, cleaningGroups]);
 
   const handleCloseSession = useCallback(async () => {
     if (!sessionId) return;
@@ -588,6 +632,20 @@ export default function NuevaSessionPage() {
     setIsSaving(true);
     setStepError(null);
     try {
+      // Guardar protecciones si se agregaron
+      if (hasProtection) {
+        await saveProtections(sessionId, {
+          has_protection: hasProtection,
+          protection_charged: protectionCharged,
+          protections: protections
+            .filter((p) => p.selected)
+            .map((p) => ({
+              person_name: p.person_name,
+              quantity: p.quantity,
+            })),
+        });
+      }
+
       await closeSession(sessionId, {
         cost,
         payment_notes: closeData.payment_notes || undefined,
@@ -600,7 +658,7 @@ export default function NuevaSessionPage() {
     } finally {
       setIsSaving(false);
     }
-  }, [sessionId, closeData, activeSteps.length, markStepComplete, reset, router]);
+  }, [sessionId, closeData, activeSteps.length, markStepComplete, reset, router, hasProtection, protectionCharged, protections]);
 
   // ─── Render ────────────────────────────────────────────────────────────────────
 
@@ -661,6 +719,10 @@ export default function NuevaSessionPage() {
         onCloseSession={handleCloseSession}
         isNextDisabled={isNextDisabled}
         isSaving={isSaving}
+        ancestors={ancestors}
+        onAncestorsChange={setAncestors}
+        conciliation={ancestorConciliation}
+        onConciliationChange={setAncestorConciliation}
       >
         {currentComponent === 'StepGeneral' && (
           <StepGeneral
@@ -669,7 +731,7 @@ export default function NuevaSessionPage() {
             value={generalData}
             onChange={setGeneralData}
             onSearchClients={(q) => searchClients(q)}
-            onEntitiesChange={setHasEntitiesFlag}
+            onCleaningTriggered={setHasEntitiesFlag}
             disabled={isSaving}
           />
         )}
@@ -680,10 +742,6 @@ export default function NuevaSessionPage() {
             readings={energyInitial}
             onChange={(id, val) => updateEnergyReading(setEnergyInitial, id, val)}
             disabled={isSaving}
-            ancestors={ancestors}
-            onAncestorsChange={setAncestors}
-            conciliation={ancestorConciliation}
-            onConciliationChange={setAncestorConciliation}
             onDimensionCreated={handleNewDimension}
             onDimensionRenamed={handleDimensionRenamed}
             isAdmin={user?.role === 'admin'}
@@ -695,6 +753,7 @@ export default function NuevaSessionPage() {
             readings={chakraInitial}
             onChange={(id, val) => updateChakraReading(setChakraInitial, id, val)}
             disabled={isSaving}
+            showAnimal={isAnimal}
           />
         )}
 
@@ -724,10 +783,9 @@ export default function NuevaSessionPage() {
 
         {currentComponent === 'StepCleaning' && (
           <StepCleaning
-            rows={cleaningRows}
-            onChange={setCleaningRows}
-            summary={cleaningSummary}
-            onSummaryChange={setCleaningSummary}
+            groups={cleaningGroups}
+            onGroupsChange={setCleaningGroups}
+            patientName={patientName}
             disabled={isSaving}
           />
         )}
@@ -748,6 +806,7 @@ export default function NuevaSessionPage() {
             compareReadings={chakraInitial}
             onChange={(id, val) => updateChakraReading(setChakraFinal, id, val)}
             disabled={isSaving}
+            showAnimal={isAnimal}
           />
         )}
 
@@ -760,7 +819,26 @@ export default function NuevaSessionPage() {
             disabled={isSaving}
             isClosing={isSaving}
             isCleaningSession={activeSteps.some((s) => s.component === 'StepCleaning')}
-            limpiezasRequeridas={cleaningSummary.limpiezas_requeridas}
+            limpiezasRequeridas={cleaningGroups.reduce((sum, g) => sum + g.cleanings_required, 0)}
+            cleaningGroups={cleaningGroups}
+            onCleaningGroupsChange={setCleaningGroups}
+            protections={protections}
+            onProtectionsChange={setProtections}
+            hasProtection={hasProtection}
+            onHasProtectionChange={setHasProtection}
+            protectionCharged={protectionCharged}
+            onProtectionChargedChange={setProtectionCharged}
+            themes={themes}
+            energyInitial={energyInitial}
+            energyFinal={energyFinal}
+            chakraInitial={chakraInitial}
+            chakraFinal={chakraFinal}
+            lntEntries={lntEntries}
+            ancestors={ancestors}
+            ancestorConciliation={ancestorConciliation}
+            generalNotes={generalData.notes}
+            dimensionNames={activeDimensions.map((d) => ({ id: d.id, name: d.name }))}
+            chakraNames={catalogs.chakras.map((c) => ({ id: c.id, name: c.name }))}
           />
         )}
       </WizardShell>

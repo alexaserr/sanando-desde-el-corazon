@@ -264,6 +264,49 @@ export async function saveCleaningEntries(
   );
 }
 
+// ─── Cleaning Groups ──────────────────────────────────────────────────────────
+
+export interface CleaningGroupEventPayload {
+  manifestation: string;                                             // pipe-delimited names
+  manifestation_details?: { name: string; value: number | null; unit: 'number' | 'percent' }[];
+  trabajo_realizado: string;   // pipe-delimited
+  materiales: string;          // pipe-delimited
+  origin: string;              // pipe-delimited (backend expects string)
+  capas: number;
+}
+
+export interface CleaningGroupPayload {
+  target_type: string;
+  target_name: string;
+  family_member_id?: string;
+  layers: { type: string; quantity: number }[];
+  events: {
+    name: string;
+    value: number | null;
+    unit: string;
+    work_done: string;
+    work_done_custom?: string;
+    materials: string[];
+    origins: string[];
+    is_auto_injected: boolean;
+  }[];
+  cleanings_required: number;
+  mesa_utilizada: string[];
+  beneficios: string;
+  is_charged: boolean;
+  cost_per_cleaning: number;
+}
+
+export async function saveCleaningGroups(
+  sessionId: string,
+  groups: CleaningGroupPayload[],
+): Promise<unknown> {
+  return apiClient.put<unknown, CleaningGroupPayload[]>(
+    `/api/v1/clinical/sessions/${sessionId}/cleaning-groups`,
+    groups,
+  );
+}
+
 // ─── Ancestors ────────────────────────────────────────────────────────────────
 
 export interface AncestorItemPayload {
@@ -295,6 +338,36 @@ export async function saveAncestors(
   return apiClient.put<unknown, SaveAncestorsPayload>(
     `/api/v1/clinical/sessions/${sessionId}/ancestors`,
     payload,
+  );
+}
+
+// ─── Protecciones ─────────────────────────────────────────────────────────────
+
+export interface ProtectionPayload {
+  person_name: string;
+  quantity: number;
+}
+
+export async function saveProtections(
+  sessionId: string,
+  payload: {
+    has_protection: boolean;
+    protection_charged: boolean;
+    protections: ProtectionPayload[];
+  },
+): Promise<unknown> {
+  // Guardar protecciones
+  await apiClient.put<unknown>(
+    `/api/v1/clinical/sessions/${sessionId}/protections`,
+    payload.protections,
+  );
+  // Actualizar flags en general
+  return apiClient.patch(
+    `/api/v1/clinical/sessions/${sessionId}/general`,
+    {
+      has_protection: payload.has_protection,
+      protection_charged: payload.protection_charged,
+    },
   );
 }
 

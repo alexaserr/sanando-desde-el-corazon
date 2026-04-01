@@ -10,6 +10,9 @@ export { StepEnergyFinal }    from './StepEnergyFinal';
 export { StepChakrasFinal }   from './StepChakrasFinal';
 export { StepClose }          from './StepClose';
 
+// Panel reutilizable de ancestros
+export { AncestorsPanel }     from './AncestorsPanel';
+
 // Contenedor
 export { WizardShell }        from './WizardShell';
 
@@ -43,4 +46,5 @@ export type { StepTopicsProps }         from './StepTopics';
 export type { StepEnergyFinalProps }    from './StepEnergyFinal';
 export type { StepChakrasFinalProps }   from './StepChakrasFinal';
 export type { StepCloseProps }          from './StepClose';
+export type { AncestorsPanelProps }     from './AncestorsPanel';
 export type { WizardShellProps }        from './WizardShell';

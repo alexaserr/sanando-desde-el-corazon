@@ -1,6 +1,11 @@
 'use client';
 
+import { useState } from 'react';
+import { Sheet, SheetContent, SheetDescription, SheetHeader, SheetTitle, SheetTrigger } from '@/components/ui/sheet';
+import { Users } from 'lucide-react';
 import { useWizardStore } from '@/lib/stores/wizardStore';
+import { AncestorsPanel } from './AncestorsPanel';
+import type { AncestorEntry, AncestorConciliation } from './types';
 
 // ─── Tipos ────────────────────────────────────────────────────────────────────
 
@@ -148,6 +153,13 @@ export interface WizardShellProps {
   isNextDisabled?: boolean;
   /** Estado de guardado en curso. */
   isSaving?: boolean;
+  /** Datos de ancestros — si se pasan, el botón flotante de ancestros aparece en todos los pasos. */
+  ancestors?: AncestorEntry[];
+  onAncestorsChange?: (ancestors: AncestorEntry[]) => void;
+  conciliation?: AncestorConciliation;
+  onConciliationChange?: (conciliation: AncestorConciliation) => void;
+  /** Callback cuando el Sheet de ancestros se cierra (para persistir cambios). */
+  onAncestorsPanelClose?: () => void;
 }
 
 /**
@@ -167,14 +179,33 @@ export function WizardShell({
   onCloseSession,
   isNextDisabled = false,
   isSaving = false,
+  ancestors,
+  onAncestorsChange,
+  conciliation,
+  onConciliationChange,
+  onAncestorsPanelClose,
 }: WizardShellProps) {
   const { currentStep, completedSteps, setStep } = useWizardStore();
+  const [ancestorsSheetOpen, setAncestorsSheetOpen] = useState(false);
 
   const totalSteps  = steps.length;
   const isFirstStep = currentStep === 1;
   const isLastStep  = currentStep === totalSteps;
 
   const currentStepMeta = steps[currentStep - 1];
+
+  const showAncestorsButton =
+    ancestors !== undefined &&
+    onAncestorsChange !== undefined &&
+    conciliation !== undefined &&
+    onConciliationChange !== undefined;
+
+  const ancestorCount = ancestors?.length ?? 0;
+
+  function handleAncestorsSheetChange(open: boolean) {
+    setAncestorsSheetOpen(open);
+    if (!open) onAncestorsPanelClose?.();
+  }
 
   return (
     <div className="flex flex-col min-h-0 gap-6">
@@ -186,7 +217,7 @@ export function WizardShell({
         onStepClick={setStep}
       />
 
-      {/* Chip del paso actual */}
+      {/* Chip del paso actual + botón Ancestros */}
       <div className="flex items-center gap-2">
         <span className="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-medium bg-terra-100 text-terra-700">
           Paso {currentStep} de {totalSteps}
@@ -195,6 +226,41 @@ export function WizardShell({
           <h1 className="text-sm font-semibold text-terra-700">
             {currentStepMeta.label}
           </h1>
+        )}
+
+        {/* Botón flotante de Ancestros — visible en todos los pasos */}
+        {showAncestorsButton && (
+          <Sheet open={ancestorsSheetOpen} onOpenChange={handleAncestorsSheetChange}>
+            <SheetTrigger asChild>
+              <button
+                type="button"
+                className="ml-auto shrink-0 inline-flex items-center gap-1.5 rounded-lg border border-[#C4704A] bg-white px-3 py-1.5 text-sm font-medium text-[#C4704A] hover:bg-[#FAF7F5] focus:outline-none focus:ring-2 focus:ring-[#C4704A] focus:ring-offset-1 transition-colors"
+              >
+                <Users className="w-4 h-4" strokeWidth={1.5} />
+                Ancestros
+                {ancestorCount > 0 && (
+                  <span className="inline-flex items-center justify-center w-5 h-5 rounded-full bg-[#C4704A] text-white text-[10px] font-bold">
+                    {ancestorCount}
+                  </span>
+                )}
+              </button>
+            </SheetTrigger>
+            <SheetContent side="right" className="w-full sm:max-w-xl overflow-y-auto">
+              <SheetHeader>
+                <SheetTitle>Reporte de Ancestros</SheetTitle>
+                <SheetDescription>Registra y edita la información de ancestros relacionados con la sesión.</SheetDescription>
+              </SheetHeader>
+              <div className="mt-4">
+                <AncestorsPanel
+                  ancestors={ancestors}
+                  onAncestorsChange={onAncestorsChange}
+                  conciliation={conciliation}
+                  onConciliationChange={onConciliationChange}
+                  disabled={isSaving}
+                />
+              </div>
+            </SheetContent>
+          </Sheet>
         )}
       </div>
 

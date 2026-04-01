@@ -167,6 +167,7 @@ export interface EnergyDimension {
 export interface ClientListItem {
   id: string;
   full_name: string;
+  is_animal?: boolean;
 }
 
 // ─── Payloads del wizard de sesión ────────────────────────────────────────────

@@ -46,8 +46,8 @@ const initialFlags: WizardFlags = {
 /** Mapeo de flags a número de paso del wizard (1-8) */
 function deriveCompletedSteps(flags: WizardFlags): number[] {
   const steps: number[] = [];
-  if (flags.has_energy_initial) steps.push(2);
-  if (flags.has_chakra_initial) steps.push(3);
+  if (flags.has_chakra_initial) steps.push(2);
+  if (flags.has_energy_initial) steps.push(3);
   if (flags.has_topics) steps.push(4);
   if (flags.has_energy_final) steps.push(5);
   if (flags.has_chakra_final) steps.push(6);

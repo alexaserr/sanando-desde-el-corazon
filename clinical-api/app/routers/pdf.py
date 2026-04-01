@@ -80,11 +80,27 @@ _CSS = """\
 body { font-family: 'Lato', sans-serif; color: #2C2220; margin: 40px; font-size: 12px; }
 h1 { font-family: 'Playfair Display', serif; color: #2C2220; font-size: 24px; border-bottom: 2px solid #C4704A; padding-bottom: 8px; }
 h2 { font-family: 'Playfair Display', serif; color: #C4704A; font-size: 16px; margin-top: 24px; }
+h3 { font-family: 'Playfair Display', serif; color: #4A3628; font-size: 13px; margin-top: 16px; }
 table { width: 100%; border-collapse: collapse; margin: 12px 0; }
 th { background: #FAF7F5; color: #4A3628; text-transform: uppercase; font-size: 10px; letter-spacing: 0.05em; padding: 8px; text-align: left; border-bottom: 1px solid #D4A592; }
 td { padding: 6px 8px; border-bottom: 1px solid #F2E8E4; }
 .meta { color: #4A3628; font-size: 11px; }
 .chip { display: inline-block; background: #FAF7F5; border: 1px solid #D4A592; border-radius: 12px; padding: 2px 8px; font-size: 10px; margin: 2px; }
+.chip-amber { display: inline-block; background: #FFFBEB; border: 1px solid #FCD34D; border-radius: 12px; padding: 2px 8px; font-size: 10px; margin: 2px; color: #92400E; }
+.chip-rose { display: inline-block; background: #FFF1F2; border: 1px solid #FDA4AF; border-radius: 12px; padding: 2px 8px; font-size: 10px; margin: 2px; color: #9F1239; }
+.chip-blue { display: inline-block; background: #EFF6FF; border: 1px solid #93C5FD; border-radius: 12px; padding: 2px 8px; font-size: 10px; margin: 2px; color: #1D4ED8; }
+.chip-green { display: inline-block; background: #F0FDF4; border: 1px solid #86EFAC; border-radius: 12px; padding: 2px 8px; font-size: 10px; margin: 2px; color: #166534; }
+.chip-orange { display: inline-block; background: #FFF7ED; border: 1px solid #FDBA74; border-radius: 12px; padding: 2px 8px; font-size: 10px; margin: 2px; color: #9A3412; }
+.toggle-row { display: flex; gap: 24px; margin: 8px 0; font-size: 11px; }
+.toggle-dot { display: inline-block; width: 8px; height: 8px; border-radius: 50%; margin-right: 4px; vertical-align: middle; }
+.toggle-on { background: #22C55E; }
+.toggle-off { background: #D1D5DB; }
+.group-card { border: 1px solid #F2E8E4; border-radius: 8px; margin: 12px 0; overflow: hidden; }
+.group-header { background: #FAF7F5; padding: 8px 12px; font-size: 12px; font-weight: 600; color: #2C2220; }
+.event-row { padding: 8px 12px; border-left: 3px solid #D4A592; border-bottom: 1px solid #F2E8E4; }
+.event-label { font-size: 10px; color: #6B7280; margin-right: 4px; }
+.cost-row { display: flex; justify-content: space-between; padding: 4px 0; font-size: 12px; }
+.cost-total { border-top: 2px solid #D4A592; padding-top: 8px; font-size: 14px; font-weight: 700; }
 .footer { margin-top: 40px; border-top: 1px solid #D4A592; padding-top: 12px; font-size: 10px; color: #4A3628; text-align: center; }
 """
 
@@ -96,6 +112,9 @@ def _section_general(
     measured_at: datetime,
     session_number: int | None,
     general_energy: int | None,
+    entities_count: int | None = None,
+    capas: int | None = None,
+    implants_count: int | None = None,
 ) -> str:
     rows = []
     if client_name:
@@ -109,7 +128,30 @@ def _section_general(
         rows.append(f"<tr><td><strong>Sesión #</strong></td><td>{session_number}</td></tr>")
     if general_energy is not None:
         rows.append(f"<tr><td><strong>Energía general</strong></td><td>{general_energy}%</td></tr>")
-    return f'<h2>Datos generales</h2><table class="meta">{"".join(rows)}</table>'
+    table = f'<table class="meta">{"".join(rows)}</table>'
+
+    # Toggles: entidades, bajo astral, implantes
+    has_entities = entities_count is not None and entities_count > 0
+    has_bajo_astral = capas is not None and capas > 0
+    has_implants = implants_count is not None and implants_count > 0
+    if any([entities_count is not None, capas is not None, implants_count is not None]):
+        toggles = '<div class="toggle-row">'
+        dot_e = "toggle-on" if has_entities else "toggle-off"
+        toggles += f'<span><span class="toggle-dot {dot_e}"></span>Entidades: '
+        toggles += f'Sí ({entities_count})' if has_entities else 'No'
+        toggles += '</span>'
+        dot_b = "toggle-on" if has_bajo_astral else "toggle-off"
+        toggles += f'<span><span class="toggle-dot {dot_b}"></span>Trabajos de bajo astral: '
+        toggles += 'Sí' if has_bajo_astral else 'No'
+        toggles += '</span>'
+        dot_i = "toggle-on" if has_implants else "toggle-off"
+        toggles += f'<span><span class="toggle-dot {dot_i}"></span>Implantes: '
+        toggles += 'Sí' if has_implants else 'No'
+        toggles += '</span></div>'
+    else:
+        toggles = ""
+
+    return f'<h2>Datos generales</h2>{table}{toggles}'
 
 
 def _section_energy(readings: list[dict[str, str]], has_final: bool) -> str:
@@ -185,6 +227,14 @@ def _section_lnt(entries: list[dict[str, str]], peticiones: str | None) -> str:
     return "".join(parts)
 
 
+def _pipes_to_chips(s: str | None, css_class: str = "chip") -> str:
+    """Pipe-delimited string → HTML chip spans."""
+    if not s:
+        return ""
+    items = [v.strip() for v in s.split("|") if v.strip()]
+    return " ".join(f'<span class="{css_class}">{_esc(item)}</span>' for item in items)
+
+
 def _section_cleaning(
     capas: int | None,
     limpiezas_req: int | None,
@@ -195,30 +245,69 @@ def _section_cleaning(
     if not any([capas, limpiezas_req, mesa, beneficios, events]):
         return ""
     parts = ["<h2>Limpiezas</h2>"]
+
+    # Summary chips
     meta = []
-    if capas is not None:
+    if capas is not None and capas > 0:
         meta.append(f"<strong>Capas:</strong> {capas}")
-    if limpiezas_req is not None:
+    if limpiezas_req is not None and limpiezas_req > 0:
         meta.append(f"<strong>Limpiezas requeridas:</strong> {limpiezas_req}")
-    if mesa:
-        mesa_display = mesa.replace("|", ", ")
-        meta.append(f"<strong>Mesa utilizada:</strong> {_esc(mesa_display)}")
-    if beneficios:
-        meta.append(f"<strong>Beneficios:</strong> {_esc(beneficios)}")
     if meta:
         parts.append(f'<p class="meta">{" &nbsp;|&nbsp; ".join(meta)}</p>')
+
+    if mesa:
+        parts.append(f'<p><span class="event-label">Mesa utilizada:</span> {_pipes_to_chips(mesa)}</p>')
+
+    if beneficios:
+        parts.append(f'<p><span class="event-label">Beneficios:</span> {_esc(beneficios)}</p>')
+
+    # Group events by person
     if events:
-        header = (
-            "<tr><th>#</th><th>Manifestación</th><th>Trabajo realizado</th>"
-            "<th>Materiales</th><th>Origen</th></tr>"
-        )
-        rows = ""
-        for idx, ev in enumerate(events, 1):
-            rows += "<tr>"
-            rows += f"<td>{idx}</td><td>{ev['manifest']}</td><td>{ev['work_done']}</td>"
-            rows += f"<td>{ev['materials']}</td><td>{ev['origin']}</td>"
-            rows += "</tr>"
-        parts.append(f"<table>{header}{rows}</table>")
+        grouped: dict[str, list[dict[str, str]]] = {}
+        for ev in events:
+            person = ev.get("person") or "Paciente"
+            grouped.setdefault(person, []).append(ev)
+
+        for g_idx, (person_name, person_events) in enumerate(grouped.items(), 1):
+            parts.append(
+                f'<div class="group-card">'
+                f'<div class="group-header">Grupo {g_idx}: {_esc(person_name)} '
+                f'&mdash; {len(person_events)} evento{"s" if len(person_events) != 1 else ""}'
+                f'</div>'
+            )
+            for idx, ev in enumerate(person_events, 1):
+                parts.append(f'<div class="event-row">')
+                parts.append(f'<strong>Evento {idx}</strong>')
+
+                if ev.get("layer"):
+                    qty = f' &times;{ev["quantity"]}' if ev.get("quantity") else ""
+                    parts.append(
+                        f'<br/><span class="event-label">Capas:</span>'
+                        f'<span class="chip-amber">{_esc(ev["layer"])}{qty}</span>'
+                    )
+                if ev.get("manifest"):
+                    parts.append(
+                        f'<br/><span class="event-label">Manifestación:</span>'
+                        f'{_pipes_to_chips(ev["manifest"], "chip-rose")}'
+                    )
+                if ev.get("work_done"):
+                    parts.append(
+                        f'<br/><span class="event-label">Trabajo realizado:</span>'
+                        f'{_pipes_to_chips(ev["work_done"], "chip-blue")}'
+                    )
+                if ev.get("materials"):
+                    parts.append(
+                        f'<br/><span class="event-label">Materiales:</span>'
+                        f'{_pipes_to_chips(ev["materials"], "chip-green")}'
+                    )
+                if ev.get("origin"):
+                    parts.append(
+                        f'<br/><span class="event-label">Origen:</span>'
+                        f'{_pipes_to_chips(ev["origin"], "chip-orange")}'
+                    )
+                parts.append('</div>')
+            parts.append('</div>')
+
     return "".join(parts)
 
 
@@ -407,6 +496,9 @@ async def export_session_pdf(
         measured_at=session.measured_at,
         session_number=session.session_number,
         general_energy=session.general_energy_level,
+        entities_count=session.entities_count,
+        capas=session.capas,
+        implants_count=session.implants_count,
     ))
 
     # Energy dimensions
@@ -556,10 +648,13 @@ async def export_session_pdf(
     active_events = [e for e in session.cleaning_events if e.deleted_at is None]
     events_data = [
         {
-            "manifest": _esc(ev.manifestation),
-            "work_done": _esc((ev.work_done or "").replace("|", ", ")),
-            "materials": _esc((ev.materials_used or "").replace("|", ", ")),
-            "origin": _esc(ev.origin),
+            "person": _esc(ev.person) if ev.person else "",
+            "layer": _esc(ev.layer) if ev.layer else "",
+            "quantity": str(ev.quantity) if ev.quantity is not None else "",
+            "manifest": ev.manifestation or "",
+            "work_done": ev.work_done or "",
+            "materials": ev.materials_used or "",
+            "origin": ev.origin or "",
         }
         for ev in active_events
     ]

@@ -91,7 +91,6 @@ export interface BlockageData {
   energy: number; // 0-100
   final_energy?: number;
   significado?: string;
-  interpretacion_tema?: string;
 }
 
 /** Tema trabajado con el nuevo modelo (rediseño paso 4). */
@@ -112,8 +111,14 @@ export interface ThemeEntry {
   /** Solo relevante si is_secondary = true. */
   secondary_energy_initial: number;
   secondary_energy_final: number;
+  /** Interpretación general del tema (un solo textarea por tema). */
+  interpretacion_tema?: string;
   /** Emociones predominantes del tema (array de strings). */
   emotions?: string[];
+  /** Edad infancia — opcional, máximo 9. */
+  childhood_age?: number | null;
+  /** Edad adultez — opcional, sin límite superior. */
+  adulthood_age?: number | null;
   childhood: AgeData;
   adulthood: AgeData;
   progress_pct: number;
@@ -142,6 +147,43 @@ export interface CleaningSummary {
   limpiezas_requeridas: number;
   mesa_utilizada: string;
   beneficios: string;
+}
+
+// ─── Modelo por grupos de limpieza ──────────────────────────────────────────
+
+/** Entrada de capa de limpieza (chip toggle + cantidad). */
+export interface LayerEntry {
+  type: 'sin_capas' | 'capas' | 'capas_ocultas' | 'capas_invisibles' | 'candados' | 'candados_ocultos' | 'programaciones' | 'reprogramaciones_ocultas_invisibles';
+  quantity: number;
+}
+
+/** Manifestación/evento de limpieza con detalles expandibles. */
+export interface ManifestationEntry {
+  id: string;
+  name: string;
+  value: number;
+  unit: 'numero' | 'porcentaje';
+  work_done: string;
+  work_done_custom?: string;
+  materials: string[];
+  origins: string[];
+  is_auto_injected?: boolean;
+  expanded: boolean;
+}
+
+/** Grupo de limpieza — cada grupo representa una persona/casa diferente. */
+export interface CleaningGroup {
+  id: string;
+  target_type: 'paciente' | 'familiar' | 'casa' | 'otro';
+  target_name: string;
+  family_member_id?: string;
+  layers: LayerEntry[];
+  events: ManifestationEntry[];
+  cleanings_required: number;
+  mesa_utilizada: string[];
+  beneficios: string;
+  is_charged: boolean;
+  cost_per_cleaning: number;
 }
 
 // ─── Tipos para el Reporte de Ancestros ──────────────────────────────────────
@@ -173,6 +215,14 @@ export interface LntEntry {
   healing_energy_body: boolean;
   healing_spiritual_body: boolean;
   healing_physical_body: boolean;
+}
+
+/** Entrada de protección por persona. */
+export interface ProtectionEntry {
+  _localId: string;
+  person_name: string;
+  quantity: number;
+  selected: boolean;
 }
 
 /** Datos del paso 7 — Cierre de la sesión. */

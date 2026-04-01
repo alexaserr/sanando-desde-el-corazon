@@ -64,7 +64,7 @@ const S_CLOSE: WizardStepConfig = {
   component: 'StepClose', required: true,
 };
 
-const BASE = [S_GENERAL, S_ENERGY_INITIAL, S_CHAKRAS_INITIAL];
+const BASE = [S_GENERAL, S_CHAKRAS_INITIAL, S_ENERGY_INITIAL];
 const TAIL = [S_ENERGY_FINAL, S_CHAKRAS_FINAL, S_CLOSE];
 
 // ─── Configuraciones por tipo de terapia ──────────────────────────────────────

@@ -40,10 +40,6 @@ export function BlockageRow({
     onChange({ ...value, energy });
   }
 
-  function handleInterpretacionChange(interpretacion_tema: string) {
-    onChange({ ...value, interpretacion_tema });
-  }
-
   const showTextFields = !!value.chakra_position_id && !!value.organ_name;
   const dictUrl = showTextFields ? getOrganDictUrl(value.organ_name) : undefined;
 
@@ -130,14 +126,6 @@ export function BlockageRow({
           </a>
         </div>
 
-        <input
-          type="text"
-          value={value.interpretacion_tema ?? ''}
-          onChange={(e) => handleInterpretacionChange(e.target.value)}
-          placeholder="Interpretación al tema"
-          disabled={disabled}
-          className="flex-1 min-h-[32px] rounded border-0 bg-[#FAF7F5] px-3 py-1 text-sm placeholder:text-gray-400 focus:outline-none focus:ring-1 focus:ring-terra-700 disabled:opacity-50 disabled:cursor-not-allowed"
-        />
       </div>
     )}
     </div>

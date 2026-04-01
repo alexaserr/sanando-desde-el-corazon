@@ -209,8 +209,8 @@ export interface StepGeneralProps {
   disabled?: boolean;
   /** Búsqueda server-side de clientes (debounce 300ms). */
   onSearchClients?: (query: string) => Promise<ClientOption[]>;
-  /** Notifica si alguno de entidades/capas/implantes está en "Sí". */
-  onEntitiesChange?: (hasEntities: boolean) => void;
+  /** Notifica si alguno de entidades/bajo astral/implantes está en "Sí" → inyecta StepCleaning. */
+  onCleaningTriggered?: (hasAny: boolean) => void;
 }
 
 export function StepGeneral({
@@ -220,7 +220,7 @@ export function StepGeneral({
   onChange,
   disabled = false,
   onSearchClients,
-  onEntitiesChange,
+  onCleaningTriggered,
 }: StepGeneralProps) {
   const clientSelectId   = useId();
   const therapySelectId  = useId();
@@ -230,15 +230,15 @@ export function StepGeneral({
   const clientOptions    = clients.map((c) => ({ value: c.id, label: c.full_name }));
   const therapyOptions   = therapyTypes.map((t) => ({ value: t.id, label: t.name }));
 
-  // Notify parent when entidades/capas/implantes toggles change
+  // Notify parent when entidades/bajo astral/implantes toggles change → inject StepCleaning
   const hasAnyEntity = value.has_entities === true || value.has_capas === true || value.has_implants === true;
-  const stableOnEntitiesChange = useCallback(
-    (flag: boolean) => onEntitiesChange?.(flag),
-    [onEntitiesChange],
+  const stableOnCleaningTriggered = useCallback(
+    (flag: boolean) => onCleaningTriggered?.(flag),
+    [onCleaningTriggered],
   );
   useEffect(() => {
-    stableOnEntitiesChange(hasAnyEntity);
-  }, [hasAnyEntity, stableOnEntitiesChange]);
+    stableOnCleaningTriggered(hasAnyEntity);
+  }, [hasAnyEntity, stableOnCleaningTriggered]);
 
   function update<K extends keyof GeneralData>(field: K, val: GeneralData[K]) {
     onChange({ ...value, [field]: val });
@@ -330,17 +330,17 @@ export function StepGeneral({
         />
       </div>
 
-      {/* ─── Limpieza y Entidades ──────────────────────────────────────────── */}
-      <div className="border-t border-gray-100 pt-6 mt-6">
-        <p className="font-semibold text-[#2C2220]">Limpieza y Entidades</p>
+      {/* ─── Entidades y Bajo Astral ───────────────────────────────────────── */}
+      <div className="border-t border-[#D4A592] pt-6 mt-6">
+        <p className="font-semibold text-[#2C2220]">Entidades y Bajo Astral</p>
         <p className="text-sm text-gray-500 mt-0.5 mb-5">
-          Registra la información de limpieza detectada
+          Registra entidades, trabajos de bajo astral e implantes detectados
         </p>
 
         <div className="space-y-5">
           {/* Entidades */}
           <div className="flex flex-wrap items-center gap-4">
-            <span className="text-xs uppercase tracking-wide font-normal text-[#4A3628] w-32 shrink-0">Entidades</span>
+            <span className="text-[13px] uppercase tracking-[0.1em] font-normal text-[#4A3628] w-32 shrink-0">Entidades</span>
             <YesNoPills
               value={value.has_entities}
               onChange={(v) => update('has_entities', v)}
@@ -357,81 +357,29 @@ export function StepGeneral({
                 value={value.entities_count}
                 disabled={disabled}
                 onChange={(e) => update('entities_count', Math.max(0, parseInt(e.target.value, 10) || 0))}
-                className="w-20 h-10 text-center text-sm border border-gray-200 rounded focus:outline-none focus:ring-2 focus:ring-[#2C2220] disabled:opacity-50"
+                className="w-[60px] h-10 text-center text-sm border-0 border-b border-[#D4A592] bg-[#FAF7F5] rounded-none focus:outline-none focus:border-b-2 focus:border-[#C4704A] disabled:opacity-50 disabled:cursor-not-allowed"
               />
             </div>
           </div>
 
-          {/* Capas */}
+          {/* Trabajos de bajo astral (DB: has_capas) */}
           <div className="flex flex-wrap items-center gap-4">
-            <span className="text-xs uppercase tracking-wide font-normal text-[#4A3628] w-32 shrink-0">Capas</span>
+            <span className="text-[13px] uppercase tracking-[0.1em] font-normal text-[#4A3628] w-32 shrink-0">Trabajos de bajo astral</span>
             <YesNoPills
               value={value.has_capas}
               onChange={(v) => update('has_capas', v)}
               disabled={disabled}
             />
-            <div
-              className={`transition-all duration-200 overflow-hidden ${
-                value.has_capas === true ? 'max-h-12 opacity-100' : 'max-h-0 opacity-0'
-              }`}
-            >
-              <input
-                type="number"
-                min={0}
-                value={value.capas_count}
-                disabled={disabled}
-                onChange={(e) => update('capas_count', Math.max(0, parseInt(e.target.value, 10) || 0))}
-                className="w-20 h-10 text-center text-sm border border-gray-200 rounded focus:outline-none focus:ring-2 focus:ring-[#2C2220] disabled:opacity-50"
-              />
-            </div>
           </div>
 
           {/* Implantes */}
           <div className="flex flex-wrap items-center gap-4">
-            <span className="text-xs uppercase tracking-wide font-normal text-[#4A3628] w-32 shrink-0">Implantes</span>
+            <span className="text-[13px] uppercase tracking-[0.1em] font-normal text-[#4A3628] w-32 shrink-0">Implantes</span>
             <YesNoPills
               value={value.has_implants}
               onChange={(v) => update('has_implants', v)}
               disabled={disabled}
             />
-            <div
-              className={`transition-all duration-200 overflow-hidden ${
-                value.has_implants === true ? 'max-h-12 opacity-100' : 'max-h-0 opacity-0'
-              }`}
-            >
-              <input
-                type="number"
-                min={0}
-                value={value.implants_count}
-                disabled={disabled}
-                onChange={(e) => update('implants_count', Math.max(0, parseInt(e.target.value, 10) || 0))}
-                className="w-20 h-10 text-center text-sm border border-gray-200 rounded focus:outline-none focus:ring-2 focus:ring-[#2C2220] disabled:opacity-50"
-              />
-            </div>
-          </div>
-
-          {/* Requiere limpiezas */}
-          <div className="flex flex-wrap items-center gap-4">
-            <span className="text-xs uppercase tracking-wide font-normal text-[#4A3628] w-32 shrink-0">¿Limpiezas?</span>
-            <YesNoPills
-              value={value.requires_cleanings}
-              onChange={(v) => update('requires_cleanings', v)}
-              disabled={disabled}
-            />
-            <div
-              className={`transition-all duration-200 overflow-hidden ${
-                value.requires_cleanings === true ? 'max-h-12 opacity-100' : 'max-h-0 opacity-0'
-              }`}
-            >
-              <input
-                type="number"
-                min={0}
-                value={value.total_cleanings}
-                disabled={disabled}
-                onChange={(e) => update('total_cleanings', Math.max(0, parseInt(e.target.value, 10) || 0))}
-                className="w-20 h-10 text-center text-sm border border-gray-200 rounded focus:outline-none focus:ring-2 focus:ring-[#2C2220] disabled:opacity-50"
-              />
-            </div>
           </div>
         </div>
       </div>
