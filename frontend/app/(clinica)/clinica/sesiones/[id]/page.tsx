@@ -271,10 +271,6 @@ function SkeletonDetail() {
 // ─── Helpers ─────────────────────────────────────────────────────────────────
 
 /** Pipe-delimited string → comma-separated display */
-function pipesToDisplay(s: string | null): string {
-  if (!s) return '';
-  return s.split('|').map((v) => v.trim()).filter(Boolean).join(', ');
-}
 
 function notEmpty<T>(arr: T[] | undefined | null): arr is T[] {
   return Array.isArray(arr) && arr.length > 0;

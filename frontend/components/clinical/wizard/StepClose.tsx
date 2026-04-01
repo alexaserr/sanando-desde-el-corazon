@@ -196,7 +196,7 @@ function Chip({ children, color = 'gray' }: { children: React.ReactNode; color?:
 
 /** Formatea una LayerEntry para mostrar. */
 function formatLayer(layer: LayerEntry): string {
-  return layer.value != null ? `${layer.name}: ${layer.value}` : layer.name;
+  return layer.quantity != null ? `${layer.type}: ${layer.quantity}` : layer.type;
 }
 
 /** Formatea una ManifestationEntry para mostrar. */
@@ -475,7 +475,7 @@ function FullSessionSummary({
                             <p className="text-xs text-gray-400 uppercase tracking-wide">Capas</p>
                             <div className="flex flex-wrap gap-1 mt-0.5">
                               {ev.layers.map((layer, li) => (
-                                <Chip key={li} color={layer.name === 'Sin capas' ? 'gray' : 'amber'}>
+                                <Chip key={li} color={layer.type === 'Sin capas' ? 'gray' : 'amber'}>
                                   {formatLayer(layer)}
                                 </Chip>
                               ))}
