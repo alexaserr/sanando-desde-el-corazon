@@ -202,14 +202,14 @@ function formatLayer(layer: LayerEntry): string {
 /** Formatea una ManifestationEntry para mostrar. */
 function formatManifestation(m: ManifestationEntry): string {
   if (m.value == null) return m.name;
-  return m.unit === 'percent' ? `${m.name}: ${m.value}%` : `${m.name}: ${m.value}`;
+  return m.unit === 'porcentaje' ? `${m.name}: ${m.value}%` : `${m.name}: ${m.value}`;
 }
 
 const TARGET_TYPE_LABELS: Record<string, string> = {
-  patient: 'Paciente',
-  family_member: 'Familiar',
-  house: 'Casa',
-  other: 'Otro',
+  paciente: 'Paciente',
+  familiar: 'Familiar',
+  casa: 'Casa',
+  otro: 'Otro',
 };
 
 function FullSessionSummary({
@@ -456,99 +456,88 @@ function FullSessionSummary({
                   </div>
                 </div>
 
-                {g.mesa_utilizada && (
-                  <p className="text-xs text-gray-500">Mesa utilizada: <span className="font-medium text-gray-700">{g.mesa_utilizada}</span></p>
+                {g.mesa_utilizada.length > 0 && (
+                  <p className="text-xs text-gray-500">Mesa utilizada: <span className="font-medium text-gray-700">{g.mesa_utilizada.join(', ')}</span></p>
                 )}
 
-                {/* Eventos de limpieza */}
-                {g.cleaning_events.length > 0 && (
+                {/* Capas (a nivel de grupo) */}
+                {g.layers.length > 0 && (
+                  <div>
+                    <p className="text-xs text-gray-400 uppercase tracking-wide">Capas</p>
+                    <div className="flex flex-wrap gap-1 mt-0.5">
+                      {g.layers.map((layer, li) => (
+                        <Chip key={li} color={layer.type === 'sin_capas' ? 'gray' : 'amber'}>
+                          {formatLayer(layer)}
+                        </Chip>
+                      ))}
+                    </div>
+                  </div>
+                )}
+
+                {/* Eventos de limpieza (cada evento es una ManifestationEntry) */}
+                {g.events.length > 0 && (
                   <div className="space-y-2 pl-2 border-l-2 border-[#D4A592]">
-                    {g.cleaning_events.map((ev, evIdx) => (
+                    {g.events.map((ev, evIdx) => (
                       <div key={ev.id} className="space-y-1.5">
                         <p className="text-xs font-medium text-[#4A3628]">
                           Evento {evIdx + 1}
                         </p>
 
-                        {/* Capas */}
-                        {ev.layers.length > 0 ? (
-                          <div>
-                            <p className="text-xs text-gray-400 uppercase tracking-wide">Capas</p>
-                            <div className="flex flex-wrap gap-1 mt-0.5">
-                              {ev.layers.map((layer, li) => (
-                                <Chip key={li} color={layer.type === 'Sin capas' ? 'gray' : 'amber'}>
-                                  {formatLayer(layer)}
-                                </Chip>
-                              ))}
-                            </div>
+                        {/* Manifestación */}
+                        <div>
+                          <p className="text-xs text-gray-400 uppercase tracking-wide">Manifestación</p>
+                          <div className="flex flex-wrap gap-1 mt-0.5">
+                            <Chip color="rose">
+                              {formatManifestation(ev)}
+                            </Chip>
                           </div>
-                        ) : ev.capas > 0 ? (
-                          <div>
-                            <p className="text-xs text-gray-400 uppercase tracking-wide">Capas</p>
-                            <Chip color="amber">{ev.capas}</Chip>
-                          </div>
-                        ) : null}
-
-                        {/* Manifestaciones */}
-                        {ev.manifestations.length > 0 && (
-                          <div>
-                            <p className="text-xs text-gray-400 uppercase tracking-wide">Manifestaciones</p>
-                            <div className="flex flex-wrap gap-1 mt-0.5">
-                              {ev.manifestations.map((m, mi) => (
-                                <Chip key={mi} color="rose">
-                                  {formatManifestation(m)}
-                                </Chip>
-                              ))}
-                            </div>
-                          </div>
-                        )}
+                        </div>
 
                         {/* Trabajo realizado */}
-                        {ev.trabajo_realizado && (
+                        {ev.work_done && (
                           <div>
                             <p className="text-xs text-gray-400 uppercase tracking-wide">Trabajo realizado</p>
                             <div className="flex flex-wrap gap-1 mt-0.5">
-                              {ev.trabajo_realizado.split('|').map((t, ti) => (
-                                <Chip key={ti} color="blue">{t.trim()}</Chip>
-                              ))}
+                              <Chip color="blue">{ev.work_done}</Chip>
                             </div>
                           </div>
                         )}
 
                         {/* Materiales */}
-                        {ev.materiales && (
+                        {ev.materials.length > 0 && (
                           <div>
                             <p className="text-xs text-gray-400 uppercase tracking-wide">Materiales</p>
                             <div className="flex flex-wrap gap-1 mt-0.5">
-                              {ev.materiales.split('|').map((mat, mi) => (
-                                <Chip key={mi} color="green">{mat.trim()}</Chip>
+                              {ev.materials.map((mat, mi) => (
+                                <Chip key={mi} color="green">{mat}</Chip>
                               ))}
                             </div>
                           </div>
                         )}
 
                         {/* Origen */}
-                        {ev.origin.length > 0 && (
+                        {ev.origins.length > 0 && (
                           <div>
                             <p className="text-xs text-gray-400 uppercase tracking-wide">Origen</p>
                             <div className="flex flex-wrap gap-1 mt-0.5">
-                              {ev.origin.map((o, oi) => (
+                              {ev.origins.map((o, oi) => (
                                 <Chip key={oi} color="orange">{o}</Chip>
                               ))}
                             </div>
                           </div>
                         )}
 
-                        {evIdx < g.cleaning_events.length - 1 && <hr className="border-gray-100" />}
+                        {evIdx < g.events.length - 1 && <hr className="border-gray-100" />}
                       </div>
                     ))}
                   </div>
                 )}
 
                 {/* Beneficios */}
-                {g.benefits && (
+                {g.beneficios && (
                   <div className="pt-1">
                     <p className="text-xs text-gray-400 uppercase tracking-wide">Beneficios</p>
-                    <p className="text-sm text-gray-700 mt-0.5">{g.benefits}</p>
+                    <p className="text-sm text-gray-700 mt-0.5">{g.beneficios}</p>
                   </div>
                 )}
               </div>
