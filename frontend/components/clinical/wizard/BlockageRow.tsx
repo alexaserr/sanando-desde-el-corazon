@@ -13,6 +13,8 @@ export interface BlockageRowProps {
   value: BlockageData;
   onChange: (value: BlockageData) => void;
   disabled?: boolean;
+  /** Mostrar el slider de energía final (solo en sesiones no-limpieza). */
+  showFinal?: boolean;
 }
 
 export function BlockageRow({
@@ -21,6 +23,7 @@ export function BlockageRow({
   value,
   onChange,
   disabled = false,
+  showFinal = true,
 }: BlockageRowProps) {
   const chakraSelectId = useId();
   const organSelectId  = useId();
@@ -38,6 +41,10 @@ export function BlockageRow({
 
   function handleEnergyChange(energy: number) {
     onChange({ ...value, energy });
+  }
+
+  function handleFinalEnergyChange(final_energy: number) {
+    onChange({ ...value, final_energy });
   }
 
   const showTextFields = !!value.chakra_position_id && !!value.organ_name;
@@ -88,18 +95,47 @@ export function BlockageRow({
         ))}
       </select>
 
-      {/* Energy slider — flex-1 */}
-      <div className="flex-1 min-w-[140px]">
-        <EnergySlider
-          label={`Energía — ${label}`}
-          value={value.energy}
-          onChange={handleEnergyChange}
-          phase="initial"
-          max={14}
-          step={0.5}
-          disabled={disabled}
-          showLabel={false}
-        />
+      {/* Energy sliders — flex-1 */}
+      <div className="flex-1 min-w-[140px] flex flex-wrap items-end gap-3">
+        <div className="flex-1 min-w-[140px] flex flex-col gap-0.5">
+          <span
+            className="text-[10px] font-normal text-[#4A3628] uppercase tracking-wide select-none"
+            style={{ fontFamily: 'Lato, sans-serif', letterSpacing: '0.1em' }}
+          >
+            E. Inicial
+          </span>
+          <EnergySlider
+            label={`Energía inicial — ${label}`}
+            value={value.energy}
+            onChange={handleEnergyChange}
+            phase="initial"
+            max={14}
+            step={0.5}
+            disabled={disabled}
+            showLabel={false}
+          />
+        </div>
+        {showFinal && (
+          <div className="flex-1 min-w-[140px] flex flex-col gap-0.5">
+            <span
+              className="text-[10px] font-normal text-[#4A3628] uppercase tracking-wide select-none"
+              style={{ fontFamily: 'Lato, sans-serif', letterSpacing: '0.1em' }}
+            >
+              E. Final
+            </span>
+            <EnergySlider
+              label={`Energía final — ${label}`}
+              value={value.final_energy ?? 0}
+              onChange={handleFinalEnergyChange}
+              phase="final"
+              compareValue={value.energy}
+              max={14}
+              step={0.5}
+              disabled={disabled}
+              showLabel={false}
+            />
+          </div>
+        )}
       </div>
     </div>
 

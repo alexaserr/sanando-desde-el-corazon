@@ -40,6 +40,43 @@ interface TopicItem {
   final_energy: number | null;
 }
 
+type ThemeEntryType =
+  | 'bloqueo_1'
+  | 'bloqueo_2'
+  | 'bloqueo_3'
+  | 'resultante'
+  | 'edad_adulta'
+  | 'edad_infancia';
+
+interface ThemeEntryRow {
+  id: string;
+  client_topic_id: string | null;
+  entry_type: ThemeEntryType | string;
+  chakra_position_id: string | null;
+  organ_name: string | null;
+  initial_energy: string | number | null;
+  final_energy: string | number | null;
+  childhood_age: number | null;
+  adulthood_age: number | null;
+  childhood_place: string | null;
+  childhood_people: string | null;
+  childhood_situation: string | null;
+  childhood_description: string | null;
+  childhood_emotions: string | null;
+  adulthood_place: string | null;
+  adulthood_people: string | null;
+  adulthood_situation: string | null;
+  adulthood_description: string | null;
+  adulthood_emotions: string | null;
+}
+
+interface ClientTopicLite {
+  id: string;
+  name: string;
+  progress_pct: number;
+  is_completed: boolean;
+}
+
 interface LNTEntry {
   id: string;
   theme_organ: string | null;
@@ -114,8 +151,11 @@ interface AncestorConciliationItem {
 
 interface ProtectionItem {
   id: string;
-  person_name: string;
+  recipient_type: string;
+  recipient_name: string | null;
+  family_member_id: string | null;
   quantity: number;
+  cost_per_unit: string | number | null;
 }
 
 interface CleaningGroupItem {
@@ -148,10 +188,9 @@ interface SessionFullDetail {
   limpiezas_requeridas: number | null;
   mesa_utilizada: string | null;
   beneficios: string | null;
-  // Protección
+  // Protección (flags — el array de protecciones se carga por separado)
   has_protection: boolean | null;
   protection_charged: boolean | null;
-  protections: ProtectionItem[];
   // Grupos de limpieza
   cleaning_groups: CleaningGroupItem[];
   // Costos calculados
@@ -284,6 +323,9 @@ export default function SessionDetailPage() {
   const { user } = useAuthStore();
   const isAdmin = user?.role === 'admin';
   const [session, setSession] = useState<SessionFullDetail | null>(null);
+  const [themeEntries, setThemeEntries] = useState<ThemeEntryRow[]>([]);
+  const [protections, setProtections] = useState<ProtectionItem[]>([]);
+  const [clientTopics, setClientTopics] = useState<ClientTopicLite[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [isDownloading, setIsDownloading] = useState(false);
@@ -327,13 +369,54 @@ export default function SessionDetailPage() {
   }
 
   useEffect(() => {
-    apiClient
-      .get<SessionFullDetail>(`/api/v1/clinical/sessions/${params.id}`)
-      .then(setSession)
-      .catch((e: unknown) =>
-        setError(e instanceof Error ? e.message : 'Error al cargar la sesión.'),
-      )
-      .finally(() => setLoading(false));
+    let cancelled = false;
+    async function load() {
+      try {
+        const s = await apiClient.get<SessionFullDetail>(
+          `/api/v1/clinical/sessions/${params.id}`,
+        );
+        if (cancelled) return;
+        setSession(s);
+
+        // Cargar sub-recursos en paralelo (no-fatal: si fallan, seguimos con lo que haya)
+        const [themeRes, protRes, topicsRes] = await Promise.allSettled([
+          apiClient.get<ThemeEntryRow[]>(
+            `/api/v1/clinical/sessions/${params.id}/theme-entries`,
+          ),
+          apiClient.get<{ protections: ProtectionItem[] }>(
+            `/api/v1/clinical/sessions/${params.id}/protections`,
+          ),
+          s.client_id
+            ? apiClient.get<ClientTopicLite[]>(
+                `/api/v1/clinical/clients/${s.client_id}/topics`,
+              )
+            : Promise.resolve<ClientTopicLite[]>([]),
+        ]);
+        if (cancelled) return;
+        if (themeRes.status === 'fulfilled' && Array.isArray(themeRes.value)) {
+          setThemeEntries(themeRes.value);
+        }
+        if (
+          protRes.status === 'fulfilled' &&
+          Array.isArray(protRes.value?.protections)
+        ) {
+          setProtections(protRes.value.protections);
+        }
+        if (topicsRes.status === 'fulfilled' && Array.isArray(topicsRes.value)) {
+          setClientTopics(topicsRes.value);
+        }
+      } catch (e: unknown) {
+        if (!cancelled) {
+          setError(e instanceof Error ? e.message : 'Error al cargar la sesión.');
+        }
+      } finally {
+        if (!cancelled) setLoading(false);
+      }
+    }
+    load();
+    return () => {
+      cancelled = true;
+    };
   }, [params.id]);
 
   if (loading) return <div className="max-w-4xl"><SkeletonDetail /></div>;
@@ -392,7 +475,39 @@ export default function SessionDetailPage() {
 
   const hasAncestorData = activeAncestors.length > 0 || session.ancestor_conciliation != null;
 
-  const hasProtectionData = session.has_protection === true && Array.isArray(session.protections) && session.protections.length > 0;
+  const hasProtectionData = protections.length > 0;
+
+  // Mapeo chakra_position_id → { name, position } (para el nuevo render de temas)
+  const chakraById = new Map<string, { name: string; position: number }>();
+  for (const r of session.chakra_readings) {
+    if (r.chakra_position_id) {
+      chakraById.set(r.chakra_position_id, {
+        name: r.chakra_name,
+        position: r.chakra_position,
+      });
+    }
+  }
+
+  const toNum = (v: string | number | null): number | null => {
+    if (v == null) return null;
+    const n = typeof v === 'number' ? v : Number(v);
+    return Number.isFinite(n) ? n : null;
+  };
+
+  // Agrupar theme-entries por client_topic_id
+  const themeGroups = (() => {
+    const map = new Map<string, ThemeEntryRow[]>();
+    for (const e of themeEntries) {
+      const key = e.client_topic_id ?? '__sin_tema__';
+      const arr = map.get(key) ?? [];
+      arr.push(e);
+      map.set(key, arr);
+    }
+    return Array.from(map.entries()).map(([topicId, entries]) => {
+      const topic = clientTopics.find((t) => t.id === topicId);
+      return { topicId, topicName: topic?.name ?? 'Tema sin asignar', progress: topic?.progress_pct ?? null, entries };
+    });
+  })();
 
   // Grupos de limpieza (puede venir vacío si el backend aún no los soporta)
   const cleaningGroupsData = Array.isArray(session.cleaning_groups) ? session.cleaning_groups : [];
@@ -621,9 +736,139 @@ export default function SessionDetailPage() {
         </CollapsibleCard>
       )}
 
-      {/* ── 4. Temas trabajados ── */}
+      {/* ── 4. Temas y Bloqueos (theme-entries) ── */}
+      {themeGroups.length > 0 && (
+        <CollapsibleCard title={`Temas y Bloqueos (${themeGroups.length})`}>
+          <div className="space-y-5">
+            {themeGroups.map(({ topicId, topicName, progress, entries }) => {
+              const bloqueos = entries.filter((e) =>
+                ['bloqueo_1', 'bloqueo_2', 'bloqueo_3', 'resultante'].includes(e.entry_type),
+              );
+              const adulta = entries.find((e) => e.entry_type === 'edad_adulta');
+              const infancia = entries.find((e) => e.entry_type === 'edad_infancia');
+              return (
+                <div
+                  key={topicId}
+                  className="border border-terra-100 rounded-lg p-4 space-y-3"
+                >
+                  <div className="flex items-start justify-between gap-3">
+                    <div>
+                      <p className="text-xs uppercase tracking-wide text-terra-500 font-medium">
+                        Tema
+                      </p>
+                      <h3 className="text-base font-semibold text-terra-900">
+                        {topicName}
+                      </h3>
+                    </div>
+                    {progress != null && (
+                      <span className="inline-flex items-center text-xs bg-[#B7BFB3] text-white rounded-full px-2.5 py-0.5">
+                        {progress}%
+                      </span>
+                    )}
+                  </div>
+
+                  {(adulta?.adulthood_age != null ||
+                    infancia?.childhood_age != null ||
+                    adulta?.adulthood_situation ||
+                    infancia?.childhood_situation ||
+                    adulta?.adulthood_emotions ||
+                    infancia?.childhood_emotions) && (
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-sm">
+                      {(adulta?.adulthood_age != null || adulta?.adulthood_situation || adulta?.adulthood_emotions || adulta?.adulthood_description) && (
+                        <div className="bg-terra-50/50 rounded-md p-3 space-y-1">
+                          <FieldLabel>
+                            Edad adulta{adulta?.adulthood_age != null ? ` (${adulta.adulthood_age} años)` : ''}
+                          </FieldLabel>
+                          {adulta?.adulthood_place && <p className="text-terra-700 text-xs"><span className="text-gray-400">Lugar:</span> {adulta.adulthood_place}</p>}
+                          {adulta?.adulthood_people && <p className="text-terra-700 text-xs"><span className="text-gray-400">Personas:</span> {adulta.adulthood_people}</p>}
+                          {adulta?.adulthood_situation && <p className="text-terra-800 text-sm">{adulta.adulthood_situation}</p>}
+                          {adulta?.adulthood_description && <p className="text-terra-700 text-xs whitespace-pre-wrap">{adulta.adulthood_description}</p>}
+                          {adulta?.adulthood_emotions && <p className="text-terra-600 text-xs italic">{adulta.adulthood_emotions}</p>}
+                        </div>
+                      )}
+                      {(infancia?.childhood_age != null || infancia?.childhood_situation || infancia?.childhood_emotions || infancia?.childhood_description) && (
+                        <div className="bg-terra-50/50 rounded-md p-3 space-y-1">
+                          <FieldLabel>
+                            Infancia{infancia?.childhood_age != null ? ` (${infancia.childhood_age} años)` : ''}
+                          </FieldLabel>
+                          {infancia?.childhood_place && <p className="text-terra-700 text-xs"><span className="text-gray-400">Lugar:</span> {infancia.childhood_place}</p>}
+                          {infancia?.childhood_people && <p className="text-terra-700 text-xs"><span className="text-gray-400">Personas:</span> {infancia.childhood_people}</p>}
+                          {infancia?.childhood_situation && <p className="text-terra-800 text-sm">{infancia.childhood_situation}</p>}
+                          {infancia?.childhood_description && <p className="text-terra-700 text-xs whitespace-pre-wrap">{infancia.childhood_description}</p>}
+                          {infancia?.childhood_emotions && <p className="text-terra-600 text-xs italic">{infancia.childhood_emotions}</p>}
+                        </div>
+                      )}
+                    </div>
+                  )}
+
+                  {bloqueos.length > 0 && (
+                    <div>
+                      <FieldLabel>Bloqueos</FieldLabel>
+                      <div className="overflow-x-auto mt-1">
+                        <table className="w-full text-sm">
+                          <thead>
+                            <tr className="bg-[#F2E8E4] text-xs uppercase tracking-wide text-[#4A3628]">
+                              <th className="text-left py-2 px-3 font-medium">Tipo</th>
+                              <th className="text-left py-2 px-3 font-medium">Chakra</th>
+                              <th className="text-left py-2 px-3 font-medium">Órgano</th>
+                              <th className="text-center py-2 px-3 font-medium w-16">Inicial</th>
+                              <th className="text-center py-2 px-3 font-medium w-16">Final</th>
+                              <th className="text-center py-2 px-3 font-medium w-16">Δ</th>
+                            </tr>
+                          </thead>
+                          <tbody>
+                            {bloqueos.map((b) => {
+                              const chakra = b.chakra_position_id ? chakraById.get(b.chakra_position_id) : null;
+                              const color = chakra ? getChakraColor(chakra.name) : undefined;
+                              const ini = toNum(b.initial_energy);
+                              const fin = toNum(b.final_energy);
+                              const label =
+                                b.entry_type === 'bloqueo_1' ? 'Bloqueo 1'
+                                : b.entry_type === 'bloqueo_2' ? 'Bloqueo 2'
+                                : b.entry_type === 'bloqueo_3' ? 'Bloqueo 3'
+                                : b.entry_type === 'resultante' ? 'Resultante'
+                                : b.entry_type;
+                              return (
+                                <tr key={b.id} className="border-b border-[#D4A592]/30">
+                                  <td className="py-2 px-3 text-[#2C2220] font-medium">{label}</td>
+                                  <td className="py-2 px-3">
+                                    {chakra ? (
+                                      <div className="flex items-center gap-2">
+                                        <span className="inline-block w-2.5 h-2.5 rounded-full shrink-0" style={{ backgroundColor: color }} />
+                                        <span className="text-[#2C2220]">{chakra.name}</span>
+                                      </div>
+                                    ) : (
+                                      <span className="text-gray-300">—</span>
+                                    )}
+                                  </td>
+                                  <td className="py-2 px-3 text-[#2C2220]">{b.organ_name ?? <span className="text-gray-300">—</span>}</td>
+                                  <td className="py-2 px-3 text-center text-terra-600">
+                                    <NumCell value={ini} />
+                                  </td>
+                                  <td className="py-2 px-3 text-center text-terra-600">
+                                    <NumCell value={fin} />
+                                  </td>
+                                  <td className="py-2 px-3 text-center">
+                                    <Delta initial={ini} final={fin} />
+                                  </td>
+                                </tr>
+                              );
+                            })}
+                          </tbody>
+                        </table>
+                      </div>
+                    </div>
+                  )}
+                </div>
+              );
+            })}
+          </div>
+        </CollapsibleCard>
+      )}
+
+      {/* ── 4b. Temas legacy (session_topics antigua) ── */}
       {activeTopics.length > 0 && (
-        <CollapsibleCard title="Temas trabajados">
+        <CollapsibleCard title="Temas trabajados (legacy)">
           <div className="space-y-4">
             {activeTopics.map((t, idx) => (
               <div
@@ -1147,27 +1392,44 @@ export default function SessionDetailPage() {
         </CollapsibleCard>
       )}
 
-      {/* ── 9. Protección ── */}
+      {/* ── 9. Protecciones ── */}
       {hasProtectionData && (
-        <CollapsibleCard title="Protección" defaultOpen={false}>
-          <div className="space-y-3">
-            <div className="flex flex-wrap gap-1.5">
-              {session.protections.map((p) => (
-                <span
-                  key={p.id}
-                  className="inline-flex items-center gap-1.5 text-sm bg-terra-50 text-terra-700 border border-terra-200 rounded-lg px-3 py-1.5"
-                >
-                  {p.person_name}
-                  <span className="text-xs text-terra-500">×{p.quantity}</span>
-                </span>
-              ))}
-            </div>
-            <p className="text-sm text-terra-600">
-              {session.protection_charged
-                ? 'Se cobró protección'
-                : 'No se cobró protección'}
-            </p>
+        <CollapsibleCard title={`Protecciones (${protections.length})`} defaultOpen={false}>
+          <div className="overflow-x-auto">
+            <table className="w-full text-sm">
+              <thead>
+                <tr className="bg-[#F2E8E4] text-xs uppercase tracking-wide text-[#4A3628]">
+                  <th className="text-left py-2 px-3 font-medium">Persona</th>
+                  <th className="text-center py-2 px-3 font-medium w-20">Cantidad</th>
+                  <th className="text-right py-2 px-3 font-medium w-28">Costo unit.</th>
+                  <th className="text-right py-2 px-3 font-medium w-28">Subtotal</th>
+                </tr>
+              </thead>
+              <tbody>
+                {protections.map((p) => {
+                  const unit = toNum(p.cost_per_unit);
+                  const sub = unit != null ? unit * p.quantity : null;
+                  return (
+                    <tr key={p.id} className="border-b border-[#D4A592]/30">
+                      <td className="py-2 px-3 text-[#2C2220]">
+                        {p.recipient_name ?? p.recipient_type}
+                      </td>
+                      <td className="py-2 px-3 text-center text-[#2C2220]">{p.quantity}</td>
+                      <td className="py-2 px-3 text-right text-terra-700">
+                        {unit != null ? formatCurrency(unit) : <span className="text-gray-300">—</span>}
+                      </td>
+                      <td className="py-2 px-3 text-right font-medium text-[#2C2220]">
+                        {sub != null ? formatCurrency(sub) : <span className="text-gray-300">—</span>}
+                      </td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
           </div>
+          <p className="text-sm text-terra-600 mt-3">
+            {session.protection_charged ? 'Se cobró protección' : 'No se cobró protección'}
+          </p>
         </CollapsibleCard>
       )}
 
@@ -1212,12 +1474,16 @@ export default function SessionDetailPage() {
             {hasProtectionData && session.protection_charged && (
               <div className="space-y-1">
                 <FieldLabel>Protecciones</FieldLabel>
-                {session.protections.map((p) => (
-                  <div key={p.id} className="flex items-center justify-between py-1 text-sm text-[#2C2220]">
-                    <span>{p.person_name} ({p.quantity} × {formatCurrency(1200)})</span>
-                    <span className="font-medium">{formatCurrency(p.quantity * 1200)}</span>
-                  </div>
-                ))}
+                {protections.map((p) => {
+                  const unit = toNum(p.cost_per_unit) ?? 0;
+                  const sub = unit * p.quantity;
+                  return (
+                    <div key={p.id} className="flex items-center justify-between py-1 text-sm text-[#2C2220]">
+                      <span>{p.recipient_name ?? p.recipient_type} ({p.quantity} × {formatCurrency(unit)})</span>
+                      <span className="font-medium">{formatCurrency(sub)}</span>
+                    </div>
+                  );
+                })}
               </div>
             )}
 

@@ -2,12 +2,25 @@
 
 import { useState, useEffect, useCallback, useRef } from "react";
 import { useRouter } from "next/navigation";
-import { Search, ChevronLeft, ChevronRight, UserSearch, UserPlus, Trash2, AlertCircle, RefreshCw } from "lucide-react";
+import { Search, ChevronLeft, ChevronRight, UserSearch, UserPlus, Trash2, AlertCircle, RefreshCw, Users, X, Loader2 } from "lucide-react";
 import { apiClient } from "@/lib/api/client";
 import { useAuthStore } from "@/store/auth";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import type { Client, PaginatedResponse } from "@/types/api";
+
+interface DuplicateCandidate {
+  id: string;
+  full_name: string;
+  email: string | null;
+  sessions_count: number;
+  created_at: string;
+}
+
+interface DuplicateGroup {
+  name: string;
+  clients: DuplicateCandidate[];
+}
 
 const PAGE_SIZE = 20;
 
@@ -34,6 +47,12 @@ export default function PacientesPage() {
   const [query, setQuery] = useState("");
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  // Duplicados (admin-only)
+  const [dupOpen, setDupOpen] = useState(false);
+  const [dupLoading, setDupLoading] = useState(false);
+  const [dupError, setDupError] = useState<string | null>(null);
+  const [dupGroups, setDupGroups] = useState<DuplicateGroup[]>([]);
+  const [mergingId, setMergingId] = useState<string | null>(null);
   // Refs para debounce y cancelación de requests en vuelo
   const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const abortRef = useRef<AbortController | null>(null);
@@ -100,6 +119,50 @@ export default function PacientesPage() {
     fetchClients(search, 1);
   };
 
+  const fetchDuplicates = useCallback(async () => {
+    setDupLoading(true);
+    setDupError(null);
+    try {
+      const data = await apiClient.get<{ groups: DuplicateGroup[] }>(
+        "/api/v1/admin/clients/duplicates",
+      );
+      setDupGroups(data.groups);
+    } catch (err) {
+      setDupError(err instanceof Error ? err.message : "Error al buscar duplicados.");
+    } finally {
+      setDupLoading(false);
+    }
+  }, []);
+
+  const openDuplicates = () => {
+    setDupOpen(true);
+    fetchDuplicates();
+  };
+
+  const handleMerge = async (
+    group: DuplicateGroup,
+    primary: DuplicateCandidate,
+    duplicate: DuplicateCandidate,
+  ) => {
+    const confirmed = window.confirm(
+      `Se moverán ${duplicate.sessions_count} sesiones de "${duplicate.full_name}" a "${primary.full_name}". El duplicado será archivado. ¿Continuar?`,
+    );
+    if (!confirmed) return;
+    setMergingId(duplicate.id);
+    try {
+      await apiClient.post("/api/v1/admin/clients/merge", {
+        primary_id: primary.id,
+        duplicate_id: duplicate.id,
+      });
+      await fetchDuplicates();
+      fetchClients(query, page);
+    } catch (err) {
+      window.alert(err instanceof Error ? err.message : "Error al unir clientes.");
+    } finally {
+      setMergingId(null);
+    }
+  };
+
   async function handleDeleteClient(e: React.MouseEvent, clientId: string) {
     e.stopPropagation();
     const confirmed = window.confirm(
@@ -125,17 +188,25 @@ export default function PacientesPage() {
         <p className="text-muted-foreground">Gestión de expedientes clínicos</p>
       </div>
 
-      {/* Búsqueda */}
-      <form onSubmit={handleSearch} className="flex gap-2 max-w-sm">
-        <Input
-          placeholder="Buscar por nombre..."
-          value={search}
-          onChange={handleSearchChange}
-        />
-        <Button type="submit" variant="outline" size="icon" aria-label="Buscar">
-          <Search className="h-4 w-4" />
-        </Button>
-      </form>
+      {/* Búsqueda + acciones admin */}
+      <div className="flex flex-wrap items-center gap-3">
+        <form onSubmit={handleSearch} className="flex gap-2 max-w-sm">
+          <Input
+            placeholder="Buscar por nombre..."
+            value={search}
+            onChange={handleSearchChange}
+          />
+          <Button type="submit" variant="outline" size="icon" aria-label="Buscar">
+            <Search className="h-4 w-4" />
+          </Button>
+        </form>
+        {isAdmin && (
+          <Button type="button" variant="outline" onClick={openDuplicates}>
+            <Users className="h-4 w-4 mr-2" />
+            Buscar duplicados
+          </Button>
+        )}
+      </div>
 
       {error && (
         <div className="border-l-4 border-red-400 bg-red-50 rounded-r-xl p-4 flex items-start gap-3">
@@ -232,6 +303,117 @@ export default function PacientesPage() {
           </tbody>
         </table>
       </div>
+
+      {/* Modal: duplicados */}
+      {dupOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4">
+          <div className="bg-white rounded-xl shadow-xl w-full max-w-3xl max-h-[85vh] flex flex-col">
+            <div className="flex items-center justify-between border-b border-terra-100 px-5 py-4">
+              <div>
+                <h2 className="font-display text-lg font-semibold text-terra-900">
+                  Posibles duplicados
+                </h2>
+                <p className="text-xs text-muted-foreground">
+                  Agrupados por nombre normalizado. El principal conservará el expediente.
+                </p>
+              </div>
+              <button
+                onClick={() => setDupOpen(false)}
+                className="p-1.5 rounded text-terra-500 hover:bg-terra-50"
+                aria-label="Cerrar"
+              >
+                <X className="h-5 w-5" />
+              </button>
+            </div>
+
+            <div className="flex-1 overflow-y-auto px-5 py-4 space-y-5">
+              {dupLoading ? (
+                <div className="flex items-center justify-center py-12 text-terra-500">
+                  <Loader2 className="h-5 w-5 animate-spin mr-2" />
+                  Buscando duplicados...
+                </div>
+              ) : dupError ? (
+                <div className="border-l-4 border-red-400 bg-red-50 rounded-r-xl p-4 text-sm text-red-700">
+                  {dupError}
+                </div>
+              ) : dupGroups.length === 0 ? (
+                <div className="text-center py-12 text-sm text-muted-foreground">
+                  No se encontraron clientes con nombres duplicados.
+                </div>
+              ) : (
+                dupGroups.map((group) => {
+                  // El primario sugerido: el que tiene más sesiones (desempate por antigüedad)
+                  const sorted = [...group.clients].sort(
+                    (a, b) =>
+                      b.sessions_count - a.sessions_count ||
+                      new Date(a.created_at).getTime() - new Date(b.created_at).getTime(),
+                  );
+                  const primary = sorted[0];
+                  const duplicates = sorted.slice(1);
+                  return (
+                    <div
+                      key={group.name + primary.id}
+                      className="border border-terra-100 rounded-lg overflow-hidden"
+                    >
+                      <div className="bg-terra-50 px-4 py-2 text-sm font-semibold text-terra-800">
+                        {group.name}
+                      </div>
+                      <table className="w-full text-sm">
+                        <thead>
+                          <tr className="text-xs uppercase text-terra-500">
+                            <th className="text-left px-4 py-2 font-medium">Email</th>
+                            <th className="text-left px-4 py-2 font-medium">Sesiones</th>
+                            <th className="text-left px-4 py-2 font-medium">Creado</th>
+                            <th className="text-right px-4 py-2 font-medium w-40">Acción</th>
+                          </tr>
+                        </thead>
+                        <tbody>
+                          <tr className="border-t border-terra-100 bg-green-50/50">
+                            <td className="px-4 py-3">{primary.email ?? "—"}</td>
+                            <td className="px-4 py-3">{primary.sessions_count}</td>
+                            <td className="px-4 py-3">
+                              {new Date(primary.created_at).toLocaleDateString("es-MX")}
+                            </td>
+                            <td className="px-4 py-3 text-right">
+                              <span className="text-xs font-medium text-green-700">
+                                Principal
+                              </span>
+                            </td>
+                          </tr>
+                          {duplicates.map((dup) => (
+                            <tr key={dup.id} className="border-t border-terra-100">
+                              <td className="px-4 py-3">{dup.email ?? "—"}</td>
+                              <td className="px-4 py-3">{dup.sessions_count}</td>
+                              <td className="px-4 py-3">
+                                {new Date(dup.created_at).toLocaleDateString("es-MX")}
+                              </td>
+                              <td className="px-4 py-3 text-right">
+                                <Button
+                                  type="button"
+                                  size="sm"
+                                  variant="outline"
+                                  disabled={mergingId !== null}
+                                  onClick={() => handleMerge(group, primary, dup)}
+                                >
+                                  {mergingId === dup.id ? (
+                                    <Loader2 className="h-4 w-4 animate-spin" />
+                                  ) : (
+                                    "Unir al principal"
+                                  )}
+                                </Button>
+                              </td>
+                            </tr>
+                          ))}
+                        </tbody>
+                      </table>
+                    </div>
+                  );
+                })
+              )}
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Paginación */}
       {!loading && total > 0 && (

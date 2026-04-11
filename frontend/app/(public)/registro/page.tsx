@@ -24,9 +24,13 @@ interface FormData {
   family_abortions: string;
   deaths_before_41: string;
   // Sección 3 — Salud
-  conditions: string;
+  conditions: string[];
+  conditions_other: string;
+  recurring: string[];
+  recurring_other: string;
   medications: string;
-  pains: string;
+  pains: string[];
+  pains_other: string;
   // Sección 4 — Emociones
   predominant_emotions: string[];
   // Sección 5 — Motivación
@@ -48,9 +52,13 @@ const INITIAL: FormData = {
   birth_order: '',
   family_abortions: '',
   deaths_before_41: '',
-  conditions: '',
+  conditions: [],
+  conditions_other: '',
+  recurring: [],
+  recurring_other: '',
   medications: '',
-  pains: '',
+  pains: [],
+  pains_other: '',
   predominant_emotions: [],
   motivation_visit: '',
   motivation_general: '',
@@ -62,6 +70,30 @@ const MARITAL_OPTIONS: { value: MaritalStatus; label: string }[] = [
   { value: 'divorciado', label: 'Divorciado/a' },
   { value: 'viudo', label: 'Viudo/a' },
   { value: 'union_libre', label: 'Unión libre' },
+];
+
+// Opciones exactas del formulario original (Notion) — NO modificar
+const CONDITIONS_OPTIONS: string[] = [
+  'Asma', 'Bipolaridad', 'Cáncer', 'Diabetes', 'Dislexia', 'Ehlers Danlos',
+  'Hipertensión', 'Hipotiroidismo', 'TDAH', 'TEA', 'Ovario poliquístico',
+  'Epilepsia', 'Insuficiencia cardiaca', 'Angina de pecho', 'Artritis',
+  'Artrosis', 'Osteoporosis', 'Fibromialgia', 'Sarcopenia', 'Dermatitis',
+  'TOC', 'EPOC', 'Herpes', 'VIH', 'Otro', 'No tengo ninguna enfermedad',
+];
+
+const RECURRING_OPTIONS: string[] = [
+  'Gripa / dolor de garganta', 'Malestar estomacal', 'Cuerpo cortado', 'Gases',
+  'Hinchazón', 'Dolor de cabeza / migraña', 'Dolor de articulaciones',
+  'Dolor de huesos', 'Dolor de músculos', 'Fatiga', 'Cansancio extremo',
+  'Cólicos', 'Náuseas constantes', 'Diarrea', 'Colitis crónica', 'Gastritis',
+  'N/A', 'Otro',
+];
+
+const PAINS_OPTIONS: string[] = [
+  'Ojos', 'Espalda', 'Pies', 'Manos', 'Espalda baja', 'Brazo derecho',
+  'Brazo izquierdo', 'Pierna derecha', 'Pierna izquierda', 'Ciática',
+  'Estómago', 'Cabeza', 'Espalda alta', 'Rodillas', 'Hombros', 'Caderas',
+  'Dientes', 'Otro', 'No siento dolor o molestia en mi cuerpo.',
 ];
 
 // ─── Componentes auxiliares ──────────────────────────────────────────────────
@@ -99,6 +131,63 @@ const INPUT_CLS =
 const TEXTAREA_CLS =
   'w-full resize-none rounded-md border border-[#D4A592] bg-[#FAF7F5] px-3 py-2 text-sm text-[#2C2220] placeholder:text-[#A9967E] focus:border-[#C4704A] focus:outline-none focus:ring-1 focus:ring-[#C4704A]/30 transition-colors';
 
+function CheckboxGroup({
+  name,
+  options,
+  selected,
+  onToggle,
+  otherValue,
+  onOtherChange,
+}: {
+  name: string;
+  options: string[];
+  selected: string[];
+  onToggle: (option: string) => void;
+  otherValue: string;
+  onOtherChange: (value: string) => void;
+}) {
+  const otherSelected = selected.includes('Otro');
+  return (
+    <div
+      className="grid grid-cols-1 gap-2 sm:grid-cols-2"
+      style={{ fontFamily: 'var(--font-lato), Lato, sans-serif' }}
+    >
+      {options.map((opt) => {
+        const id = `${name}-${opt}`;
+        const checked = selected.includes(opt);
+        const isOther = opt === 'Otro';
+        return (
+          <div key={opt} className={isOther ? 'sm:col-span-2' : ''}>
+            <label
+              htmlFor={id}
+              className="flex cursor-pointer items-center gap-2 text-sm text-[#4A3628]"
+            >
+              <input
+                id={id}
+                type="checkbox"
+                checked={checked}
+                onChange={() => onToggle(opt)}
+                className="h-4 w-4 rounded border-[#D4A592]"
+                style={{ accentColor: '#C4704A' }}
+              />
+              <span>{opt}</span>
+            </label>
+            {isOther && otherSelected && (
+              <input
+                type="text"
+                value={otherValue}
+                onChange={(e) => onOtherChange(e.target.value)}
+                placeholder="Especifica..."
+                className={`${INPUT_CLS} mt-1`}
+              />
+            )}
+          </div>
+        );
+      })}
+    </div>
+  );
+}
+
 // ─── Componente principal ────────────────────────────────────────────────────
 
 export default function RegistroPage() {
@@ -127,6 +216,16 @@ export default function RegistroPage() {
       set(key, e.target.value as FormData[typeof key]);
   }
 
+  function toggleFromList(key: 'conditions' | 'recurring' | 'pains', option: string) {
+    setForm((prev) => {
+      const current = prev[key];
+      const next = current.includes(option)
+        ? current.filter((o) => o !== option)
+        : [...current, option];
+      return { ...prev, [key]: next };
+    });
+  }
+
   async function handleSubmit(e: FormEvent) {
     e.preventDefault();
     if (!form.full_name.trim()) {
@@ -145,9 +244,16 @@ export default function RegistroPage() {
     setSubmitting(true);
     setError(null);
 
-    // Separar condiciones/medicamentos/dolores en arrays (una línea por elemento)
+    // Medicamentos: una línea por elemento (Tanya lo quiere textarea)
     const toArray = (text: string): string[] =>
       text.split('\n').map((s) => s.trim()).filter(Boolean);
+
+    // Multi-select: reemplazar "Otro" por el texto del input cuando existe
+    const resolveOther = (list: string[], otherText: string): string[] => {
+      const base = list.filter((o) => o !== 'Otro');
+      const extra = otherText.trim();
+      return list.includes('Otro') && extra ? [...base, extra] : base;
+    };
 
     const payload = {
       full_name: form.full_name.trim(),
@@ -166,9 +272,10 @@ export default function RegistroPage() {
       predominant_emotions: form.predominant_emotions.length > 0 ? form.predominant_emotions : [],
       motivation_visit: form.motivation_visit.trim() ? [form.motivation_visit.trim()] : [],
       motivation_general: form.motivation_general.trim() || null,
-      medical_conditions: toArray(form.conditions),
+      medical_conditions: resolveOther(form.conditions, form.conditions_other),
+      recurring_diseases: resolveOther(form.recurring, form.recurring_other),
       medications: toArray(form.medications),
-      body_pains: toArray(form.pains),
+      body_pains: resolveOther(form.pains, form.pains_other),
       important_notes: null,
     };
 
@@ -420,38 +527,82 @@ export default function RegistroPage() {
             open={openSections[3]}
             onToggle={() => toggleSection(3)}
           >
-            <div className="space-y-4">
+            <div className="space-y-6">
               <div>
-                <Label htmlFor="conditions">Padecimientos</Label>
-                <textarea
-                  id="conditions"
-                  rows={2}
-                  className={TEXTAREA_CLS}
-                  value={form.conditions}
-                  onChange={setStr('conditions')}
-                  placeholder="Una por línea (ej: Diabetes, Hipertensión)"
+                <Label htmlFor="conditions" required>Problemas médicos diagnosticados</Label>
+                <p
+                  className="mb-2 text-xs text-[#6B5E54]"
+                  style={{ fontFamily: 'var(--font-lato), Lato, sans-serif' }}
+                >
+                  Selecciona si tienes uno o más problemas médicos diagnosticados.
+                  <br />
+                  <span className="italic">(Selecciona todas las opciones que quieras)</span>
+                </p>
+                <CheckboxGroup
+                  name="conditions"
+                  options={CONDITIONS_OPTIONS}
+                  selected={form.conditions}
+                  onToggle={(opt) => toggleFromList('conditions', opt)}
+                  otherValue={form.conditions_other}
+                  onOtherChange={(v) => set('conditions_other', v)}
                 />
               </div>
+
               <div>
-                <Label htmlFor="medications">Medicamentos</Label>
+                <Label htmlFor="recurring" required>Enfermedades médicas recurrentes</Label>
+                <p
+                  className="mb-2 text-xs text-[#6B5E54]"
+                  style={{ fontFamily: 'var(--font-lato), Lato, sans-serif' }}
+                >
+                  Selecciona si tienes dolor o molestia constante en estas regiones.
+                  <br />
+                  <span className="italic">(Selecciona todas las opciones que quieras)</span>
+                </p>
+                <CheckboxGroup
+                  name="recurring"
+                  options={RECURRING_OPTIONS}
+                  selected={form.recurring}
+                  onToggle={(opt) => toggleFromList('recurring', opt)}
+                  otherValue={form.recurring_other}
+                  onOtherChange={(v) => set('recurring_other', v)}
+                />
+              </div>
+
+              <div>
+                <Label htmlFor="medications" required>Medicamentos</Label>
+                <p
+                  className="mb-2 text-xs text-[#6B5E54]"
+                  style={{ fontFamily: 'var(--font-lato), Lato, sans-serif' }}
+                >
+                  Escribe separados por comas el nombre de los medicamentos que tomas.
+                </p>
                 <textarea
                   id="medications"
                   rows={2}
                   className={TEXTAREA_CLS}
                   value={form.medications}
                   onChange={setStr('medications')}
-                  placeholder="Uno por línea (ej: Metformina, Losartán)"
+                  placeholder="Metformina, Losartán, ..."
                 />
               </div>
+
               <div>
-                <Label htmlFor="pains">Dolores recurrentes</Label>
-                <textarea
-                  id="pains"
-                  rows={2}
-                  className={TEXTAREA_CLS}
-                  value={form.pains}
-                  onChange={setStr('pains')}
-                  placeholder="Uno por línea (ej: Dolor de cabeza, Dolor lumbar)"
+                <Label htmlFor="pains" required>Dolor en cuerpo</Label>
+                <p
+                  className="mb-2 text-xs text-[#6B5E54]"
+                  style={{ fontFamily: 'var(--font-lato), Lato, sans-serif' }}
+                >
+                  Selecciona en qué partes sientes dolor o molestia en tu cuerpo.
+                  <br />
+                  <span className="italic">(Selecciona todas las opciones que quieras)</span>
+                </p>
+                <CheckboxGroup
+                  name="pains"
+                  options={PAINS_OPTIONS}
+                  selected={form.pains}
+                  onToggle={(opt) => toggleFromList('pains', opt)}
+                  otherValue={form.pains_other}
+                  onOtherChange={(v) => set('pains_other', v)}
                 />
               </div>
             </div>

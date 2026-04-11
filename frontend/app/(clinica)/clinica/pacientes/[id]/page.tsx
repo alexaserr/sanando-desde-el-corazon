@@ -20,12 +20,15 @@ import {
   AlertCircle,
   AlertTriangle,
   RefreshCw,
+  Pencil,
+  Check,
 } from "lucide-react";
 import { apiClient } from "@/lib/api/client";
 import { useAuthStore } from "@/store/auth";
 import { getClientTopics, completeClientTopic } from "@/lib/api/clinical";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
+import { Input } from "@/components/ui/input";
 import { formatDate, formatPhone, formatCurrency } from "@/lib/utils/formatters";
 import type {
   Client,
@@ -461,6 +464,88 @@ export default function PacienteDetailPage() {
   const [error, setError] = useState<string | null>(null);
   const [isMarkingConsent, setIsMarkingConsent] = useState(false);
 
+  // Edición de datos personales
+  type PersonalForm = {
+    full_name: string;
+    email: string;
+    phone: string;
+    birth_date: string;
+    marital_status: MaritalStatus | "";
+    profession: string;
+    birth_place: string;
+    residence_place: string;
+  };
+  const emptyForm: PersonalForm = {
+    full_name: "",
+    email: "",
+    phone: "",
+    birth_date: "",
+    marital_status: "",
+    profession: "",
+    birth_place: "",
+    residence_place: "",
+  };
+  const [isEditingPersonal, setIsEditingPersonal] = useState(false);
+  const [personalForm, setPersonalForm] = useState<PersonalForm>(emptyForm);
+  const [isSavingPersonal, setIsSavingPersonal] = useState(false);
+  const [personalSaveError, setPersonalSaveError] = useState<string | null>(null);
+  const [personalSaveOk, setPersonalSaveOk] = useState(false);
+
+  function startEditPersonal() {
+    if (!client) return;
+    setPersonalForm({
+      full_name: client.full_name ?? "",
+      email: client.email ?? "",
+      phone: client.phone ?? "",
+      birth_date: client.birth_date ? client.birth_date.slice(0, 10) : "",
+      marital_status: client.marital_status ?? "",
+      profession: client.profession ?? "",
+      birth_place: client.birth_place ?? "",
+      residence_place: client.residence_place ?? "",
+    });
+    setPersonalSaveError(null);
+    setPersonalSaveOk(false);
+    setIsEditingPersonal(true);
+  }
+
+  function cancelEditPersonal() {
+    setIsEditingPersonal(false);
+    setPersonalSaveError(null);
+  }
+
+  async function handleSavePersonal() {
+    if (!client || isSavingPersonal) return;
+    setIsSavingPersonal(true);
+    setPersonalSaveError(null);
+    setPersonalSaveOk(false);
+    const payload: Record<string, string | null> = {
+      full_name: personalForm.full_name.trim(),
+      email: personalForm.email.trim() || null,
+      phone: personalForm.phone.trim() || null,
+      birth_date: personalForm.birth_date || null,
+      marital_status: personalForm.marital_status || null,
+      profession: personalForm.profession.trim() || null,
+      birth_place: personalForm.birth_place.trim() || null,
+      residence_place: personalForm.residence_place.trim() || null,
+    };
+    try {
+      const updated = await apiClient.patch<Client, typeof payload>(
+        `/api/v1/clinical/clients/${client.id}`,
+        payload,
+      );
+      setClient(updated);
+      setIsEditingPersonal(false);
+      setPersonalSaveOk(true);
+      setTimeout(() => setPersonalSaveOk(false), 3000);
+    } catch (err) {
+      setPersonalSaveError(
+        err instanceof Error ? err.message : "Error al guardar los cambios.",
+      );
+    } finally {
+      setIsSavingPersonal(false);
+    }
+  }
+
   async function handleMarkConsent() {
     if (!client || isMarkingConsent) return;
     setIsMarkingConsent(true);
@@ -710,38 +795,186 @@ export default function PacienteDetailPage() {
 
               {/* SECCIÓN 1: Información Personal */}
               <Section>
-                <SectionHeader icon={User} title="Información Personal" />
-                <dl className="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-4">
-                  <Field label="Nombre completo" value={client.full_name} />
-                  <Field label="Correo electrónico" value={client.email} />
-                  <Field
-                    label="Teléfono"
-                    value={client.phone ? formatPhone(client.phone) : null}
-                  />
-                  <Field
-                    label="Fecha de nacimiento"
-                    value={
-                      client.birth_date ? formatDate(client.birth_date) : null
-                    }
-                  />
-                  <Field
-                    label="Estado civil"
-                    value={
-                      client.marital_status
-                        ? MARITAL_LABELS[client.marital_status]
-                        : null
-                    }
-                  />
-                  <Field label="Profesión" value={client.profession} />
-                  <Field
-                    label="Lugar de nacimiento"
-                    value={client.birth_place}
-                  />
-                  <Field
-                    label="Lugar de residencia"
-                    value={client.residence_place}
-                  />
-                </dl>
+                <div className="flex items-center justify-between mb-3">
+                  <SectionHeader icon={User} title="Información Personal" />
+                  {!isEditingPersonal ? (
+                    <button
+                      onClick={startEditPersonal}
+                      className="flex items-center gap-1.5 text-xs font-medium text-terra-700 hover:text-terra-900 border border-terra-200 hover:border-terra-300 rounded px-3 py-1.5 transition-colors -mt-3"
+                    >
+                      <Pencil className="h-3.5 w-3.5" />
+                      Editar
+                    </button>
+                  ) : (
+                    <div className="flex items-center gap-2 -mt-3">
+                      <button
+                        onClick={cancelEditPersonal}
+                        disabled={isSavingPersonal}
+                        className="text-xs font-medium text-gray-500 hover:text-gray-700 rounded px-3 py-1.5 transition-colors disabled:opacity-50"
+                      >
+                        Cancelar
+                      </button>
+                      <button
+                        onClick={handleSavePersonal}
+                        disabled={isSavingPersonal}
+                        className="flex items-center gap-1.5 text-xs font-medium bg-[#C4704A] hover:bg-terra-500 text-white rounded px-3 py-1.5 transition-colors disabled:opacity-50"
+                      >
+                        <Check className="h-3.5 w-3.5" />
+                        {isSavingPersonal ? "Guardando…" : "Guardar"}
+                      </button>
+                    </div>
+                  )}
+                </div>
+
+                {personalSaveError && (
+                  <div className="mb-4 border-l-4 border-red-400 bg-red-50 rounded-r p-3 text-sm text-red-700">
+                    {personalSaveError}
+                  </div>
+                )}
+                {personalSaveOk && (
+                  <div className="mb-4 border-l-4 border-green-400 bg-green-50 rounded-r p-3 text-sm text-green-700">
+                    Cambios guardados correctamente.
+                  </div>
+                )}
+
+                {!isEditingPersonal ? (
+                  <dl className="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-4">
+                    <Field label="Nombre completo" value={client.full_name} />
+                    <Field label="Correo electrónico" value={client.email} />
+                    <Field
+                      label="Teléfono"
+                      value={client.phone ? formatPhone(client.phone) : null}
+                    />
+                    <Field
+                      label="Fecha de nacimiento"
+                      value={
+                        client.birth_date ? formatDate(client.birth_date) : null
+                      }
+                    />
+                    <Field
+                      label="Estado civil"
+                      value={
+                        client.marital_status
+                          ? MARITAL_LABELS[client.marital_status]
+                          : null
+                      }
+                    />
+                    <Field label="Profesión" value={client.profession} />
+                    <Field
+                      label="Lugar de nacimiento"
+                      value={client.birth_place}
+                    />
+                    <Field
+                      label="Lugar de residencia"
+                      value={client.residence_place}
+                    />
+                  </dl>
+                ) : (
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-4">
+                    <div>
+                      <p className="text-xs uppercase tracking-wide text-gray-400 mb-1 font-medium">
+                        Nombre completo
+                      </p>
+                      <Input
+                        value={personalForm.full_name}
+                        onChange={(e) =>
+                          setPersonalForm((f) => ({ ...f, full_name: e.target.value }))
+                        }
+                      />
+                    </div>
+                    <div>
+                      <p className="text-xs uppercase tracking-wide text-gray-400 mb-1 font-medium">
+                        Correo electrónico
+                      </p>
+                      <Input
+                        type="email"
+                        value={personalForm.email}
+                        onChange={(e) =>
+                          setPersonalForm((f) => ({ ...f, email: e.target.value }))
+                        }
+                      />
+                    </div>
+                    <div>
+                      <p className="text-xs uppercase tracking-wide text-gray-400 mb-1 font-medium">
+                        Teléfono
+                      </p>
+                      <Input
+                        type="tel"
+                        value={personalForm.phone}
+                        onChange={(e) =>
+                          setPersonalForm((f) => ({ ...f, phone: e.target.value }))
+                        }
+                      />
+                    </div>
+                    <div>
+                      <p className="text-xs uppercase tracking-wide text-gray-400 mb-1 font-medium">
+                        Fecha de nacimiento
+                      </p>
+                      <Input
+                        type="date"
+                        value={personalForm.birth_date}
+                        onChange={(e) =>
+                          setPersonalForm((f) => ({ ...f, birth_date: e.target.value }))
+                        }
+                      />
+                    </div>
+                    <div>
+                      <p className="text-xs uppercase tracking-wide text-gray-400 mb-1 font-medium">
+                        Estado civil
+                      </p>
+                      <select
+                        value={personalForm.marital_status}
+                        onChange={(e) =>
+                          setPersonalForm((f) => ({
+                            ...f,
+                            marital_status: e.target.value as MaritalStatus | "",
+                          }))
+                        }
+                        className="flex w-full rounded-none border-0 border-b border-arcilla bg-marfil px-4 py-3.5 text-[15px] text-foreground focus:border-b-2 focus:border-terra focus:outline-none"
+                      >
+                        <option value="">Sin registrar</option>
+                        {(Object.keys(MARITAL_LABELS) as MaritalStatus[]).map((k) => (
+                          <option key={k} value={k}>
+                            {MARITAL_LABELS[k]}
+                          </option>
+                        ))}
+                      </select>
+                    </div>
+                    <div>
+                      <p className="text-xs uppercase tracking-wide text-gray-400 mb-1 font-medium">
+                        Profesión
+                      </p>
+                      <Input
+                        value={personalForm.profession}
+                        onChange={(e) =>
+                          setPersonalForm((f) => ({ ...f, profession: e.target.value }))
+                        }
+                      />
+                    </div>
+                    <div>
+                      <p className="text-xs uppercase tracking-wide text-gray-400 mb-1 font-medium">
+                        Lugar de nacimiento
+                      </p>
+                      <Input
+                        value={personalForm.birth_place}
+                        onChange={(e) =>
+                          setPersonalForm((f) => ({ ...f, birth_place: e.target.value }))
+                        }
+                      />
+                    </div>
+                    <div>
+                      <p className="text-xs uppercase tracking-wide text-gray-400 mb-1 font-medium">
+                        Lugar de residencia
+                      </p>
+                      <Input
+                        value={personalForm.residence_place}
+                        onChange={(e) =>
+                          setPersonalForm((f) => ({ ...f, residence_place: e.target.value }))
+                        }
+                      />
+                    </div>
+                  </div>
+                )}
               </Section>
 
               {/* SECCIÓN 2: Perfil Emocional */}

@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useCallback } from "react";
 import { useRouter } from "next/navigation";
-import { PlusCircle, ChevronLeft, ChevronRight, AlertCircle, CalendarPlus, Trash2 } from "lucide-react";
+import { PlusCircle, ChevronLeft, ChevronRight, AlertCircle, CalendarPlus, Trash2, Sparkles } from "lucide-react";
 import { apiClient } from "@/lib/api/client";
 import { useAuthStore } from "@/store/auth";
 import { formatDate, formatCurrency } from "@/lib/utils/formatters";
@@ -56,6 +56,37 @@ export default function SessionsPage() {
   const [data, setData] = useState<SessionsResponse | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [cleaningEmpty, setCleaningEmpty] = useState(false);
+
+  async function handleCleanEmptySessions() {
+    if (cleaningEmpty) return;
+    setCleaningEmpty(true);
+    try {
+      const list = await apiClient.get<{ data: unknown[]; total: number }>(
+        "/api/v1/admin/sessions/empty",
+      );
+      if (list.total === 0) {
+        window.alert("No hay sesiones vacías para eliminar.");
+        return;
+      }
+      const confirmed = window.confirm(
+        `Se eliminarán ${list.total} sesiones vacías. ¿Continuar?`,
+      );
+      if (!confirmed) return;
+      const result = await apiClient.delete<{ deleted_count: number }>(
+        "/api/v1/admin/sessions/empty",
+      );
+      window.alert(`Se eliminaron ${result.deleted_count} sesiones vacías.`);
+      fetchSessions(page);
+    } catch (err) {
+      console.error("Clean empty sessions failed:", err);
+      window.alert(
+        err instanceof Error ? err.message : "Error al limpiar sesiones vacías",
+      );
+    } finally {
+      setCleaningEmpty(false);
+    }
+  }
 
   async function handleDeleteSession(e: React.MouseEvent, sessionId: string) {
     e.stopPropagation();
@@ -104,13 +135,26 @@ export default function SessionsPage() {
             Historial de sesiones clínicas
           </p>
         </div>
-        <button
-          onClick={() => router.push("/clinica/sesiones/nueva")}
-          className="flex items-center gap-2 bg-terra-700 hover:bg-terra-500 text-white h-10 px-4 rounded text-sm font-medium transition-colors"
-        >
-          <PlusCircle className="h-4 w-4" />
-          Nueva sesión
-        </button>
+        <div className="flex items-center gap-2">
+          {isAdmin && (
+            <button
+              onClick={handleCleanEmptySessions}
+              disabled={cleaningEmpty}
+              className="flex items-center gap-2 bg-white border border-terra-700 text-terra-700 hover:bg-terra-50 disabled:opacity-50 disabled:cursor-not-allowed h-10 px-4 rounded text-sm font-medium transition-colors"
+              title="Eliminar sesiones creadas sin datos capturados"
+            >
+              <Sparkles className="h-4 w-4" />
+              {cleaningEmpty ? "Limpiando…" : "Limpiar sesiones vacías"}
+            </button>
+          )}
+          <button
+            onClick={() => router.push("/clinica/sesiones/nueva")}
+            className="flex items-center gap-2 bg-terra-700 hover:bg-terra-500 text-white h-10 px-4 rounded text-sm font-medium transition-colors"
+          >
+            <PlusCircle className="h-4 w-4" />
+            Nueva sesión
+          </button>
+        </div>
       </div>
 
       {/* Loading */}
