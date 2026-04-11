@@ -40,7 +40,7 @@ export function ManifestationAccordion({
   }
 
   return (
-    <div className="rounded-lg border border-[#EDE5E0] bg-white overflow-hidden">
+    <div className="rounded-lg border border-[#EDE5E0] bg-white">
       {/* ── Header (always visible) ── */}
       <button
         type="button"
@@ -119,7 +119,7 @@ export function ManifestationAccordion({
               Trabajo realizado
             </label>
             <SearchableCombobox
-              options={TRABAJO_OPTIONS}
+              options={TRABAJO_OPTIONS} multiple
               value={entry.work_done}
               onChange={(val) => onChange({ work_done: val as string })}
               placeholder="— Trabajo —"
