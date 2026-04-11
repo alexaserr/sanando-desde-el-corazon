@@ -352,7 +352,7 @@ def _event_db_to_output(ev: SessionCleaningEvent) -> CleaningEventOutput:
         name=ev.manifestation or "",
         value=ev.energy_level,
         unit="numero",
-        work_done=ev.work_done or "",
+        work_done=_pipe_split(ev.work_done),
         work_done_custom=None,
         materials=_pipe_split(ev.materials_used),
         origins=_pipe_split(ev.origin),
@@ -1238,7 +1238,7 @@ async def save_cleaning_groups(
         await db.flush()  # materializar group.id
 
         for ev_data in group_data.events:
-            work_done = ev_data.work_done_custom if ev_data.work_done_custom else ev_data.work_done
+            work_done = ev_data.work_done_custom if ev_data.work_done_custom else _pipe_join(ev_data.work_done)
             db.add(SessionCleaningEvent(
                 session_id=session_id,
                 cleaning_group_id=group.id,

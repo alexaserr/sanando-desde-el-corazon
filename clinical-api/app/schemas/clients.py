@@ -255,3 +255,33 @@ class ClientSessionsResponse(BaseModel):
     total: int
     page: int
     per_page: int
+
+
+# ── Merge / duplicados (admin) ────────────────────────────────
+
+class ClientMergeRequest(BaseModel):
+    primary_id: UUID
+    duplicate_id: UUID
+
+
+class ClientMergeResponse(BaseModel):
+    merged: bool
+    sessions_moved: int
+    primary_id: UUID
+
+
+class DuplicateCandidate(BaseModel):
+    id: UUID
+    full_name: str
+    email: str | None = None
+    sessions_count: int
+    created_at: datetime
+
+
+class DuplicateGroup(BaseModel):
+    name: str
+    clients: list[DuplicateCandidate]
+
+
+class DuplicateGroupsResponse(BaseModel):
+    groups: list[DuplicateGroup]

@@ -42,11 +42,20 @@ class CleaningEventInput(BaseModel):
     name: str = ""
     value: Decimal | None = None
     unit: str = "numero"
-    work_done: str = ""
+    work_done: list[str] = Field(default_factory=list)
     work_done_custom: str | None = None
     materials: list[str] = Field(default_factory=list)
     origins: list[str] = Field(default_factory=list)
     is_auto_injected: bool = False
+
+    @field_validator("work_done", "materials", "origins", mode="before")
+    @classmethod
+    def _coerce_list(cls, v):  # type: ignore[no-untyped-def]
+        if v is None or v == "":
+            return []
+        if isinstance(v, str):
+            return [s for s in v.split("|") if s]
+        return v
 
 
 class CleaningEventOutput(BaseModel):
@@ -55,7 +64,7 @@ class CleaningEventOutput(BaseModel):
     name: str = ""
     value: Decimal | None = None
     unit: str = "numero"
-    work_done: str = ""
+    work_done: list[str] = []
     work_done_custom: str | None = None
     materials: list[str] = []
     origins: list[str] = []
