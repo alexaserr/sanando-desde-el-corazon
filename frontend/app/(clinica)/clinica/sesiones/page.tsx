@@ -139,9 +139,10 @@ export default function SessionsPage() {
   async function handleFindDuplicates() {
     setLoadingDuplicates(true);
     try {
-      const groups = await apiClient.get<DuplicateGroup[]>(
+      const response = await apiClient.get<{ data: DuplicateGroup[]; total_groups: number }>(
         "/api/v1/admin/sessions/duplicates",
       );
+      const groups = response.data;
       if (groups.length === 0) {
         window.alert("No se encontraron sesiones duplicadas.");
         return;

@@ -108,10 +108,10 @@ export function useDashboardStats() {
       setLoading(true);
       setError(null);
       try {
-        const data = await apiClient.get<DashboardStats>(
+        const response = await apiClient.get<{ data: DashboardStats }>(
           "/api/v1/admin/dashboard/stats",
         );
-        if (!cancelled) setStats(data);
+        if (!cancelled) setStats(response.data);
       } catch (err) {
         console.error("Dashboard stats failed:", err);
         if (!cancelled) setStats(null);
