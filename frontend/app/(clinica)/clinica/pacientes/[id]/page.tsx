@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { useParams, useRouter } from "next/navigation";
 import {
   ArrowLeft,
@@ -27,6 +27,8 @@ import { apiClient } from "@/lib/api/client";
 import { useAuthStore } from "@/store/auth";
 import { getClientTopics, completeClientTopic } from "@/lib/api/clinical";
 import { Button } from "@/components/ui/button";
+import { SortableHeader, toggleSort } from "@/components/ui/sortable-header";
+import type { SortConfig } from "@/components/ui/sortable-header";
 import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { formatDate, formatPhone, formatCurrency } from "@/lib/utils/formatters";
@@ -59,10 +61,11 @@ const MARITAL_LABELS: Record<MaritalStatus, string> = {
 };
 
 const SLEEP_LABELS: Record<SleepQuality, string> = {
-  bad: "Malo",
+  muy_mala: "Muy mala",
+  mala: "Mala",
   regular: "Regular",
-  good: "Bueno",
-  excellent: "Excelente",
+  buena: "Buena",
+  muy_buena: "Muy buena",
 };
 
 function ordinal(n: number): string {
@@ -459,6 +462,7 @@ export default function PacienteDetailPage() {
   const [selectedSession, setSelectedSession] = useState<Session | null>(null);
   const [loading, setLoading] = useState(true);
   const [sessionsLoading, setSessionsLoading] = useState(false);
+  const [sessionSort, setSessionSort] = useState<SortConfig | null>(null);
   const [topicsLoading, setTopicsLoading] = useState(false);
   const [topicsEndpointMissing, setTopicsEndpointMissing] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -574,6 +578,21 @@ export default function PacienteDetailPage() {
       setIsDeleting(false);
     }
   }
+
+  const handleSessionSort = (key: string) => {
+    setSessionSort((prev) => toggleSort(prev, key));
+  };
+
+  const sortedSessions = useMemo(() => {
+    if (!sessionSort) return sessions;
+    const { key, dir } = sessionSort;
+    return [...sessions].sort((a, b) => {
+      const aVal = String((a as unknown as Record<string, unknown>)[key] ?? "");
+      const bVal = String((b as unknown as Record<string, unknown>)[key] ?? "");
+      const cmp = aVal.localeCompare(bVal, "es-MX");
+      return dir === "asc" ? cmp : -cmp;
+    });
+  }, [sessions, sessionSort]);
 
   useEffect(() => {
     const fetchClient = async () => {
@@ -1080,28 +1099,24 @@ export default function PacienteDetailPage() {
             <div className="rounded-xl border border-terra-100 overflow-hidden">
               <table className="w-full text-sm">
                 <thead>
-                  <tr className="bg-terra-50 border-b border-terra-100 text-terra-600 text-xs uppercase tracking-wider">
-                    <th className="px-5 py-3 text-left font-medium">
-                      Fecha
-                    </th>
-                    <th className="px-5 py-3 text-left font-medium hidden sm:table-cell">
-                      Tipo de terapia
-                    </th>
-                    <th className="px-5 py-3 text-center font-medium hidden sm:table-cell">
+                  <tr className="bg-[#FAF7F5] border-b border-terra-100">
+                    <SortableHeader label="Fecha" sortKey="measured_at" currentSort={sessionSort} onSort={handleSessionSort} />
+                    <SortableHeader label="Tipo de terapia" sortKey="therapy_type_name" currentSort={sessionSort} onSort={handleSessionSort} className="hidden sm:table-cell" />
+                    <th className="px-5 py-3 text-center font-medium text-[#4A3628] text-xs uppercase hidden sm:table-cell" style={{ letterSpacing: "0.1em" }}>
                       Energía
                     </th>
-                    <th className="px-5 py-3 text-left font-medium">
+                    <th className="px-5 py-3 text-left font-medium text-[#4A3628] text-xs uppercase" style={{ letterSpacing: "0.1em" }}>
                       Costo
                     </th>
                   </tr>
                 </thead>
                 <tbody>
-                  {sessions.map((session, idx) => (
+                  {sortedSessions.map((session, idx) => (
                     <tr
                       key={session.id}
                       onClick={() => router.push(`/clinica/sesiones/${session.id}`)}
                       className={`border-b border-terra-100/40 cursor-pointer hover:bg-terra-50/40 transition-colors duration-150 text-terra-800 ${
-                        idx % 2 === 0 ? "bg-white" : "bg-terra-50/20"
+                        idx % 2 === 1 ? "bg-[#F2E8E4]" : "bg-[#FAF7F5]"
                       }`}
                     >
                       <td className="px-5 py-4 font-medium">

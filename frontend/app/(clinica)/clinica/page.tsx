@@ -3,16 +3,41 @@
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
+import dynamic from "next/dynamic";
 import {
   Users,
   CalendarDays,
   Activity,
+  DollarSign,
+  UserPlus,
+  RefreshCw,
   PlusCircle,
   ChevronRight,
+  TrendingUp,
+  TrendingDown,
 } from "lucide-react";
 import { apiClient } from "@/lib/api/client";
 import { formatDate, formatCurrency } from "@/lib/utils/formatters";
+import { useDashboardStats } from "@/hooks/use-dashboard-stats";
 import type { Client, PaginatedResponse, SessionListItem } from "@/types/api";
+
+// Lazy-load Recharts components (they're heavy, SSR-unfriendly)
+const TopClientsChart = dynamic(
+  () => import("@/components/dashboard/TopClientsChart"),
+  { ssr: false, loading: () => <ChartSkeleton /> },
+);
+const TherapyDistributionChart = dynamic(
+  () => import("@/components/dashboard/TherapyDistributionChart"),
+  { ssr: false, loading: () => <ChartSkeleton /> },
+);
+const SessionsTrendChart = dynamic(
+  () => import("@/components/dashboard/SessionsTrendChart"),
+  { ssr: false, loading: () => <ChartSkeleton /> },
+);
+const CleaningsTrendChart = dynamic(
+  () => import("@/components/dashboard/CleaningsTrendChart"),
+  { ssr: false, loading: () => <ChartSkeleton /> },
+);
 
 // ─── Helpers ────────────────────────────────────────────────────────────────
 
@@ -25,13 +50,22 @@ function firstDayOfMonth(): string {
 
 function StatCardSkeleton() {
   return (
-    <div className="bg-white rounded-lg shadow-[0_2px_8px_rgba(44,34,32,0.06)] p-6">
+    <div className="bg-[#FAF7F5] rounded-lg shadow-[0_2px_8px_rgba(44,34,32,0.06)] p-6">
       <div className="flex flex-row items-center justify-between pb-3">
-        <div className="h-4 w-28 bg-terra-200 rounded animate-pulse" />
-        <div className="h-12 w-12 bg-terra-200 rounded-full animate-pulse" />
+        <div className="h-4 w-28 bg-[#F2E8E4] rounded animate-pulse" />
+        <div className="h-12 w-12 bg-[#F2E8E4] rounded-full animate-pulse" />
       </div>
-      <div className="h-9 w-16 bg-terra-200 rounded animate-pulse mb-1" />
-      <div className="h-3 w-24 bg-terra-200 rounded animate-pulse" />
+      <div className="h-9 w-16 bg-[#F2E8E4] rounded animate-pulse mb-1" />
+      <div className="h-3 w-24 bg-[#F2E8E4] rounded animate-pulse" />
+    </div>
+  );
+}
+
+function ChartSkeleton() {
+  return (
+    <div className="rounded-lg bg-[#FAF7F5] shadow-[0_2px_8px_rgba(44,34,32,0.06)] p-6">
+      <div className="h-5 w-48 bg-[#F2E8E4] rounded animate-pulse mb-4" />
+      <div className="h-[300px] bg-[#F2E8E4] rounded animate-pulse" />
     </div>
   );
 }
@@ -44,6 +78,7 @@ interface StatCardProps {
   iconBg: string;
   iconColor: string;
   href?: string;
+  delta?: number | null;
 }
 
 function StatCard({
@@ -54,10 +89,11 @@ function StatCard({
   iconBg,
   iconColor,
   href,
+  delta,
 }: StatCardProps) {
   const card = (
     <div
-      className={`bg-white rounded-lg shadow-[0_2px_8px_rgba(44,34,32,0.06)] transition-shadow ${
+      className={`bg-[#FAF7F5] rounded-lg shadow-[0_2px_8px_rgba(44,34,32,0.06)] transition-shadow ${
         href ? "cursor-pointer hover:shadow-[0_4px_16px_rgba(44,34,32,0.10)]" : "cursor-default"
       }`}
     >
@@ -73,7 +109,24 @@ function StatCard({
       </div>
       <div className="px-6 pb-6 pt-0">
         <div className="font-body text-3xl font-bold text-[#2C2220]">{value}</div>
-        <p className="text-sm text-[#4A3628]/70 mt-1">{description}</p>
+        <div className="flex items-center gap-2 mt-1">
+          <p className="text-sm text-[#4A3628]/70">{description}</p>
+          {delta != null && (
+            <span
+              className={`inline-flex items-center gap-0.5 text-xs font-medium ${
+                delta >= 0 ? "text-emerald-600" : "text-red-500"
+              }`}
+            >
+              {delta >= 0 ? (
+                <TrendingUp className="h-3 w-3" />
+              ) : (
+                <TrendingDown className="h-3 w-3" />
+              )}
+              {delta >= 0 ? "+" : ""}
+              {delta.toFixed(1)}%
+            </span>
+          )}
+        </div>
       </div>
     </div>
   );
@@ -101,25 +154,23 @@ export default function ClinicaDashboardPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
+  const { stats, loading: statsLoading } = useDashboardStats();
+
   useEffect(() => {
     const load = async () => {
       setLoading(true);
       setError(null);
 
       const results = await Promise.allSettled([
-        // Total clients
         apiClient.get<PaginatedResponse<unknown>>(
           "/api/v1/clinical/clients?per_page=1&page=1",
         ),
-        // Recent sessions (total + últimas 5)
         apiClient.get<{ data: SessionListItem[]; total: number }>(
           "/api/v1/clinical/sessions?per_page=5&page=1&sort_by=measured_at&sort_order=desc",
         ),
-        // Sessions this month
         apiClient.get<{ data: SessionListItem[]; total: number }>(
           `/api/v1/clinical/sessions?per_page=1&page=1&date_from=${firstDayOfMonth()}`,
         ),
-        // Recent clients
         apiClient.get<PaginatedResponse<Client>>(
           "/api/v1/clinical/clients?page=1&per_page=5&sort_by=created_at&sort_order=desc",
         ),
@@ -151,7 +202,7 @@ export default function ClinicaDashboardPage() {
       }
 
       if (anyError) {
-        setError("No se pudieron cargar algunas estadísticas.");
+        setError("No se pudieron cargar algunas estadisticas.");
       }
 
       setLoading(false);
@@ -160,10 +211,57 @@ export default function ClinicaDashboardPage() {
     load();
   }, []);
 
+  // Revenue delta %
+  const revenueDelta =
+    stats && stats.revenue_last_month > 0
+      ? ((stats.revenue_this_month - stats.revenue_last_month) /
+          stats.revenue_last_month) *
+        100
+      : null;
+
   const statCards: StatCardProps[] = [
     {
+      title: "Sesiones Este Mes",
+      value: stats?.sessions_this_month ?? sessionsThisMonth ?? "\u2014",
+      description: "vs. mes anterior",
+      icon: CalendarDays,
+      iconBg: "bg-blue-50/80",
+      iconColor: "text-blue-500",
+      href: "/clinica/sesiones",
+      delta: stats?.sessions_delta_pct ?? null,
+    },
+    {
+      title: "Ingresos del Mes",
+      value: stats ? formatCurrency(stats.revenue_this_month) : "\u2014",
+      description: "Estimado",
+      icon: DollarSign,
+      iconBg: "bg-emerald-50/80",
+      iconColor: "text-emerald-500",
+      delta: revenueDelta,
+    },
+    {
+      title: "Pacientes Nuevos",
+      value: stats?.new_clients_this_month ?? "\u2014",
+      description: "Este mes",
+      icon: UserPlus,
+      iconBg: "bg-terra-100",
+      iconColor: "text-terra-600",
+      href: "/clinica/pacientes",
+    },
+    {
+      title: "Tasa de Retorno",
+      value: stats ? `${stats.return_rate.toFixed(1)}%` : "\u2014",
+      description: "Pacientes recurrentes",
+      icon: RefreshCw,
+      iconBg: "bg-violet-50/80",
+      iconColor: "text-violet-500",
+    },
+  ];
+
+  const summaryCards: StatCardProps[] = [
+    {
       title: "Total Pacientes",
-      value: totalClients ?? "—",
+      value: totalClients ?? "\u2014",
       description: "Expedientes registrados",
       icon: Users,
       iconBg: "bg-terra-100",
@@ -171,18 +269,9 @@ export default function ClinicaDashboardPage() {
       href: "/clinica/pacientes",
     },
     {
-      title: "Sesiones Este Mes",
-      value: sessionsThisMonth ?? "—",
-      description: "Mes actual",
-      icon: CalendarDays,
-      iconBg: "bg-blue-50/80",
-      iconColor: "text-blue-500",
-      href: "/clinica/sesiones",
-    },
-    {
       title: "Total Sesiones",
-      value: totalSessions ?? "—",
-      description: "Histórico",
+      value: totalSessions ?? "\u2014",
+      description: "Historico",
       icon: Activity,
       iconBg: "bg-emerald-50/80",
       iconColor: "text-emerald-500",
@@ -191,7 +280,7 @@ export default function ClinicaDashboardPage() {
   ];
 
   return (
-    <div className="space-y-12 max-w-5xl">
+    <div className="space-y-12 max-w-6xl">
       {/* Header */}
       <div className="flex flex-wrap items-center justify-between gap-4">
         <div>
@@ -199,7 +288,7 @@ export default function ClinicaDashboardPage() {
             Dashboard
           </h1>
           <p className="text-sm text-[#4A3628]/60">
-            Bienvenido a Sanando desde el Corazón
+            Bienvenido a Sanando desde el Corazon
           </p>
         </div>
         <div className="flex items-center gap-2">
@@ -208,7 +297,7 @@ export default function ClinicaDashboardPage() {
             className="flex items-center gap-2 bg-[#C4704A] hover:bg-[#A85C3A] text-white h-10 px-4 rounded-lg text-sm font-medium transition-colors"
           >
             <PlusCircle className="h-4 w-4" />
-            Nueva sesión
+            Nueva sesion
           </button>
           <button
             onClick={() => router.push("/clinica/pacientes/nuevo")}
@@ -227,13 +316,52 @@ export default function ClinicaDashboardPage() {
         </div>
       )}
 
-      {/* KPI Cards */}
-      <div className="grid gap-5 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3">
-        {loading
-          ? Array.from({ length: 3 }).map((_, i) => (
+      {/* KPI Cards — expanded row */}
+      <div className="grid gap-5 grid-cols-1 sm:grid-cols-2 lg:grid-cols-4">
+        {loading || statsLoading
+          ? Array.from({ length: 4 }).map((_, i) => (
               <StatCardSkeleton key={i} />
             ))
           : statCards.map((card) => <StatCard key={card.title} {...card} />)}
+      </div>
+
+      {/* Summary totals */}
+      <div className="grid gap-5 grid-cols-1 sm:grid-cols-2 lg:grid-cols-2 max-w-2xl">
+        {loading
+          ? Array.from({ length: 2 }).map((_, i) => (
+              <StatCardSkeleton key={i} />
+            ))
+          : summaryCards.map((card) => <StatCard key={card.title} {...card} />)}
+      </div>
+
+      {/* Charts row 1: Top clients + Therapy distribution */}
+      <div className="grid gap-5 grid-cols-1 lg:grid-cols-2">
+        {statsLoading || !stats ? (
+          <>
+            <ChartSkeleton />
+            <ChartSkeleton />
+          </>
+        ) : (
+          <>
+            <TopClientsChart data={stats.top_clients} />
+            <TherapyDistributionChart data={stats.sessions_by_therapy} />
+          </>
+        )}
+      </div>
+
+      {/* Charts row 2: Sessions trend + Cleanings trend */}
+      <div className="grid gap-5 grid-cols-1 lg:grid-cols-2">
+        {statsLoading || !stats ? (
+          <>
+            <ChartSkeleton />
+            <ChartSkeleton />
+          </>
+        ) : (
+          <>
+            <SessionsTrendChart data={stats.sessions_by_month} />
+            <CleaningsTrendChart data={stats.cleanings_by_month} />
+          </>
+        )}
       </div>
 
       {/* Sesiones recientes */}
@@ -251,7 +379,7 @@ export default function ClinicaDashboardPage() {
           </button>
         </div>
 
-        <div className="rounded-lg shadow-[0_2px_8px_rgba(44,34,32,0.06)] overflow-hidden bg-white">
+        <div className="rounded-lg shadow-[0_2px_8px_rgba(44,34,32,0.06)] overflow-hidden bg-[#FAF7F5]">
           {loading ? (
             <ul className="divide-y divide-[#2C2220]/5">
               {Array.from({ length: 5 }).map((_, i) => (
@@ -260,16 +388,16 @@ export default function ClinicaDashboardPage() {
                   className="flex items-center justify-between px-5 py-3.5 gap-4"
                 >
                   <div className="space-y-1.5">
-                    <div className="h-4 w-40 bg-terra-200 rounded animate-pulse" />
-                    <div className="h-3 w-24 bg-terra-200 rounded animate-pulse" />
+                    <div className="h-4 w-40 bg-[#F2E8E4] rounded animate-pulse" />
+                    <div className="h-3 w-24 bg-[#F2E8E4] rounded animate-pulse" />
                   </div>
-                  <div className="h-3 w-20 bg-terra-200 rounded animate-pulse" />
+                  <div className="h-3 w-20 bg-[#F2E8E4] rounded animate-pulse" />
                 </li>
               ))}
             </ul>
           ) : recentSessions.length === 0 ? (
             <p className="px-5 py-8 text-center text-sm text-[#4A3628]/60">
-              No hay sesiones registradas aún.
+              No hay sesiones registradas aun.
             </p>
           ) : (
             <ul className="divide-y divide-[#2C2220]/5">
@@ -284,7 +412,7 @@ export default function ClinicaDashboardPage() {
                       {s.client_name ?? "Sin paciente"}
                     </p>
                     <p className="text-xs text-[#4A3628]/60">
-                      {s.therapy_type_name ?? "Sesión"} ·{" "}
+                      {s.therapy_type_name ?? "Sesion"} ·{" "}
                       {formatDate(s.measured_at)}
                     </p>
                   </div>
@@ -318,7 +446,7 @@ export default function ClinicaDashboardPage() {
           </button>
         </div>
 
-        <div className="rounded-lg shadow-[0_2px_8px_rgba(44,34,32,0.06)] overflow-hidden bg-white">
+        <div className="rounded-lg shadow-[0_2px_8px_rgba(44,34,32,0.06)] overflow-hidden bg-[#FAF7F5]">
           {loading ? (
             <ul className="divide-y divide-[#2C2220]/5">
               {Array.from({ length: 5 }).map((_, i) => (
@@ -327,16 +455,16 @@ export default function ClinicaDashboardPage() {
                   className="flex items-center justify-between px-5 py-3.5 gap-4"
                 >
                   <div className="space-y-1.5">
-                    <div className="h-4 w-40 bg-terra-200 rounded animate-pulse" />
-                    <div className="h-3 w-24 bg-terra-200 rounded animate-pulse" />
+                    <div className="h-4 w-40 bg-[#F2E8E4] rounded animate-pulse" />
+                    <div className="h-3 w-24 bg-[#F2E8E4] rounded animate-pulse" />
                   </div>
-                  <div className="h-3 w-20 bg-terra-200 rounded animate-pulse" />
+                  <div className="h-3 w-20 bg-[#F2E8E4] rounded animate-pulse" />
                 </li>
               ))}
             </ul>
           ) : recentClients.length === 0 ? (
             <p className="px-5 py-8 text-center text-sm text-[#4A3628]/60">
-              No hay pacientes registrados aún.
+              No hay pacientes registrados aun.
             </p>
           ) : (
             <ul className="divide-y divide-[#2C2220]/5">
@@ -355,7 +483,7 @@ export default function ClinicaDashboardPage() {
                     <p className="text-xs text-[#4A3628]/60">
                       {(client.profession && client.profession !== "NA")
                         ? client.profession
-                        : client.email ?? "—"}
+                        : client.email ?? "\u2014"}
                     </p>
                   </div>
                   <div className="flex items-center gap-2 text-xs text-[#4A3628]/60 flex-shrink-0">

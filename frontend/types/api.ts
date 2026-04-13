@@ -51,7 +51,7 @@ export interface ClientMedication {
   deleted_at: string | null;
 }
 
-export type SleepQuality = "bad" | "regular" | "good" | "excellent";
+export type SleepQuality = "muy_mala" | "mala" | "regular" | "buena" | "muy_buena";
 
 export interface ClientSleep {
   id: string;
@@ -100,6 +100,7 @@ export interface SessionListItem {
   therapy_type_name: string | null;
   measured_at: string;
   general_energy_level: number | null;
+  status: string | null;
   cost: number | null;
   created_at: string;
 }

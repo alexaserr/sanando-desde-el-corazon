@@ -1,12 +1,14 @@
 "use client";
 
-import { useState, useEffect, useCallback, useRef } from "react";
+import { useState, useEffect, useCallback, useRef, useMemo } from "react";
 import { useRouter } from "next/navigation";
 import { Search, ChevronLeft, ChevronRight, UserSearch, UserPlus, Trash2, AlertCircle, RefreshCw, Users, X, Loader2 } from "lucide-react";
 import { apiClient } from "@/lib/api/client";
 import { useAuthStore } from "@/store/auth";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { SortableHeader, toggleSort } from "@/components/ui/sortable-header";
+import type { SortConfig } from "@/components/ui/sortable-header";
 import type { Client, PaginatedResponse } from "@/types/api";
 
 interface DuplicateCandidate {
@@ -47,6 +49,7 @@ export default function PacientesPage() {
   const [query, setQuery] = useState("");
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [sortConfig, setSortConfig] = useState<SortConfig | null>(null);
   // Duplicados (admin-only)
   const [dupOpen, setDupOpen] = useState(false);
   const [dupLoading, setDupLoading] = useState(false);
@@ -56,6 +59,21 @@ export default function PacientesPage() {
   // Refs para debounce y cancelación de requests en vuelo
   const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const abortRef = useRef<AbortController | null>(null);
+
+  const sortedClients = useMemo(() => {
+    if (!sortConfig) return clients;
+    const { key, dir } = sortConfig;
+    return [...clients].sort((a, b) => {
+      const aVal = (a[key as keyof Client] as string | null) ?? "";
+      const bVal = (b[key as keyof Client] as string | null) ?? "";
+      const cmp = String(aVal).localeCompare(String(bVal), "es-MX");
+      return dir === "asc" ? cmp : -cmp;
+    });
+  }, [clients, sortConfig]);
+
+  const handleSort = (key: string) => {
+    setSortConfig((prev) => toggleSort(prev, key));
+  };
 
   const fetchClients = useCallback(async (searchQuery: string, pageNum: number) => {
     // Cancelar request anterior si sigue en vuelo
@@ -229,11 +247,11 @@ export default function PacientesPage() {
       <div className="rounded-xl border border-terra-100 overflow-hidden">
         <table className="w-full text-sm">
           <thead>
-            <tr className="bg-terra-50 text-terra-600 text-xs uppercase tracking-wider">
-              <th className="px-5 py-3 text-left font-medium">Nombre</th>
-              <th className="px-5 py-3 text-left font-medium hidden sm:table-cell">Email</th>
-              <th className="px-5 py-3 text-left font-medium hidden md:table-cell">Teléfono</th>
-              <th className="px-5 py-3 text-left font-medium hidden md:table-cell">Profesión</th>
+            <tr className="bg-[#FAF7F5] border-b border-terra-100">
+              <SortableHeader label="Nombre" sortKey="full_name" currentSort={sortConfig} onSort={handleSort} />
+              <SortableHeader label="Email" sortKey="email" currentSort={sortConfig} onSort={handleSort} className="hidden sm:table-cell" />
+              <SortableHeader label="Teléfono" sortKey="phone" currentSort={sortConfig} onSort={handleSort} className="hidden md:table-cell" />
+              <SortableHeader label="Profesión" sortKey="profession" currentSort={sortConfig} onSort={handleSort} className="hidden md:table-cell" />
               {isAdmin && <th className="w-10" />}
             </tr>
           </thead>
@@ -270,11 +288,11 @@ export default function PacientesPage() {
                 </td>
               </tr>
             ) : (
-              clients.map((client) => (
+              sortedClients.map((client, idx) => (
                 <tr
                   key={client.id}
                   onClick={() => router.push(`/clinica/pacientes/${client.id}`)}
-                  className="border-b border-terra-100/40 cursor-pointer hover:bg-terra-50/40 transition-colors duration-150 text-terra-800"
+                  className={`border-b border-terra-100/40 cursor-pointer hover:bg-terra-50/40 transition-colors duration-150 text-terra-800 ${idx % 2 === 1 ? "bg-[#F2E8E4]" : "bg-[#FAF7F5]"}`}
                 >
                   <td className="px-5 py-4 font-medium">{client.full_name}</td>
                   <td className="px-5 py-4 text-terra-500 hidden sm:table-cell">
