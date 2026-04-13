@@ -112,9 +112,9 @@ export function useDashboardStats() {
           "/api/v1/admin/dashboard/stats",
         );
         if (!cancelled) setStats(data);
-      } catch {
-        // Fallback to mock data if endpoint not available
-        if (!cancelled) setStats(MOCK_STATS);
+      } catch (err) {
+        console.error("Dashboard stats failed:", err);
+        if (!cancelled) setStats(null);
       } finally {
         if (!cancelled) setLoading(false);
       }

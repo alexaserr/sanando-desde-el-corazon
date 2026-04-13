@@ -6,25 +6,25 @@ import { useEffect } from "react";
 
 const MEXICO_STATES = [
   "Aguascalientes","Baja California","Baja California Sur","Campeche","Chiapas",
-  "Chihuahua","Ciudad de Mexico","Coahuila","Colima","Durango","Estado de Mexico",
-  "Guanajuato","Guerrero","Hidalgo","Jalisco","Michoacan","Morelos","Nayarit",
-  "Nuevo Leon","Oaxaca","Puebla","Queretaro","Quintana Roo","San Luis Potosi",
-  "Sinaloa","Sonora","Tabasco","Tamaulipas","Tlaxcala","Veracruz","Yucatan","Zacatecas",
+  "Chihuahua","Ciudad de México","Coahuila","Colima","Durango","Estado de México",
+  "Guanajuato","Guerrero","Hidalgo","Jalisco","Michoacán","Morelos","Nayarit",
+  "Nuevo León","Oaxaca","Puebla","Querétaro","Quintana Roo","San Luis Potosí",
+  "Sinaloa","Sonora","Tabasco","Tamaulipas","Tlaxcala","Veracruz","Yucatán","Zacatecas",
 ];
 
 const SPAIN_COMMUNITIES = [
-  "Andalucia","Aragon","Asturias","Baleares","Canarias","Cantabria",
-  "Castilla-La Mancha","Castilla y Leon","Cataluna","Comunidad Valenciana",
-  "Extremadura","Galicia","La Rioja","Madrid","Murcia","Navarra","Pais Vasco",
+  "Andalucía","Aragón","Asturias","Baleares","Canarias","Cantabria",
+  "Castilla-La Mancha","Castilla y León","Cataluña","Comunidad Valenciana",
+  "Extremadura","Galicia","La Rioja","Madrid","Murcia","Navarra","País Vasco",
 ];
 
 const US_STATES = [
   "Alabama","Alaska","Arizona","Arkansas","California","Carolina del Norte",
   "Carolina del Sur","Colorado","Connecticut","Dakota del Norte","Dakota del Sur",
-  "Delaware","Florida","Georgia","Hawai","Idaho","Illinois","Indiana","Iowa",
+  "Delaware","Florida","Georgia","Hawái","Idaho","Illinois","Indiana","Iowa",
   "Kansas","Kentucky","Luisiana","Maine","Maryland","Massachusetts","Michigan",
   "Minnesota","Misisipi","Misuri","Montana","Nebraska","Nevada","Nueva Hampshire",
-  "Nueva Jersey","Nuevo Mexico","Nueva York","Ohio","Oklahoma","Oregon",
+  "Nueva Jersey","Nuevo Mexico","Nueva York","Ohio","Oklahoma","Oregón",
   "Pensilvania","Rhode Island","Tennessee","Texas","Utah","Vermont","Virginia",
   "Virginia Occidental","Washington","Wisconsin","Wyoming",
 ];
@@ -127,7 +127,7 @@ export default function LocationSelector({
               <option key={c} value={c}>{c}</option>
             ))}
           </optgroup>
-          <optgroup label="Otros paises">
+          <optgroup label="Otros países">
             {OTHER_COUNTRIES.map((c) => (
               <option key={c} value={c}>{c}</option>
             ))}
@@ -165,7 +165,7 @@ export default function LocationSelector({
             disabled={!countryValue}
           >
             <option value="">
-              {countryValue ? "Seleccionar..." : "Primero selecciona pais"}
+              {countryValue ? "Seleccionar..." : "Primero selecciona país"}
             </option>
             {stateOptions?.map((s) => (
               <option key={s} value={s}>{s}</option>

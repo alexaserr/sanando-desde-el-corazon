@@ -202,7 +202,7 @@ export default function ClinicaDashboardPage() {
       }
 
       if (anyError) {
-        setError("No se pudieron cargar algunas estadisticas.");
+        setError("No se pudieron cargar algunas estadísticas.");
       }
 
       setLoading(false);
@@ -213,7 +213,7 @@ export default function ClinicaDashboardPage() {
 
   // Revenue delta %
   const revenueDelta =
-    stats && stats.revenue_last_month > 0
+    stats && stats.revenue_last_month != null && stats.revenue_last_month > 0
       ? ((stats.revenue_this_month - stats.revenue_last_month) /
           stats.revenue_last_month) *
         100
@@ -250,7 +250,7 @@ export default function ClinicaDashboardPage() {
     },
     {
       title: "Tasa de Retorno",
-      value: stats ? `${stats.return_rate.toFixed(1)}%` : "\u2014",
+      value: stats?.return_rate != null ? `${stats.return_rate.toFixed(1)}%` : "\u2014",
       description: "Pacientes recurrentes",
       icon: RefreshCw,
       iconBg: "bg-violet-50/80",
@@ -271,7 +271,7 @@ export default function ClinicaDashboardPage() {
     {
       title: "Total Sesiones",
       value: totalSessions ?? "\u2014",
-      description: "Historico",
+      description: "Histórico",
       icon: Activity,
       iconBg: "bg-emerald-50/80",
       iconColor: "text-emerald-500",
@@ -288,7 +288,7 @@ export default function ClinicaDashboardPage() {
             Dashboard
           </h1>
           <p className="text-sm text-[#4A3628]/60">
-            Bienvenido a Sanando desde el Corazon
+            Bienvenido a Sanando desde el Corazón
           </p>
         </div>
         <div className="flex items-center gap-2">
@@ -297,7 +297,7 @@ export default function ClinicaDashboardPage() {
             className="flex items-center gap-2 bg-[#C4704A] hover:bg-[#A85C3A] text-white h-10 px-4 rounded-lg text-sm font-medium transition-colors"
           >
             <PlusCircle className="h-4 w-4" />
-            Nueva sesion
+            Nueva sesión
           </button>
           <button
             onClick={() => router.push("/clinica/pacientes/nuevo")}
@@ -397,7 +397,7 @@ export default function ClinicaDashboardPage() {
             </ul>
           ) : recentSessions.length === 0 ? (
             <p className="px-5 py-8 text-center text-sm text-[#4A3628]/60">
-              No hay sesiones registradas aun.
+              No hay sesiones registradas aún.
             </p>
           ) : (
             <ul className="divide-y divide-[#2C2220]/5">
@@ -412,7 +412,7 @@ export default function ClinicaDashboardPage() {
                       {s.client_name ?? "Sin paciente"}
                     </p>
                     <p className="text-xs text-[#4A3628]/60">
-                      {s.therapy_type_name ?? "Sesion"} ·{" "}
+                      {s.therapy_type_name ?? "Sesión"} ·{" "}
                       {formatDate(s.measured_at)}
                     </p>
                   </div>
@@ -464,7 +464,7 @@ export default function ClinicaDashboardPage() {
             </ul>
           ) : recentClients.length === 0 ? (
             <p className="px-5 py-8 text-center text-sm text-[#4A3628]/60">
-              No hay pacientes registrados aun.
+              No hay pacientes registrados aún.
             </p>
           ) : (
             <ul className="divide-y divide-[#2C2220]/5">

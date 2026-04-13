@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
@@ -13,45 +13,45 @@ import LocationSelector from "@/components/form/LocationSelector";
 const registrationSchema = z.object({
   // Step 1
   full_name: z.string().min(3, "El nombre es obligatorio"),
-  email: z.string().email("Email invalido"),
-  phone: z.string().min(10, "Telefono obligatorio (minimo 10 digitos)"),
+  email: z.string().email("Email inválido"),
+  phone: z.string().min(10, "Teléfono obligatorio (mínimo 10 dígitos)"),
   birth_date: z.string().min(1, "Fecha de nacimiento obligatoria"),
   marital_status: z.string().min(1, "Estado civil obligatorio"),
-  profession: z.string().min(1, "Profesion obligatoria"),
+  profession: z.string().min(1, "Profesión obligatoria"),
   profession_other: z.string().optional(),
   // Step 2
-  predominant_emotions: z.array(z.string()).min(1, "Selecciona al menos una emocion"),
-  motivation_visit: z.array(z.string()).min(1, "Selecciona al menos una motivacion"),
+  predominant_emotions: z.array(z.string()).min(1, "Selecciona al menos una emoción"),
+  motivation_visit: z.array(z.string()).min(1, "Selecciona al menos una motivación"),
   motivation_other: z.string().optional(),
-  motivation_general: z.string().min(10, "Describe tu motivacion (minimo 10 caracteres)"),
+  motivation_general: z.string().min(10, "Describe tu motivación (mínimo 10 caracteres)"),
   // Step 3
-  medical_conditions: z.array(z.string()).min(1, "Selecciona al menos una opcion"),
+  medical_conditions: z.array(z.string()).min(1, "Selecciona al menos una opción"),
   medical_conditions_other: z.string().optional(),
-  recurring_diseases: z.array(z.string()).min(1, "Selecciona al menos una opcion"),
+  recurring_diseases: z.array(z.string()).min(1, "Selecciona al menos una opción"),
   recurring_diseases_other: z.string().optional(),
   // Step 4
-  birth_country: z.string().min(1, "Pais de nacimiento obligatorio"),
+  birth_country: z.string().min(1, "País de nacimiento obligatorio"),
   birth_state: z.string().min(1, "Estado/provincia obligatorio"),
-  residence_country: z.string().min(1, "Pais de residencia obligatorio"),
+  residence_country: z.string().min(1, "País de residencia obligatorio"),
   residence_state: z.string().min(1, "Estado/provincia obligatorio"),
+  // Step 5
   family_nuclear: z.string().min(3, "Describe tu familia nuclear"),
-  family_nuclear_dynamics: z.string().min(3, "Describe las dinamicas familiares"),
+  family_nuclear_dynamics: z.string().min(3, "Describe las dinámicas familiares"),
   num_siblings: z.coerce.number().int().min(0, "Obligatorio"),
   birth_order: z.coerce.number().int().min(1, "Obligatorio"),
   family_abortions_detail: z.string().min(1, "Obligatorio"),
   deaths_before_41: z.string().min(1, "Obligatorio"),
-  // Step 5
   family_current: z.string().min(3, "Describe tu familia actual"),
-  family_current_dynamics: z.string().min(3, "Describe las dinamicas"),
+  family_current_dynamics: z.string().min(3, "Describe las dinámicas"),
   num_children_detail: z.string().min(1, "Obligatorio"),
   // Step 6
-  avg_sleep_hours: z.coerce.number().int().min(1, "Obligatorio").max(24, "Maximo 24 horas"),
+  avg_sleep_hours: z.coerce.number().min(0.5, "Mínimo 0.5 horas").max(24, "Máximo 24 horas"),
   sleep_quality: z.enum(["muy_buena", "buena", "regular", "mala", "muy_mala"], {
-    required_error: "Selecciona la calidad de sueno",
-    invalid_type_error: "Selecciona la calidad de sueno",
+    required_error: "Selecciona la calidad de sueño",
+    invalid_type_error: "Selecciona la calidad de sueño",
   }),
   medications: z.string().min(1, "Obligatorio (escribe 'Ninguno' si no aplica)"),
-  body_pains: z.array(z.string()).min(1, "Selecciona al menos una opcion"),
+  body_pains: z.array(z.string()).min(1, "Selecciona al menos una opción"),
   body_pains_other: z.string().optional(),
   important_notes: z.string().optional(),
   consent: z.literal(true, {
@@ -67,18 +67,18 @@ const STEPS = [
   { number: 1, label: "Datos personales" },
   { number: 2, label: "Emociones" },
   { number: 3, label: "Salud" },
-  { number: 4, label: "Ubicacion y familia" },
-  { number: 5, label: "Familia actual" },
-  { number: 6, label: "Salud y notas" },
+  { number: 4, label: "Ubicación" },
+  { number: 5, label: "Familia" },
+  { number: 6, label: "Sueño y notas" },
 ];
 
 const FIELDS_BY_STEP: Record<number, (keyof RegistrationForm)[]> = {
   1: ["full_name", "email", "phone", "birth_date", "marital_status", "profession"],
   2: ["predominant_emotions", "motivation_visit", "motivation_general"],
   3: ["medical_conditions", "recurring_diseases"],
-  4: ["birth_country", "birth_state", "family_nuclear", "family_nuclear_dynamics",
-      "num_siblings", "birth_order", "family_abortions_detail", "deaths_before_41"],
-  5: ["residence_country", "residence_state", "family_current",
+  4: ["birth_country", "birth_state", "residence_country", "residence_state"],
+  5: ["family_nuclear", "family_nuclear_dynamics", "num_siblings", "birth_order",
+      "family_abortions_detail", "deaths_before_41", "family_current",
       "family_current_dynamics", "num_children_detail"],
   6: ["avg_sleep_hours", "sleep_quality", "medications", "body_pains", "consent"],
 };
@@ -88,53 +88,53 @@ const MARITAL_OPTIONS = [
   { value: "casado", label: "Casado/a" },
   { value: "divorciado", label: "Divorciado/a" },
   { value: "viudo", label: "Viudo/a" },
-  { value: "union_libre", label: "Union libre" },
+  { value: "union_libre", label: "Unión libre" },
 ];
 
 const PROFESSION_OPTIONS = [
-  "Abogada/o","Administracion","Agente de Seguros","Ama de Casa",
-  "Arquitectura y Diseno","Chef","Consultoria","Contaduria","Disenador(a)",
+  "Abogada/o","Administración","Agente de Seguros","Ama de Casa",
+  "Arquitectura y Diseño","Chef","Consultoría","Contaduría","Diseñador(a)",
   "Doctor(a)","Emprendedor(a)","Empresaria/o","Enfermera/o","Estudiante",
-  "Funcion Publica","Hogar","Ingenieria","Jubilada/o","Marketing y Comunicacion",
-  "Pensionada/o","Psicologa/o","Psicoterapeuta","Restaurantera/o",
+  "Función Pública","Hogar","Ingeniería","Jubilada/o","Marketing y Comunicación",
+  "Pensionada/o","Psicóloga/o","Psicoterapeuta","Restaurantera/o",
   "Sector belleza","Sector salud","Terapeuta","Ventas","Otro",
 ];
 
 const MOTIVATION_OPTIONS = [
   "Cortar pensamientos limitantes","Crecimiento personal","Disolver trauma",
-  "Encontrar mas oportunidades personales","Estabilidad familiar",
-  "Mejorar estado de animo","Mejorar salud emocional","Mejorar salud fisica",
+  "Encontrar más oportunidades personales","Estabilidad familiar",
+  "Mejorar estado de ánimo","Mejorar salud emocional","Mejorar salud física",
   "Poder tomar decisiones","Reconectar consigo mismo","Otro",
 ];
 
 const CONDITIONS_OPTIONS = [
   "Adenomiosis","Anemia","Angina de pecho","Artritis","Artrosis","Asma",
-  "Bipolaridad","Bursitis","Cancer","Cataratas","Cirrosis hepatica","Colitis",
-  "Contracturas cronicas","Dermatitis","Desgaste de cartilago","Diabetes",
-  "Dislexia","Diverticulos","Ehlers Danlos","Endometriosis","EPOC","Epilepsia",
+  "Bipolaridad","Bursitis","Cáncer","Cataratas","Cirrosis hepática","Colitis",
+  "Contracturas crónicas","Dermatitis","Desgaste de cartílago","Diabetes",
+  "Dislexia","Divertículos","Ehlers Danlos","Endometriosis","EPOC","Epilepsia",
   "Escoliosis","Fibromialgia","Fibroadenoma","Fibrosis","Gastritis",
-  "Hernia discal","Higado graso","Hipertension","Hipertiroidismo",
-  "Hipotiroidismo","Inflamacion sacroiliaca","Insuficiencia cardiaca","Lupus",
-  "Migrana cronica","Neuropatia","Osteoporosis","Ovario poliquistico",
-  "Parkinson","Protesis articular","Psoriasis","Resistencia a la insulina",
-  "Rosacea","Sarcopenia","Sindrome de intestino irritable","Tabaquismo",
+  "Hernia discal","Hígado graso","Hipertensión","Hipertiroidismo",
+  "Hipotiroidismo","Inflamación sacroilíaca","Insuficiencia cardíaca","Lupus",
+  "Migraña crónica","Neuropatía","Osteoporosis","Ovario poliquístico",
+  "Parkinson","Prótesis articular","Psoriasis","Resistencia a la insulina",
+  "Rosácea","Sarcopenia","Síndrome de intestino irritable","Tabaquismo",
   "TDAH","TEA","TLP","TOC","Trastorno de ansiedad generalizada",
-  "Trastorno depresivo mayor","Venas varicosas","Vitiligo",
+  "Trastorno depresivo mayor","Venas varicosas","Vitíligo",
   "No aplica","Otro",
 ];
 
 const RECURRING_OPTIONS = [
   "Gripa / dolor de garganta","Malestar estomacal","Cuerpo cortado","Gases",
-  "Hinchazon","Dolor de cabeza / migrana","Dolor de articulaciones",
-  "Dolor de huesos","Dolor de musculos","Fatiga","Cansancio extremo",
-  "Colicos","Nauseas constantes","Diarrea","Colitis cronica","Gastritis",
+  "Hinchazón","Dolor de cabeza / migraña","Dolor de articulaciones",
+  "Dolor de huesos","Dolor de músculos","Fatiga","Cansancio extremo",
+  "Cólicos","Náuseas constantes","Diarrea","Colitis crónica","Gastritis",
   "No aplica","Otro",
 ];
 
 const PAINS_OPTIONS = [
   "Ojos","Espalda","Pies","Manos","Espalda baja","Brazo derecho",
-  "Brazo izquierdo","Pierna derecha","Pierna izquierda","Ciatica",
-  "Estomago","Cabeza","Espalda alta","Rodillas","Hombros","Caderas",
+  "Brazo izquierdo","Pierna derecha","Pierna izquierda","Ciática",
+  "Estómago","Cabeza","Espalda alta","Rodillas","Hombros","Caderas",
   "Dientes","No aplica","Otro",
 ];
 
@@ -398,6 +398,50 @@ export default function RegistroPage() {
   const residenceState = watch("residence_state");
   const sleepQuality = watch("sleep_quality");
 
+  // ── Dynamic children ──
+  const [childCount, setChildCount] = useState(0);
+  const [childrenList, setChildrenList] = useState<{name: string; age: string; gender: string}[]>([]);
+
+  useEffect(() => {
+    if (childCount === 0) {
+      setValue("num_children_detail", "Ninguno");
+      setChildrenList([]);
+    } else {
+      setChildrenList((prev) => {
+        const arr = [...prev];
+        while (arr.length < childCount) arr.push({ name: "", age: "", gender: "" });
+        return arr.slice(0, childCount);
+      });
+    }
+  }, [childCount, setValue]);
+
+  useEffect(() => {
+    if (childrenList.length > 0) {
+      const desc = childrenList
+        .map((c, i) => {
+          const parts = [
+            c.name || `Hijo/a ${i + 1}`,
+            c.age ? `${c.age} años` : "",
+            c.gender,
+          ].filter(Boolean);
+          return parts.join(", ");
+        })
+        .join("; ");
+      setValue("num_children_detail", `${childrenList.length} hijo(s): ${desc}`);
+    }
+  }, [childrenList, setValue]);
+
+  const updateChild = useCallback(
+    (index: number, field: "name" | "age" | "gender", value: string) => {
+      setChildrenList((prev) => {
+        const next = [...prev];
+        next[index] = { ...next[index], [field]: value };
+        return next;
+      });
+    },
+    [],
+  );
+
   // ── Auto-save to sessionStorage ──
   useEffect(() => {
     const subscription = watch((data) => {
@@ -504,7 +548,7 @@ export default function RegistroPage() {
       if (!res.ok) {
         if (res.status === 429) {
           setServerError(
-            "Has excedido el limite de intentos. Espera unos minutos e intenta de nuevo.",
+            "Has excedido el límite de intentos. Espera unos minutos e intenta de nuevo.",
           );
           return;
         }
@@ -541,13 +585,13 @@ export default function RegistroPage() {
             className="mb-2 text-2xl text-[#4A3628]"
             style={{ fontFamily: "Playfair Display, serif" }}
           >
-            Registro exitoso!
+            ¡Registro exitoso!
           </h2>
           <p
             className="text-sm text-[#6B5E54]"
             style={{ fontFamily: "Lato, sans-serif" }}
           >
-            Tu terapeuta revisara tus datos antes de tu primera sesion.
+            Tu terapeuta revisará tus datos antes de tu primera sesión.
           </p>
         </div>
       </div>
@@ -562,7 +606,7 @@ export default function RegistroPage() {
         <div className="flex justify-center mb-6">
           <img
             src="/logo_SDC.svg"
-            alt="Sanando desde el Corazon"
+            alt="Sanando desde el Corazón"
             className="h-24 w-auto"
           />
         </div>
@@ -573,7 +617,7 @@ export default function RegistroPage() {
             className="text-3xl text-[#4A3628]"
             style={{ fontFamily: "Playfair Display, serif" }}
           >
-            Sanando desde el Corazon
+            Sanando desde el Corazón
           </h1>
           <p
             className="mt-1 text-sm text-[#6B5E54]"
@@ -654,7 +698,7 @@ export default function RegistroPage() {
                 {/* Phone */}
                 <div>
                   <FieldLabel htmlFor="phone" required>
-                    Telefono
+                    Teléfono
                   </FieldLabel>
                   <input
                     id="phone"
@@ -700,7 +744,7 @@ export default function RegistroPage() {
                 {/* Profession */}
                 <div className="sm:col-span-2">
                   <FieldLabel htmlFor="profession" required>
-                    Profesion
+                    Profesión
                   </FieldLabel>
                   <select
                     id="profession"
@@ -718,7 +762,7 @@ export default function RegistroPage() {
                     <input
                       type="text"
                       className={`${INPUT_CLS} mt-2`}
-                      placeholder="Especifica tu profesion..."
+                      placeholder="Especifica tu profesión..."
                       {...register("profession_other")}
                     />
                   )}
@@ -735,7 +779,7 @@ export default function RegistroPage() {
                 className="text-lg text-[#2C2220] font-semibold"
                 style={{ fontFamily: "Playfair Display, serif" }}
               >
-                Emociones y Motivacion
+                Emociones y Motivación
               </h2>
               {/* Predominant emotions */}
               <div>
@@ -754,7 +798,7 @@ export default function RegistroPage() {
               {/* Motivation visit - multi-select */}
               <div>
                 <FieldLabel htmlFor="motivation_visit" required>
-                  Que te motivo a buscar ayuda?
+                  ¿Qué te motivó a buscar ayuda?
                 </FieldLabel>
                 <p className="mb-2 text-xs text-[#6B5E54]">
                   Selecciona todas las que apliquen
@@ -778,7 +822,7 @@ export default function RegistroPage() {
               {/* Motivation general */}
               <div>
                 <FieldLabel htmlFor="motivation_general" required>
-                  Que esperas lograr?
+                  ¿Qué esperas lograr?
                 </FieldLabel>
                 <textarea
                   id="motivation_general"
@@ -804,7 +848,7 @@ export default function RegistroPage() {
               {/* Medical conditions */}
               <div>
                 <FieldLabel htmlFor="conditions" required>
-                  Problemas medicos diagnosticados
+                  Problemas médicos diagnosticados
                 </FieldLabel>
                 <p className="mb-2 text-xs text-[#6B5E54]">
                   Selecciona todas las opciones que apliquen
@@ -825,7 +869,7 @@ export default function RegistroPage() {
               {/* Recurring diseases */}
               <div>
                 <FieldLabel htmlFor="recurring" required>
-                  Enfermedades medicas recurrentes
+                  Enfermedades médicas recurrentes
                 </FieldLabel>
                 <p className="mb-2 text-xs text-[#6B5E54]">
                   Selecciona si tienes dolor o molestia constante
@@ -846,14 +890,14 @@ export default function RegistroPage() {
             </div>
           )}
 
-          {/* ═══════ Step 4: Ubicacion y familia ═══════ */}
+          {/* ═══════ Step 4: Ubicación ═══════ */}
           {currentStep === 4 && (
             <div className="rounded-lg bg-[#FAF7F5] shadow-[0_2px_8px_rgba(44,34,32,0.06)] p-5 space-y-5">
               <h2
                 className="text-lg text-[#2C2220] font-semibold"
                 style={{ fontFamily: "Playfair Display, serif" }}
               >
-                Ubicacion y Familia
+                Ubicación
               </h2>
               {/* Birth place */}
               <div>
@@ -867,12 +911,42 @@ export default function RegistroPage() {
                   onStateChange={(v) => setValue("birth_state", v, { shouldValidate: true })}
                   countryId="birth_country"
                   stateId="birth_state"
-                  countryLabel="Pais"
+                  countryLabel="País"
                   stateLabel="Estado / Provincia"
                   countryError={errors.birth_country?.message}
                   stateError={errors.birth_state?.message}
                 />
               </div>
+              {/* Residence */}
+              <div>
+                <p className="mb-2 text-xs uppercase tracking-[0.1em] font-bold text-[#4A3628]">
+                  Lugar de residencia
+                </p>
+                <LocationSelector
+                  countryValue={residenceCountry}
+                  stateValue={residenceState}
+                  onCountryChange={(v) => setValue("residence_country", v, { shouldValidate: true })}
+                  onStateChange={(v) => setValue("residence_state", v, { shouldValidate: true })}
+                  countryId="residence_country"
+                  stateId="residence_state"
+                  countryLabel="País"
+                  stateLabel="Estado / Provincia"
+                  countryError={errors.residence_country?.message}
+                  stateError={errors.residence_state?.message}
+                />
+              </div>
+            </div>
+          )}
+
+          {/* ═══════ Step 5: Familia ═══════ */}
+          {currentStep === 5 && (
+            <div className="rounded-lg bg-[#FAF7F5] shadow-[0_2px_8px_rgba(44,34,32,0.06)] p-5 space-y-5">
+              <h2
+                className="text-lg text-[#2C2220] font-semibold"
+                style={{ fontFamily: "Playfair Display, serif" }}
+              >
+                Familia
+              </h2>
               {/* Family nuclear */}
               <div>
                 <FieldLabel htmlFor="family_nuclear" required>
@@ -889,13 +963,13 @@ export default function RegistroPage() {
               </div>
               <div>
                 <FieldLabel htmlFor="family_nuclear_dynamics" required>
-                  Dinamicas familiares nucleares
+                  Dinámicas familiares nucleares
                 </FieldLabel>
                 <textarea
                   id="family_nuclear_dynamics"
                   rows={3}
                   className={TEXTAREA_CLS}
-                  placeholder="Como es la relacion entre los miembros de tu familia..."
+                  placeholder="¿Cómo es la relación entre los miembros de tu familia?"
                   {...register("family_nuclear_dynamics")}
                 />
                 <FieldError message={errors.family_nuclear_dynamics?.message} />
@@ -904,7 +978,7 @@ export default function RegistroPage() {
               <div className="grid gap-4 sm:grid-cols-2">
                 <div>
                   <FieldLabel htmlFor="num_siblings" required>
-                    Numero de hermanos
+                    Número de hermanos
                   </FieldLabel>
                   <input
                     id="num_siblings"
@@ -948,7 +1022,7 @@ export default function RegistroPage() {
               {/* Deaths before 41 */}
               <div>
                 <FieldLabel htmlFor="deaths_before_41" required>
-                  Fallecimientos antes de los 41 anos
+                  Fallecimientos antes de los 41 años
                 </FieldLabel>
                 <textarea
                   id="deaths_before_41"
@@ -959,35 +1033,15 @@ export default function RegistroPage() {
                 />
                 <FieldError message={errors.deaths_before_41?.message} />
               </div>
-            </div>
-          )}
 
-          {/* ═══════ Step 5: Familia actual ═══════ */}
-          {currentStep === 5 && (
-            <div className="rounded-lg bg-[#FAF7F5] shadow-[0_2px_8px_rgba(44,34,32,0.06)] p-5 space-y-5">
-              <h2
-                className="text-lg text-[#2C2220] font-semibold"
-                style={{ fontFamily: "Playfair Display, serif" }}
-              >
-                Familia Actual
-              </h2>
-              {/* Residence */}
-              <div>
-                <p className="mb-2 text-xs uppercase tracking-[0.1em] font-bold text-[#4A3628]">
-                  Lugar de residencia
-                </p>
-                <LocationSelector
-                  countryValue={residenceCountry}
-                  stateValue={residenceState}
-                  onCountryChange={(v) => setValue("residence_country", v, { shouldValidate: true })}
-                  onStateChange={(v) => setValue("residence_state", v, { shouldValidate: true })}
-                  countryId="residence_country"
-                  stateId="residence_state"
-                  countryLabel="Pais"
-                  stateLabel="Estado / Provincia"
-                  countryError={errors.residence_country?.message}
-                  stateError={errors.residence_state?.message}
-                />
+              {/* ── Familia actual ── */}
+              <div className="border-t border-[#D4A592] pt-5 mt-2">
+                <h3
+                  className="text-base text-[#2C2220] font-semibold mb-4"
+                  style={{ fontFamily: "Playfair Display, serif" }}
+                >
+                  Familia Actual
+                </h3>
               </div>
               <div>
                 <FieldLabel htmlFor="family_current" required>
@@ -997,37 +1051,87 @@ export default function RegistroPage() {
                   id="family_current"
                   rows={3}
                   className={TEXTAREA_CLS}
-                  placeholder="Pareja, hijos, con quien vives..."
+                  placeholder="Pareja, hijos, con quién vives..."
                   {...register("family_current")}
                 />
                 <FieldError message={errors.family_current?.message} />
               </div>
               <div>
                 <FieldLabel htmlFor="family_current_dynamics" required>
-                  Dinamicas familiares actuales
+                  Dinámicas familiares actuales
                 </FieldLabel>
                 <textarea
                   id="family_current_dynamics"
                   rows={3}
                   className={TEXTAREA_CLS}
-                  placeholder="Como es la relacion con tu familia actual..."
+                  placeholder="¿Cómo es la relación con tu familia actual?"
                   {...register("family_current_dynamics")}
                 />
                 <FieldError message={errors.family_current_dynamics?.message} />
               </div>
+              {/* Dynamic children */}
               <div>
-                <FieldLabel htmlFor="num_children_detail" required>
-                  Hijos (numero y edades)
+                <FieldLabel htmlFor="child_count" required>
+                  ¿Cuántos hijos tienes?
                 </FieldLabel>
                 <input
-                  id="num_children_detail"
-                  type="text"
+                  id="child_count"
+                  type="number"
+                  min={0}
+                  max={30}
                   className={INPUT_CLS}
-                  placeholder="Ej: 2 hijos (8 y 12 anos) o 'Ninguno'"
-                  {...register("num_children_detail")}
+                  placeholder="0"
+                  value={childCount}
+                  onChange={(e) => {
+                    const n = Math.max(0, Math.min(30, parseInt(e.target.value) || 0));
+                    setChildCount(n);
+                  }}
                 />
-                <FieldError message={errors.num_children_detail?.message} />
               </div>
+              {childCount > 0 && (
+                <div className="space-y-3">
+                  {childrenList.map((child, i) => (
+                    <div key={i} className="grid gap-3 sm:grid-cols-3 rounded-md border border-[#D4A592]/40 p-3">
+                      <div>
+                        <label className="mb-1 block text-xs text-[#4A3628]">Nombre</label>
+                        <input
+                          type="text"
+                          className={INPUT_CLS}
+                          placeholder={`Hijo/a ${i + 1}`}
+                          value={child.name}
+                          onChange={(e) => updateChild(i, "name", e.target.value)}
+                        />
+                      </div>
+                      <div>
+                        <label className="mb-1 block text-xs text-[#4A3628]">Edad</label>
+                        <input
+                          type="number"
+                          min={0}
+                          max={100}
+                          className={INPUT_CLS}
+                          placeholder="0"
+                          value={child.age}
+                          onChange={(e) => updateChild(i, "age", e.target.value)}
+                        />
+                      </div>
+                      <div>
+                        <label className="mb-1 block text-xs text-[#4A3628]">Género</label>
+                        <select
+                          className={INPUT_CLS}
+                          value={child.gender}
+                          onChange={(e) => updateChild(i, "gender", e.target.value)}
+                        >
+                          <option value="">Seleccionar...</option>
+                          <option value="M">Masculino</option>
+                          <option value="F">Femenino</option>
+                          <option value="Otro">Otro</option>
+                        </select>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+              <FieldError message={errors.num_children_detail?.message} />
             </div>
           )}
 
@@ -1038,19 +1142,20 @@ export default function RegistroPage() {
                 className="text-lg text-[#2C2220] font-semibold"
                 style={{ fontFamily: "Playfair Display, serif" }}
               >
-                Salud y Notas
+                Sueño y Notas
               </h2>
               {/* Sleep hours */}
               <div className="grid gap-4 sm:grid-cols-2">
                 <div>
                   <FieldLabel htmlFor="avg_sleep_hours" required>
-                    Horas de sueno promedio
+                    Horas de sueño promedio
                   </FieldLabel>
                   <input
                     id="avg_sleep_hours"
                     type="number"
-                    min={1}
+                    min={0.5}
                     max={24}
+                    step={0.5}
                     className={INPUT_CLS}
                     placeholder="7"
                     {...register("avg_sleep_hours")}
@@ -1060,7 +1165,7 @@ export default function RegistroPage() {
                 {/* Sleep quality - radio buttons */}
                 <div>
                   <FieldLabel htmlFor="sleep_quality" required>
-                    Calidad de sueno
+                    Calidad de sueño
                   </FieldLabel>
                   <div className="space-y-2 mt-1">
                     {SLEEP_QUALITY_OPTIONS.map((opt) => (
@@ -1108,7 +1213,7 @@ export default function RegistroPage() {
                   Dolor en cuerpo
                 </FieldLabel>
                 <p className="mb-2 text-xs text-[#6B5E54]">
-                  Selecciona en que partes sientes dolor o molestia
+                  Selecciona en qué partes sientes dolor o molestia
                 </p>
                 <CheckboxGroup
                   name="body_pains"
@@ -1132,7 +1237,7 @@ export default function RegistroPage() {
                   id="important_notes"
                   rows={3}
                   className={TEXTAREA_CLS}
-                  placeholder="Algo mas que quieras compartir..."
+                  placeholder="Algo más que quieras compartir..."
                   {...register("important_notes")}
                 />
               </div>
@@ -1146,7 +1251,7 @@ export default function RegistroPage() {
                   Consentimiento Informado
                 </h3>
                 <p className="text-sm text-[#4A3628] leading-relaxed">
-                  Al enviar este formulario, confirmo que he leido y acepto el{" "}
+                  Al enviar este formulario, confirmo que he leído y acepto el{" "}
                   <a
                     href="https://www.sana-desde-el-corazon.com/privacy-policy"
                     target="_blank"
@@ -1162,12 +1267,12 @@ export default function RegistroPage() {
                     rel="noopener noreferrer"
                     className="text-[#C4704A] underline hover:text-[#4A3628] transition-colors"
                   >
-                    Terminos de Servicio
+                    Términos de Servicio
                   </a>{" "}
-                  de Sanando desde el Corazon. Autorizo el tratamiento de mis
+                  de Sanando desde el Corazón. Autorizo el tratamiento de mis
                   datos personales, incluyendo datos sensibles de salud,
-                  conforme a la Ley Federal de Proteccion de Datos Personales en
-                  Posesion de los Particulares (LFPDPPP).
+                  conforme a la Ley Federal de Protección de Datos Personales en
+                  Posesión de los Particulares (LFPDPPP).
                 </p>
                 <label className="flex items-start gap-3 cursor-pointer">
                   <input
@@ -1177,7 +1282,7 @@ export default function RegistroPage() {
                     style={{ accentColor: "#C4704A" }}
                   />
                   <span className="text-sm text-[#2C2220] font-medium">
-                    Acepto el Aviso de Privacidad y los Terminos de Servicio *
+                    Acepto el Aviso de Privacidad y los Términos de Servicio *
                   </span>
                 </label>
                 <FieldError message={errors.consent?.message} />
