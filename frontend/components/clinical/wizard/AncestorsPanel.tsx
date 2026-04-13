@@ -81,7 +81,7 @@ function CheckboxGroup({ legend, options, selected, onChange, disabled }: Checkb
               disabled={disabled}
               className="mt-0.5 w-3.5 h-3.5 accent-terra-700 shrink-0"
             />
-            <span className="text-xs text-gray-700 leading-snug">{opt}</span>
+            <span className="text-xs text-terra-800 leading-snug">{opt}</span>
           </label>
         ))}
       </div>
@@ -133,14 +133,14 @@ function DynamicList({ legend, items, onChange, disabled, placeholder }: Dynamic
             onChange={(e) => updateText(i, e.target.value)}
             disabled={disabled}
             placeholder={placeholder}
-            className="flex-1 min-h-[32px] rounded-none border-0 border-b border-[#D4A592] bg-[#FAF7F5] px-2 py-1 text-sm text-gray-800 focus:outline-none focus:ring-0 focus:border-b-2 focus:border-[#C4704A] disabled:opacity-50"
+            className="flex-1 min-h-[32px] rounded-none border-0 border-b border-[#D4A592] bg-[#FAF7F5] px-2 py-1 text-sm text-terra-900 focus:outline-none focus:ring-0 focus:border-b-2 focus:border-[#C4704A] disabled:opacity-50"
           />
           <button
             type="button"
             onClick={() => removeItem(i)}
             disabled={disabled}
             aria-label="Eliminar"
-            className="shrink-0 p-1 rounded text-gray-400 hover:text-red-600 hover:bg-red-50 disabled:opacity-40 transition-colors"
+            className="shrink-0 p-1 rounded text-terra-400 hover:text-red-600 hover:bg-red-50 disabled:opacity-40 transition-colors"
           >
             <svg aria-hidden="true" className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
               <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
@@ -185,10 +185,10 @@ function AncestorCard({ entry, index, onChange, onDelete, disabled }: AncestorCa
   return (
     <article
       aria-labelledby={headingId}
-      className="rounded-lg overflow-hidden bg-white shadow-[0_2px_8px_rgba(44,34,32,0.06)]"
+      className="rounded-lg overflow-hidden bg-terra-50 shadow-[0_2px_8px_rgba(44,34,32,0.06)]"
     >
       {/* Cabecera */}
-      <div className="flex items-center gap-2 px-4 py-3 bg-terra-50 border-b border-gray-100">
+      <div className="flex items-center gap-2 px-4 py-3 bg-terra-50 border-b border-terra-100">
         <span id={headingId} className="flex-1 text-sm font-semibold text-terra-700 truncate">
           Ancestro {index + 1}{entry.member ? `: ${entry.member}` : ''}
         </span>
@@ -199,7 +199,7 @@ function AncestorCard({ entry, index, onChange, onDelete, disabled }: AncestorCa
           disabled={disabled}
           aria-label={`Eliminar ancestro ${index + 1}`}
           title="Eliminar"
-          className="shrink-0 p-1.5 rounded text-gray-400 hover:text-red-600 hover:bg-red-50 focus:outline-none focus:ring-2 focus:ring-red-500 disabled:opacity-40 transition-colors"
+          className="shrink-0 p-1.5 rounded text-terra-400 hover:text-red-600 hover:bg-red-50 focus:outline-none focus:ring-2 focus:ring-red-500 disabled:opacity-40 transition-colors"
         >
           <svg aria-hidden="true" className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
             <path strokeLinecap="round" strokeLinejoin="round" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
@@ -210,7 +210,7 @@ function AncestorCard({ entry, index, onChange, onDelete, disabled }: AncestorCa
           type="button"
           onClick={() => setExpanded((p) => !p)}
           aria-expanded={expanded}
-          className="shrink-0 p-1.5 rounded text-gray-500 hover:bg-gray-100 focus:outline-none focus:ring-2 focus:ring-terra-700 transition-colors"
+          className="shrink-0 p-1.5 rounded text-terra-500 hover:bg-terra-100 focus:outline-none focus:ring-2 focus:ring-terra-700 transition-colors"
         >
           <svg aria-hidden="true" className={`w-4 h-4 transition-transform ${expanded ? 'rotate-180' : ''}`} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
             <path strokeLinecap="round" strokeLinejoin="round" d="M19 9l-7 7-7-7" />
@@ -253,7 +253,7 @@ function AncestorCard({ entry, index, onChange, onDelete, disabled }: AncestorCa
                     disabled={disabled}
                     className="w-3.5 h-3.5 accent-terra-700"
                   />
-                  <span className="text-sm capitalize text-gray-700">{opt}</span>
+                  <span className="text-sm capitalize text-terra-800">{opt}</span>
                 </label>
               ))}
             </div>
@@ -286,7 +286,7 @@ function AncestorCard({ entry, index, onChange, onDelete, disabled }: AncestorCa
             disabled={disabled}
           />
 
-          <hr className="border-gray-100" />
+          <hr className="border-terra-100" />
 
           {/* Expresiones de la energía */}
           <DynamicList
@@ -360,7 +360,7 @@ export function AncestorsPanel({
     <div className="space-y-4">
       {/* Tarjetas de ancestros */}
       {ancestors.length === 0 && (
-        <p className="text-sm text-gray-400 text-center py-8">
+        <p className="text-sm text-terra-400 text-center py-8">
           Sin ancestros registrados. Agrega uno con el botón de abajo.
         </p>
       )}
@@ -389,7 +389,7 @@ export function AncestorsPanel({
         Agregar ancestro
       </button>
 
-      <hr className="border-gray-200" />
+      <hr className="border-terra-100" />
 
       {/* Conciliación de Ancestros */}
       <section className="space-y-4">
@@ -403,7 +403,7 @@ export function AncestorsPanel({
               value={conciliation[key]}
               onChange={(e) => updateConciliation(key, e.target.value)}
               disabled={disabled}
-              className="w-full rounded-none border-0 border-b border-[#D4A592] bg-[#FAF7F5] px-3 py-2 text-sm text-gray-800 resize-y focus:outline-none focus:ring-0 focus:border-b-2 focus:border-[#C4704A] disabled:opacity-50"
+              className="w-full rounded-none border-0 border-b border-[#D4A592] bg-[#FAF7F5] px-3 py-2 text-sm text-terra-900 resize-y focus:outline-none focus:ring-0 focus:border-b-2 focus:border-[#C4704A] disabled:opacity-50"
             />
           </div>
         ))}

@@ -29,7 +29,7 @@ export function StepChakrasFinal({
         >
           Chakras finales
         </h2>
-        <p className="text-sm text-gray-500 mt-0.5">
+        <p className="text-sm text-terra-500 mt-0.5">
           Estado de cada chakra al cierre de la sesión. Escala 0 – 14.
           El badge &ldquo;Inicial&rdquo; muestra el valor registrado al inicio.
         </p>

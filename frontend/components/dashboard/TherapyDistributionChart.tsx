@@ -22,7 +22,7 @@ export default function TherapyDistributionChart({ data }: Props) {
   return (
     <div className="rounded-lg bg-[#FAF7F5] shadow-[0_2px_8px_rgba(44,34,32,0.06)] p-6">
       <h3 className="font-display font-semibold text-[#2C2220] mb-4">
-        Distribucion por Tipo de Terapia
+        Distribución por Tipo de Terapia
       </h3>
       <div className="h-[340px]">
         <ResponsiveContainer width="100%" height="100%">

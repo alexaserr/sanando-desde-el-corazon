@@ -92,10 +92,11 @@ function SectionTitle({ children }: { children: React.ReactNode }) {
 
 function inputClass(hasError?: boolean) {
   return [
-    "w-full h-11 rounded border px-3 text-sm text-gray-900",
-    "focus:outline-none focus:ring-2 focus:ring-terra-500/20 focus:border-terra-500",
+    "w-full h-11 border-0 border-b bg-terra-50 px-3 text-sm text-terra-900 rounded-none",
+    "focus:outline-none focus:ring-0 focus:border-b-2 focus:border-terra-700",
     "disabled:opacity-50 disabled:cursor-not-allowed",
-    hasError ? "border-red-400" : "border-gray-200",
+    "transition-colors",
+    hasError ? "border-red-400" : "border-terra-500",
   ].join(" ");
 }
 
@@ -120,7 +121,7 @@ function CheckboxGroup({
 
   return (
     <div className="md:col-span-2">
-      <p className="text-sm font-medium text-gray-700 mb-3">{label}</p>
+      <p className="text-[13px] font-medium text-terra-600 uppercase tracking-wide mb-3">{label}</p>
       <div className="grid grid-cols-2 sm:grid-cols-3 gap-x-4 gap-y-2.5">
         {options.map((opt) => (
           <label
@@ -131,9 +132,9 @@ function CheckboxGroup({
               type="checkbox"
               checked={selected.includes(opt)}
               onChange={() => toggle(opt)}
-              className="h-4 w-4 rounded border-gray-300 text-terra-700 focus:ring-terra-500 shrink-0"
+              className="h-4 w-4 rounded border-terra-200 text-terra-700 focus:ring-terra-500 shrink-0"
             />
-            <span className="text-sm text-gray-700 leading-tight">{opt}</span>
+            <span className="text-sm text-terra-800 leading-tight">{opt}</span>
           </label>
         ))}
       </div>
@@ -218,19 +219,19 @@ export default function NuevoPacientePage() {
         <h1 className="font-display text-2xl font-bold text-terra-900">
           Nuevo paciente
         </h1>
-        <p className="text-sm text-gray-500 mt-0.5">
+        <p className="text-sm text-terra-500 mt-0.5">
           Completa la información del expediente clínico
         </p>
       </div>
 
       <form onSubmit={onSubmit} noValidate className="space-y-8">
         {/* ── SECCIÓN 1: Información Personal ── */}
-        <div className="bg-white rounded-lg border border-gray-100 p-6">
+        <div className="bg-terra-50 rounded-lg border border-terra-100 p-6">
           <SectionTitle>Información Personal</SectionTitle>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             {/* Nombre completo */}
             <div className="md:col-span-2">
-              <label className="block text-sm font-medium text-gray-700 mb-1.5">
+              <label className="block text-[13px] font-medium text-terra-600 uppercase tracking-wide mb-1.5">
                 Nombre completo <span className="text-red-500">*</span>
               </label>
               <input
@@ -245,7 +246,7 @@ export default function NuevoPacientePage() {
 
             {/* Correo */}
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1.5">
+              <label className="block text-[13px] font-medium text-terra-600 uppercase tracking-wide mb-1.5">
                 Correo electrónico
               </label>
               <input
@@ -260,7 +261,7 @@ export default function NuevoPacientePage() {
 
             {/* Teléfono */}
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1.5">
+              <label className="block text-[13px] font-medium text-terra-600 uppercase tracking-wide mb-1.5">
                 Teléfono
               </label>
               <input
@@ -275,7 +276,7 @@ export default function NuevoPacientePage() {
 
             {/* Fecha de nacimiento */}
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1.5">
+              <label className="block text-[13px] font-medium text-terra-600 uppercase tracking-wide mb-1.5">
                 Fecha de nacimiento
               </label>
               <input
@@ -290,12 +291,12 @@ export default function NuevoPacientePage() {
 
             {/* Estado civil */}
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1.5">
+              <label className="block text-[13px] font-medium text-terra-600 uppercase tracking-wide mb-1.5">
                 Estado civil
               </label>
               <select
                 {...register("marital_status")}
-                className={`${inputClass(!!errors.marital_status)} bg-white`}
+                className="w-full h-11 border-0 border-b border-terra-500 bg-terra-50 rounded-none px-3 text-sm text-terra-900 focus:outline-none focus:ring-0 focus:border-b-2 focus:border-terra-700 disabled:opacity-50"
                 disabled={isSubmitting}
               >
                 <option value="">Seleccionar…</option>
@@ -309,7 +310,7 @@ export default function NuevoPacientePage() {
 
             {/* Profesión */}
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1.5">
+              <label className="block text-[13px] font-medium text-terra-600 uppercase tracking-wide mb-1.5">
                 Profesión
               </label>
               <input
@@ -323,7 +324,7 @@ export default function NuevoPacientePage() {
 
             {/* Lugar de nacimiento */}
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1.5">
+              <label className="block text-[13px] font-medium text-terra-600 uppercase tracking-wide mb-1.5">
                 Lugar de nacimiento
               </label>
               <input
@@ -337,7 +338,7 @@ export default function NuevoPacientePage() {
 
             {/* Lugar de residencia */}
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1.5">
+              <label className="block text-[13px] font-medium text-terra-600 uppercase tracking-wide mb-1.5">
                 Lugar de residencia
               </label>
               <input
@@ -352,7 +353,7 @@ export default function NuevoPacientePage() {
         </div>
 
         {/* ── SECCIÓN 2: Perfil Emocional ── */}
-        <div className="bg-white rounded-lg border border-gray-100 p-6">
+        <div className="bg-terra-50 rounded-lg border border-terra-100 p-6">
           <SectionTitle>Perfil Emocional</SectionTitle>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             <CheckboxGroup
@@ -371,14 +372,14 @@ export default function NuevoPacientePage() {
 
             {/* Motivación general */}
             <div className="md:col-span-2">
-              <label className="block text-sm font-medium text-gray-700 mb-1.5">
+              <label className="block text-[13px] font-medium text-terra-600 uppercase tracking-wide mb-1.5">
                 Motivación general
               </label>
               <textarea
                 {...register("motivation_general")}
                 rows={3}
                 placeholder="Describe en sus propias palabras por qué viene a consulta…"
-                className="w-full rounded border border-gray-200 px-3 py-2.5 text-sm text-gray-900 resize-none focus:outline-none focus:ring-2 focus:ring-terra-500/20 focus:border-terra-500 disabled:opacity-50"
+                className="w-full min-h-[120px] border-0 border-b border-terra-500 bg-terra-50 rounded-none px-3 py-2.5 text-sm text-terra-900 resize-none focus:outline-none focus:ring-0 focus:border-b-2 focus:border-terra-700 disabled:opacity-50 transition-colors"
                 disabled={isSubmitting}
               />
             </div>
@@ -386,12 +387,12 @@ export default function NuevoPacientePage() {
         </div>
 
         {/* ── SECCIÓN 3: Familia ── */}
-        <div className="bg-white rounded-lg border border-gray-100 p-6">
+        <div className="bg-terra-50 rounded-lg border border-terra-100 p-6">
           <SectionTitle>Sistema Familiar</SectionTitle>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             {/* Num hijos */}
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1.5">
+              <label className="block text-[13px] font-medium text-terra-600 uppercase tracking-wide mb-1.5">
                 Número de hijos
               </label>
               <input
@@ -405,7 +406,7 @@ export default function NuevoPacientePage() {
 
             {/* Num hermanos */}
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1.5">
+              <label className="block text-[13px] font-medium text-terra-600 uppercase tracking-wide mb-1.5">
                 Número de hermanos
               </label>
               <input
@@ -419,7 +420,7 @@ export default function NuevoPacientePage() {
 
             {/* Orden de nacimiento */}
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1.5">
+              <label className="block text-[13px] font-medium text-terra-600 uppercase tracking-wide mb-1.5">
                 Orden de nacimiento
               </label>
               <input
@@ -434,7 +435,7 @@ export default function NuevoPacientePage() {
 
             {/* Abortos en sistema familiar */}
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1.5">
+              <label className="block text-[13px] font-medium text-terra-600 uppercase tracking-wide mb-1.5">
                 Abortos en sistema familiar
               </label>
               <input
@@ -448,14 +449,14 @@ export default function NuevoPacientePage() {
 
             {/* Fallecimientos antes de 41 */}
             <div className="md:col-span-2">
-              <label className="block text-sm font-medium text-gray-700 mb-1.5">
+              <label className="block text-[13px] font-medium text-terra-600 uppercase tracking-wide mb-1.5">
                 Fallecimientos antes de los 41 años en la familia
               </label>
               <textarea
                 {...register("deaths_before_41")}
                 rows={2}
                 placeholder="Descripción si aplica…"
-                className="w-full rounded border border-gray-200 px-3 py-2.5 text-sm text-gray-900 resize-none focus:outline-none focus:ring-2 focus:ring-terra-500/20 focus:border-terra-500 disabled:opacity-50"
+                className="w-full min-h-[120px] border-0 border-b border-terra-500 bg-terra-50 rounded-none px-3 py-2.5 text-sm text-terra-900 resize-none focus:outline-none focus:ring-0 focus:border-b-2 focus:border-terra-700 disabled:opacity-50 transition-colors"
                 disabled={isSubmitting}
               />
             </div>
@@ -463,18 +464,18 @@ export default function NuevoPacientePage() {
         </div>
 
         {/* ── SECCIÓN 4: Notas ── */}
-        <div className="bg-white rounded-lg border border-gray-100 p-6">
+        <div className="bg-terra-50 rounded-lg border border-terra-100 p-6">
           <SectionTitle>Notas</SectionTitle>
           <div className="grid grid-cols-1 gap-6">
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1.5">
+              <label className="block text-[13px] font-medium text-terra-600 uppercase tracking-wide mb-1.5">
                 Notas importantes
               </label>
               <textarea
                 {...register("important_notes")}
                 rows={4}
                 placeholder="Observaciones relevantes para las sesiones…"
-                className="w-full rounded border border-gray-200 px-3 py-2.5 text-sm text-gray-900 resize-none focus:outline-none focus:ring-2 focus:ring-terra-500/20 focus:border-terra-500 disabled:opacity-50"
+                className="w-full min-h-[120px] border-0 border-b border-terra-500 bg-terra-50 rounded-none px-3 py-2.5 text-sm text-terra-900 resize-none focus:outline-none focus:ring-0 focus:border-b-2 focus:border-terra-700 disabled:opacity-50 transition-colors"
                 disabled={isSubmitting}
               />
             </div>
@@ -501,7 +502,7 @@ export default function NuevoPacientePage() {
             type="button"
             onClick={() => router.push("/clinica/pacientes")}
             disabled={isSubmitting}
-            className="h-11 px-6 rounded text-gray-600 hover:text-gray-900 text-sm font-medium transition-colors disabled:opacity-50"
+            className="h-11 px-6 rounded text-terra-800 hover:text-terra-900 text-sm font-medium transition-colors disabled:opacity-50"
           >
             Cancelar
           </button>

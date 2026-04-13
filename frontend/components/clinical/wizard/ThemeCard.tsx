@@ -71,10 +71,10 @@ export function ThemeCard({ theme, index, chakras, onChange, onDelete, disabled 
     <article
       ref={articleRef}
       aria-labelledby={headingId}
-      className="bg-white rounded-lg shadow-[0_2px_8px_rgba(44,34,32,0.06)] overflow-hidden"
+      className="bg-terra-50 rounded-lg shadow-[0_2px_8px_rgba(44,34,32,0.06)] overflow-hidden"
     >
       {/* ── Cabecera colapsable ─────────────────────────────────────────────── */}
-      <div className="flex items-center gap-2 px-4 py-3 bg-terra-50 border-b border-gray-100">
+      <div className="flex items-center gap-2 px-4 py-3 bg-terra-50 border-b border-terra-100">
         {/* Título / editor inline */}
         <div className="flex-1 min-w-0">
           {isEditingName ? (
@@ -89,7 +89,7 @@ export function ThemeCard({ theme, index, chakras, onChange, onDelete, disabled 
                 if (e.key === 'Escape') { setIsEditingName(false); }
               }}
               aria-label="Nombre del tema"
-              className="w-full rounded border border-terra-300 bg-white px-2 py-0.5 text-sm font-semibold text-terra-700 focus:outline-none focus:ring-1 focus:ring-terra-700"
+              className="w-full rounded border border-terra-300 bg-terra-50 px-2 py-0.5 text-sm font-semibold text-terra-700 focus:outline-none focus:ring-1 focus:ring-terra-700"
             />
           ) : (
             <button
@@ -135,7 +135,7 @@ export function ThemeCard({ theme, index, chakras, onChange, onDelete, disabled 
             disabled={disabled}
             aria-label={`Eliminar tema ${index + 1}`}
             title="Eliminar tema"
-            className="shrink-0 p-1.5 rounded text-gray-400 hover:text-red-600 hover:bg-red-50 focus:outline-none focus:ring-2 focus:ring-red-500 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
+            className="shrink-0 p-1.5 rounded text-terra-400 hover:text-red-600 hover:bg-red-50 focus:outline-none focus:ring-2 focus:ring-red-500 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
             style={{ minWidth: 44, minHeight: 44 }}
           >
             <svg
@@ -157,7 +157,7 @@ export function ThemeCard({ theme, index, chakras, onChange, onDelete, disabled 
           onClick={() => setExpanded((p) => !p)}
           aria-expanded={expanded}
           aria-controls={`theme-body-${theme._localId}`}
-          className="shrink-0 p-1.5 rounded text-gray-500 hover:bg-gray-100 focus:outline-none focus:ring-2 focus:ring-terra-700 transition-colors"
+          className="shrink-0 p-1.5 rounded text-terra-500 hover:bg-terra-100 focus:outline-none focus:ring-2 focus:ring-terra-700 transition-colors"
           style={{ minWidth: 44, minHeight: 44 }}
         >
           <svg
@@ -182,7 +182,7 @@ export function ThemeCard({ theme, index, chakras, onChange, onDelete, disabled 
           <section aria-label="Bloqueos y resultante" className="space-y-3">
             {/* Selector de cantidad de bloqueos */}
             <div className="flex items-center gap-2">
-              <span className="text-xs font-medium text-gray-600 select-none">Bloqueos:</span>
+              <span className="text-xs font-medium text-terra-800 select-none">Bloqueos:</span>
               {([1, 2, 3] as const).map((n) => (
                 <button
                   key={n}
@@ -193,7 +193,7 @@ export function ThemeCard({ theme, index, chakras, onChange, onDelete, disabled 
                   className={`w-8 h-7 rounded-full text-xs font-semibold transition-colors focus:outline-none focus:ring-2 focus:ring-terra-700 disabled:cursor-not-allowed ${
                     blockageCount === n
                       ? 'bg-terra-700 text-white'
-                      : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+                      : 'bg-terra-100 text-terra-800 hover:bg-terra-200'
                   }`}
                 >
                   {n}
@@ -243,7 +243,7 @@ export function ThemeCard({ theme, index, chakras, onChange, onDelete, disabled 
             />
           </div>
 
-          <hr className="border-gray-100" />
+          <hr className="border-terra-100" />
 
           {/* Toggle tema secundario */}
           <div className="flex items-center gap-3">
@@ -308,7 +308,7 @@ export function ThemeCard({ theme, index, chakras, onChange, onDelete, disabled 
             </div>
           )}
 
-          <hr className="border-gray-100" />
+          <hr className="border-terra-100" />
 
           {/* Emociones predominantes */}
           <div className="flex flex-col gap-1.5">
@@ -325,7 +325,7 @@ export function ThemeCard({ theme, index, chakras, onChange, onDelete, disabled 
             />
           </div>
 
-          <hr className="border-gray-100" />
+          <hr className="border-terra-100" />
 
           {/* Edades Infancia / Adultez */}
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
@@ -394,7 +394,7 @@ export function ThemeCard({ theme, index, chakras, onChange, onDelete, disabled 
             />
           </div>
 
-          <hr className="border-gray-100" />
+          <hr className="border-terra-100" />
 
           {/* Progreso del tema */}
           <EnergySlider

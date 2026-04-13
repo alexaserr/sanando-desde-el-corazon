@@ -127,14 +127,13 @@ export default function SecurityPage() {
     <div className="max-w-2xl mx-auto space-y-6">
       {/* Page title */}
       <h1
-        className="text-2xl font-semibold text-[#2C2220]"
-        style={{ fontFamily: 'Playfair Display, serif' }}
+        className="font-display text-2xl font-semibold text-[#2C2220]"
       >
         Seguridad
       </h1>
 
       {/* 2FA Status card */}
-      <div className="bg-white rounded-lg border border-terra-100 p-6 space-y-6">
+      <div className="bg-terra-50 rounded-lg border border-terra-100 p-6 space-y-6">
         <div className="flex items-center gap-3">
           <ShieldCheck
             className={`h-6 w-6 ${has2fa ? 'text-emerald-600' : 'text-terra-300'}`}

@@ -294,8 +294,7 @@ export default function UsuariosPage() {
       {/* Header */}
       <div className="flex items-center justify-between">
         <h1
-          className="text-2xl font-semibold text-[#2C2220]"
-          style={{ fontFamily: 'Playfair Display, serif' }}
+          className="font-display text-2xl font-semibold text-[#2C2220]"
         >
           Usuarios
         </h1>
@@ -360,7 +359,7 @@ export default function UsuariosPage() {
               {/* Badges */}
               <div className="flex items-center gap-2 flex-wrap">
                 <span
-                  className={`inline-flex items-center px-2 py-0.5 rounded text-xs font-medium ${ROLE_COLORS[u.role] ?? 'bg-gray-100 text-gray-600'}`}
+                  className={`inline-flex items-center px-2 py-0.5 rounded text-xs font-medium ${ROLE_COLORS[u.role] ?? 'bg-terra-100 text-terra-800'}`}
                 >
                   {ROLE_LABELS[u.role] ?? u.role}
                 </span>
@@ -368,16 +367,16 @@ export default function UsuariosPage() {
                   className={`inline-flex items-center gap-1 px-2 py-0.5 rounded text-xs font-medium ${
                     u.is_active
                       ? 'bg-emerald-50 text-emerald-700 border border-emerald-200'
-                      : 'bg-gray-100 text-gray-500 border border-gray-200'
+                      : 'bg-terra-50 text-terra-500 border border-terra-100'
                   }`}
                 >
                   <span
-                    className={`w-1.5 h-1.5 rounded-full ${u.is_active ? 'bg-emerald-500' : 'bg-gray-400'}`}
+                    className={`w-1.5 h-1.5 rounded-full ${u.is_active ? 'bg-emerald-500' : 'bg-terra-200'}`}
                   />
                   {u.is_active ? 'Activo' : 'Inactivo'}
                 </span>
                 {u.totp_enabled && (
-                  <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded text-xs font-medium bg-blue-50 text-blue-700 border border-blue-200">
+                  <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded text-xs font-medium bg-terra-200/50 text-terra-900 border border-terra-500">
                     2FA
                   </span>
                 )}
@@ -437,7 +436,7 @@ export default function UsuariosPage() {
       {modal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40">
           <div
-            className="w-full max-w-md mx-4 bg-white rounded-lg shadow-xl"
+            className="w-full max-w-md mx-4 bg-terra-50 rounded-lg shadow-xl"
             style={{ boxShadow: '0 8px 30px rgba(44,34,32,0.15)' }}
           >
             {/* Modal header */}
@@ -475,7 +474,7 @@ export default function UsuariosPage() {
                       type="text"
                       value={createName}
                       onChange={(e) => setCreateName(e.target.value)}
-                      className="w-full rounded-none border-0 border-b border-[#D4A592] bg-[#FAF7F5] px-4 py-3 text-[15px] text-[#2C2220] placeholder:text-gray-400 focus:border-b-2 focus:border-[#C4704A] focus:outline-none transition-colors"
+                      className="w-full rounded-none border-0 border-b border-[#D4A592] bg-[#FAF7F5] px-4 py-3 text-[15px] text-[#2C2220] placeholder:text-terra-200 focus:border-b-2 focus:border-[#C4704A] focus:outline-none transition-colors"
                       placeholder="Nombre del usuario"
                     />
                   </div>
@@ -487,7 +486,7 @@ export default function UsuariosPage() {
                       type="email"
                       value={createEmail}
                       onChange={(e) => setCreateEmail(e.target.value)}
-                      className="w-full rounded-none border-0 border-b border-[#D4A592] bg-[#FAF7F5] px-4 py-3 text-[15px] text-[#2C2220] placeholder:text-gray-400 focus:border-b-2 focus:border-[#C4704A] focus:outline-none transition-colors"
+                      className="w-full rounded-none border-0 border-b border-[#D4A592] bg-[#FAF7F5] px-4 py-3 text-[15px] text-[#2C2220] placeholder:text-terra-200 focus:border-b-2 focus:border-[#C4704A] focus:outline-none transition-colors"
                       placeholder="correo@ejemplo.com"
                     />
                   </div>
@@ -499,7 +498,7 @@ export default function UsuariosPage() {
                       type="password"
                       value={createPassword}
                       onChange={(e) => setCreatePassword(e.target.value)}
-                      className="w-full rounded-none border-0 border-b border-[#D4A592] bg-[#FAF7F5] px-4 py-3 text-[15px] text-[#2C2220] placeholder:text-gray-400 focus:border-b-2 focus:border-[#C4704A] focus:outline-none transition-colors"
+                      className="w-full rounded-none border-0 border-b border-[#D4A592] bg-[#FAF7F5] px-4 py-3 text-[15px] text-[#2C2220] placeholder:text-terra-200 focus:border-b-2 focus:border-[#C4704A] focus:outline-none transition-colors"
                       placeholder="Mínimo 12 caracteres"
                     />
                   </div>
@@ -511,7 +510,7 @@ export default function UsuariosPage() {
                       type="password"
                       value={createConfirm}
                       onChange={(e) => setCreateConfirm(e.target.value)}
-                      className="w-full rounded-none border-0 border-b border-[#D4A592] bg-[#FAF7F5] px-4 py-3 text-[15px] text-[#2C2220] placeholder:text-gray-400 focus:border-b-2 focus:border-[#C4704A] focus:outline-none transition-colors"
+                      className="w-full rounded-none border-0 border-b border-[#D4A592] bg-[#FAF7F5] px-4 py-3 text-[15px] text-[#2C2220] placeholder:text-terra-200 focus:border-b-2 focus:border-[#C4704A] focus:outline-none transition-colors"
                       placeholder="Repite la contraseña"
                     />
                   </div>
@@ -542,7 +541,7 @@ export default function UsuariosPage() {
                       type="text"
                       value={editName}
                       onChange={(e) => setEditName(e.target.value)}
-                      className="w-full rounded-none border-0 border-b border-[#D4A592] bg-[#FAF7F5] px-4 py-3 text-[15px] text-[#2C2220] placeholder:text-gray-400 focus:border-b-2 focus:border-[#C4704A] focus:outline-none transition-colors"
+                      className="w-full rounded-none border-0 border-b border-[#D4A592] bg-[#FAF7F5] px-4 py-3 text-[15px] text-[#2C2220] placeholder:text-terra-200 focus:border-b-2 focus:border-[#C4704A] focus:outline-none transition-colors"
                     />
                   </div>
                   <div>
@@ -553,7 +552,7 @@ export default function UsuariosPage() {
                       type="email"
                       value={editEmail}
                       onChange={(e) => setEditEmail(e.target.value)}
-                      className="w-full rounded-none border-0 border-b border-[#D4A592] bg-[#FAF7F5] px-4 py-3 text-[15px] text-[#2C2220] placeholder:text-gray-400 focus:border-b-2 focus:border-[#C4704A] focus:outline-none transition-colors"
+                      className="w-full rounded-none border-0 border-b border-[#D4A592] bg-[#FAF7F5] px-4 py-3 text-[15px] text-[#2C2220] placeholder:text-terra-200 focus:border-b-2 focus:border-[#C4704A] focus:outline-none transition-colors"
                     />
                   </div>
                   <div>
@@ -577,7 +576,7 @@ export default function UsuariosPage() {
                       type="button"
                       onClick={() => setEditActive(!editActive)}
                       className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${
-                        editActive ? 'bg-emerald-500' : 'bg-gray-300'
+                        editActive ? 'bg-emerald-500' : 'bg-terra-200'
                       }`}
                     >
                       <span
@@ -607,7 +606,7 @@ export default function UsuariosPage() {
                       type="password"
                       value={resetPassword}
                       onChange={(e) => setResetPassword(e.target.value)}
-                      className="w-full rounded-none border-0 border-b border-[#D4A592] bg-[#FAF7F5] px-4 py-3 text-[15px] text-[#2C2220] placeholder:text-gray-400 focus:border-b-2 focus:border-[#C4704A] focus:outline-none transition-colors"
+                      className="w-full rounded-none border-0 border-b border-[#D4A592] bg-[#FAF7F5] px-4 py-3 text-[15px] text-[#2C2220] placeholder:text-terra-200 focus:border-b-2 focus:border-[#C4704A] focus:outline-none transition-colors"
                       placeholder="Mínimo 12 caracteres"
                     />
                   </div>
@@ -619,7 +618,7 @@ export default function UsuariosPage() {
                       type="password"
                       value={resetConfirm}
                       onChange={(e) => setResetConfirm(e.target.value)}
-                      className="w-full rounded-none border-0 border-b border-[#D4A592] bg-[#FAF7F5] px-4 py-3 text-[15px] text-[#2C2220] placeholder:text-gray-400 focus:border-b-2 focus:border-[#C4704A] focus:outline-none transition-colors"
+                      className="w-full rounded-none border-0 border-b border-[#D4A592] bg-[#FAF7F5] px-4 py-3 text-[15px] text-[#2C2220] placeholder:text-terra-200 focus:border-b-2 focus:border-[#C4704A] focus:outline-none transition-colors"
                       placeholder="Repite la contraseña"
                     />
                   </div>

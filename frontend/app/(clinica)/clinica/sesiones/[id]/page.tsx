@@ -222,7 +222,7 @@ function CollapsibleCard({
   children: React.ReactNode;
 }) {
   return (
-    <details open={defaultOpen} className="group bg-white rounded-lg shadow-[0_2px_8px_rgba(44,34,32,0.06)]">
+    <details open={defaultOpen} className="group bg-terra-50 rounded-lg shadow-[0_2px_8px_rgba(44,34,32,0.06)]">
       <summary className="flex items-center justify-between cursor-pointer p-5 select-none">
         <h2 className="font-display text-lg font-semibold text-terra-900">
           {title}
@@ -244,7 +244,7 @@ function Delta({
   final: number | null;
 }) {
   if (initial == null || fin == null)
-    return <span className="text-gray-300">—</span>;
+    return <span className="text-terra-200">—</span>;
   const delta = Number(fin) - Number(initial);
   const sign = delta > 0 ? '+' : '';
   const cls =
@@ -252,7 +252,7 @@ function Delta({
       ? 'text-green-600 font-medium'
       : delta < 0
         ? 'text-red-600 font-medium'
-        : 'text-gray-400';
+        : 'text-terra-400';
   return (
     <span className={cls}>
       {sign}
@@ -262,14 +262,14 @@ function Delta({
 }
 
 function NumCell({ value }: { value: number | null }) {
-  if (value == null) return <span className="text-gray-300">—</span>;
+  if (value == null) return <span className="text-terra-200">—</span>;
   return <span>{value}</span>;
 }
 
 function MetaBadge({ label, value }: { label: string; value: React.ReactNode }) {
   return (
     <div className="flex flex-col">
-      <span className="text-xs uppercase tracking-wide text-gray-400 font-medium mb-0.5">
+      <span className="text-xs uppercase tracking-wide text-terra-400 font-medium mb-0.5">
         {label}
       </span>
       <span className="text-sm font-semibold text-terra-900">{value}</span>
@@ -287,7 +287,7 @@ function Chip({ children }: { children: React.ReactNode }) {
 
 function FieldLabel({ children }: { children: React.ReactNode }) {
   return (
-    <p className="text-xs uppercase tracking-wide text-gray-400 font-medium mb-0.5">
+    <p className="text-xs uppercase tracking-wide text-terra-400 font-medium mb-0.5">
       {children}
     </p>
   );
@@ -603,7 +603,7 @@ export default function SessionDetailPage() {
         {(session.entities_count != null || session.capas != null || session.implants_count != null) && (
           <div className="flex flex-wrap gap-4 mb-4">
             <div className="flex items-center gap-2 text-sm">
-              <span className={`w-2.5 h-2.5 rounded-full shrink-0 ${session.entities_count != null && session.entities_count > 0 ? 'bg-green-500' : 'bg-gray-300'}`} />
+              <span className={`w-2.5 h-2.5 rounded-full shrink-0 ${session.entities_count != null && session.entities_count > 0 ? 'bg-green-500' : 'bg-terra-200'}`} />
               <span className="text-terra-700">Entidades:</span>
               <span className="font-medium text-terra-900">
                 {session.entities_count != null && session.entities_count > 0
@@ -612,14 +612,14 @@ export default function SessionDetailPage() {
               </span>
             </div>
             <div className="flex items-center gap-2 text-sm">
-              <span className={`w-2.5 h-2.5 rounded-full shrink-0 ${session.capas != null && session.capas > 0 ? 'bg-green-500' : 'bg-gray-300'}`} />
+              <span className={`w-2.5 h-2.5 rounded-full shrink-0 ${session.capas != null && session.capas > 0 ? 'bg-green-500' : 'bg-terra-200'}`} />
               <span className="text-terra-700">Trabajos de bajo astral:</span>
               <span className="font-medium text-terra-900">
                 {session.capas != null && session.capas > 0 ? 'Sí' : 'No'}
               </span>
             </div>
             <div className="flex items-center gap-2 text-sm">
-              <span className={`w-2.5 h-2.5 rounded-full shrink-0 ${session.implants_count != null && session.implants_count > 0 ? 'bg-green-500' : 'bg-gray-300'}`} />
+              <span className={`w-2.5 h-2.5 rounded-full shrink-0 ${session.implants_count != null && session.implants_count > 0 ? 'bg-green-500' : 'bg-terra-200'}`} />
               <span className="text-terra-700">Implantes:</span>
               <span className="font-medium text-terra-900">
                 {session.implants_count != null && session.implants_count > 0 ? 'Sí' : 'No'}
@@ -685,7 +685,7 @@ export default function SessionDetailPage() {
       {/* ── 3. Chakras ── */}
       {chakraRows.length > 0 && (
         <CollapsibleCard title={hasFinalChakra ? 'Chakras' : 'Chakras — mediciones iniciales'}>
-          <p className="text-xs text-gray-400 mb-3">Escala 0 – 14</p>
+          <p className="text-xs text-terra-400 mb-3">Escala 0 – 14</p>
           <div className="overflow-x-auto">
             <table className="w-full text-sm">
               <thead>
@@ -779,8 +779,8 @@ export default function SessionDetailPage() {
                           <FieldLabel>
                             Edad adulta{adulta?.adulthood_age != null ? ` (${adulta.adulthood_age} años)` : ''}
                           </FieldLabel>
-                          {adulta?.adulthood_place && <p className="text-terra-700 text-xs"><span className="text-gray-400">Lugar:</span> {adulta.adulthood_place}</p>}
-                          {adulta?.adulthood_people && <p className="text-terra-700 text-xs"><span className="text-gray-400">Personas:</span> {adulta.adulthood_people}</p>}
+                          {adulta?.adulthood_place && <p className="text-terra-700 text-xs"><span className="text-terra-400">Lugar:</span> {adulta.adulthood_place}</p>}
+                          {adulta?.adulthood_people && <p className="text-terra-700 text-xs"><span className="text-terra-400">Personas:</span> {adulta.adulthood_people}</p>}
                           {adulta?.adulthood_situation && <p className="text-terra-800 text-sm">{adulta.adulthood_situation}</p>}
                           {adulta?.adulthood_description && <p className="text-terra-700 text-xs whitespace-pre-wrap">{adulta.adulthood_description}</p>}
                           {adulta?.adulthood_emotions && <p className="text-terra-600 text-xs italic">{adulta.adulthood_emotions}</p>}
@@ -791,8 +791,8 @@ export default function SessionDetailPage() {
                           <FieldLabel>
                             Infancia{infancia?.childhood_age != null ? ` (${infancia.childhood_age} años)` : ''}
                           </FieldLabel>
-                          {infancia?.childhood_place && <p className="text-terra-700 text-xs"><span className="text-gray-400">Lugar:</span> {infancia.childhood_place}</p>}
-                          {infancia?.childhood_people && <p className="text-terra-700 text-xs"><span className="text-gray-400">Personas:</span> {infancia.childhood_people}</p>}
+                          {infancia?.childhood_place && <p className="text-terra-700 text-xs"><span className="text-terra-400">Lugar:</span> {infancia.childhood_place}</p>}
+                          {infancia?.childhood_people && <p className="text-terra-700 text-xs"><span className="text-terra-400">Personas:</span> {infancia.childhood_people}</p>}
                           {infancia?.childhood_situation && <p className="text-terra-800 text-sm">{infancia.childhood_situation}</p>}
                           {infancia?.childhood_description && <p className="text-terra-700 text-xs whitespace-pre-wrap">{infancia.childhood_description}</p>}
                           {infancia?.childhood_emotions && <p className="text-terra-600 text-xs italic">{infancia.childhood_emotions}</p>}
@@ -838,10 +838,10 @@ export default function SessionDetailPage() {
                                         <span className="text-[#2C2220]">{chakra.name}</span>
                                       </div>
                                     ) : (
-                                      <span className="text-gray-300">—</span>
+                                      <span className="text-terra-200">—</span>
                                     )}
                                   </td>
-                                  <td className="py-2 px-3 text-[#2C2220]">{b.organ_name ?? <span className="text-gray-300">—</span>}</td>
+                                  <td className="py-2 px-3 text-[#2C2220]">{b.organ_name ?? <span className="text-terra-200">—</span>}</td>
                                   <td className="py-2 px-3 text-center text-terra-600">
                                     <NumCell value={ini} />
                                   </td>
@@ -917,19 +917,19 @@ export default function SessionDetailPage() {
                   <div className="flex gap-6 pt-1 border-t border-terra-50">
                     {t.initial_energy != null && (
                       <div>
-                        <span className="text-xs text-gray-400">Inicial: </span>
+                        <span className="text-xs text-terra-400">Inicial: </span>
                         <span className="text-sm font-medium text-terra-700">{t.initial_energy}</span>
                       </div>
                     )}
                     {t.final_energy != null && (
                       <div>
-                        <span className="text-xs text-gray-400">Final: </span>
+                        <span className="text-xs text-terra-400">Final: </span>
                         <span className="text-sm font-medium text-terra-700">{t.final_energy}</span>
                       </div>
                     )}
                     {t.initial_energy != null && t.final_energy != null && (
                       <div>
-                        <span className="text-xs text-gray-400">Delta: </span>
+                        <span className="text-xs text-terra-400">Delta: </span>
                         <Delta initial={t.initial_energy} final={t.final_energy} />
                       </div>
                     )}
@@ -961,7 +961,7 @@ export default function SessionDetailPage() {
                 </div>
                 <div className="flex flex-wrap gap-2">
                   {e.healing_energy_body && (
-                    <span className="text-xs bg-blue-50 text-blue-700 border border-blue-200 rounded-full px-2 py-0.5">
+                    <span className="text-xs bg-terra-200/50 text-terra-900 border border-terra-500 rounded-full px-2 py-0.5">
                       Cuerpo energético
                     </span>
                   )}
@@ -1068,7 +1068,7 @@ export default function SessionDetailPage() {
                             {/* Capas */}
                             {ev.layer && (
                               <div>
-                                <span className="text-xs text-gray-500 mr-1.5">Capas:</span>
+                                <span className="text-xs text-terra-500 mr-1.5">Capas:</span>
                                 <span className="inline-flex items-center text-xs bg-amber-50 text-amber-800 border border-amber-200 rounded-full px-2.5 py-0.5">
                                   {ev.layer}{ev.quantity != null ? ` ×${ev.quantity}` : ''}
                                 </span>
@@ -1078,7 +1078,7 @@ export default function SessionDetailPage() {
                             {/* Manifestación */}
                             {ev.manifestation && (
                               <div>
-                                <span className="text-xs text-gray-500 mr-1.5">Manifestación:</span>
+                                <span className="text-xs text-terra-500 mr-1.5">Manifestación:</span>
                                 <div className="inline-flex flex-wrap gap-1">
                                   {ev.manifestation.split('|').map((m) => m.trim()).filter(Boolean).map((m, mi) => (
                                     <span key={mi} className="inline-flex items-center text-xs bg-rose-50 text-rose-700 border border-rose-200 rounded-full px-2.5 py-0.5">
@@ -1092,10 +1092,10 @@ export default function SessionDetailPage() {
                             {/* Trabajo realizado */}
                             {ev.work_done && (
                               <div>
-                                <span className="text-xs text-gray-500 mr-1.5">Trabajo realizado:</span>
+                                <span className="text-xs text-terra-500 mr-1.5">Trabajo realizado:</span>
                                 <div className="inline-flex flex-wrap gap-1">
                                   {ev.work_done.split('|').map((w) => w.trim()).filter(Boolean).map((w, wi) => (
-                                    <span key={wi} className="inline-flex items-center text-xs bg-blue-50 text-blue-700 border border-blue-200 rounded-full px-2.5 py-0.5">
+                                    <span key={wi} className="inline-flex items-center text-xs bg-terra-200/50 text-terra-900 border border-terra-500 rounded-full px-2.5 py-0.5">
                                       {w}
                                     </span>
                                   ))}
@@ -1106,7 +1106,7 @@ export default function SessionDetailPage() {
                             {/* Materiales */}
                             {ev.materials_used && (
                               <div>
-                                <span className="text-xs text-gray-500 mr-1.5">Materiales:</span>
+                                <span className="text-xs text-terra-500 mr-1.5">Materiales:</span>
                                 <div className="inline-flex flex-wrap gap-1">
                                   {ev.materials_used.split('|').map((m) => m.trim()).filter(Boolean).map((m, mi) => (
                                     <span key={mi} className="inline-flex items-center text-xs bg-green-50 text-green-700 border border-green-200 rounded-full px-2.5 py-0.5">
@@ -1120,7 +1120,7 @@ export default function SessionDetailPage() {
                             {/* Origen */}
                             {ev.origin && (
                               <div>
-                                <span className="text-xs text-gray-500 mr-1.5">Origen:</span>
+                                <span className="text-xs text-terra-500 mr-1.5">Origen:</span>
                                 <div className="inline-flex flex-wrap gap-1">
                                   {ev.origin.split('|').map((o) => o.trim()).filter(Boolean).map((o, oi) => (
                                     <span key={oi} className="inline-flex items-center text-xs bg-orange-50 text-orange-700 border border-orange-200 rounded-full px-2.5 py-0.5">
@@ -1134,7 +1134,7 @@ export default function SessionDetailPage() {
                             {/* Área de vida */}
                             {ev.life_area && (
                               <div>
-                                <span className="text-xs text-gray-500 mr-1.5">Área de vida:</span>
+                                <span className="text-xs text-terra-500 mr-1.5">Área de vida:</span>
                                 <span className="text-sm text-terra-700">{ev.life_area}</span>
                               </div>
                             )}
@@ -1147,7 +1147,7 @@ export default function SessionDetailPage() {
               </div>
             );
           })() : (
-            <p className="text-sm text-gray-400 italic">Sin eventos de limpieza registrados</p>
+            <p className="text-sm text-terra-400 italic">Sin eventos de limpieza registrados</p>
           )}
 
           {/* Resumen de costos de limpieza */}
@@ -1161,7 +1161,7 @@ export default function SessionDetailPage() {
                     <div
                       key={g.id}
                       className={`flex items-center justify-between py-1 text-sm ${
-                        g.is_charged ? 'text-terra-800' : 'text-gray-400 line-through'
+                        g.is_charged ? 'text-terra-800' : 'text-terra-400 line-through'
                       }`}
                     >
                       <span>
@@ -1327,7 +1327,7 @@ export default function SessionDetailPage() {
                       </div>
                       {e.adult_theme && (
                         <p className="text-terra-700">
-                          <span className="text-xs text-gray-400 font-medium uppercase tracking-wide mr-1">
+                          <span className="text-xs text-terra-400 font-medium uppercase tracking-wide mr-1">
                             Adulto{e.adult_age != null ? ` (${e.adult_age}a)` : ''}:
                           </span>
                           {e.adult_theme}
@@ -1335,7 +1335,7 @@ export default function SessionDetailPage() {
                       )}
                       {e.child_theme && (
                         <p className="text-terra-700">
-                          <span className="text-xs text-gray-400 font-medium uppercase tracking-wide mr-1">
+                          <span className="text-xs text-terra-400 font-medium uppercase tracking-wide mr-1">
                             Infancia{e.child_age != null ? ` (${e.child_age}a)` : ''}:
                           </span>
                           {e.child_theme}
@@ -1363,7 +1363,7 @@ export default function SessionDetailPage() {
                       </div>
                       {e.adult_theme && (
                         <p className="text-terra-700">
-                          <span className="text-xs text-gray-400 font-medium uppercase tracking-wide mr-1">
+                          <span className="text-xs text-terra-400 font-medium uppercase tracking-wide mr-1">
                             Adulto{e.adult_age != null ? ` (${e.adult_age}a)` : ''}:
                           </span>
                           {e.adult_theme}
@@ -1371,7 +1371,7 @@ export default function SessionDetailPage() {
                       )}
                       {e.child_theme && (
                         <p className="text-terra-700">
-                          <span className="text-xs text-gray-400 font-medium uppercase tracking-wide mr-1">
+                          <span className="text-xs text-terra-400 font-medium uppercase tracking-wide mr-1">
                             Infancia{e.child_age != null ? ` (${e.child_age}a)` : ''}:
                           </span>
                           {e.child_theme}
@@ -1379,7 +1379,7 @@ export default function SessionDetailPage() {
                       )}
                       {e.emotions && (
                         <p className="text-terra-700">
-                          <span className="text-xs text-gray-400 font-medium uppercase tracking-wide mr-1">Emociones:</span>
+                          <span className="text-xs text-terra-400 font-medium uppercase tracking-wide mr-1">Emociones:</span>
                           {e.emotions}
                         </p>
                       )}
@@ -1416,10 +1416,10 @@ export default function SessionDetailPage() {
                       </td>
                       <td className="py-2 px-3 text-center text-[#2C2220]">{p.quantity}</td>
                       <td className="py-2 px-3 text-right text-terra-700">
-                        {unit != null ? formatCurrency(unit) : <span className="text-gray-300">—</span>}
+                        {unit != null ? formatCurrency(unit) : <span className="text-terra-200">—</span>}
                       </td>
                       <td className="py-2 px-3 text-right font-medium text-[#2C2220]">
-                        {sub != null ? formatCurrency(sub) : <span className="text-gray-300">—</span>}
+                        {sub != null ? formatCurrency(sub) : <span className="text-terra-200">—</span>}
                       </td>
                     </tr>
                   );
@@ -1534,7 +1534,7 @@ export default function SessionDetailPage() {
       )}
 
       {/* Pie de página */}
-      <p className="text-xs text-gray-400 pb-6">
+      <p className="text-xs text-terra-400 pb-6">
         Sesión creada el {formatDateTime(session.created_at)}
       </p>
     </div>

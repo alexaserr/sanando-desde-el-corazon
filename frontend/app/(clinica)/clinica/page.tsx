@@ -225,7 +225,7 @@ export default function ClinicaDashboardPage() {
       value: stats?.sessions_this_month ?? sessionsThisMonth ?? "\u2014",
       description: "vs. mes anterior",
       icon: CalendarDays,
-      iconBg: "bg-blue-50/80",
+      iconBg: "bg-terra-200/50",
       iconColor: "text-blue-500",
       href: "/clinica/sesiones",
       delta: stats?.sessions_delta_pct ?? null,

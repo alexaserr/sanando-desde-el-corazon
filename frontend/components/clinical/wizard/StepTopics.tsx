@@ -180,16 +180,16 @@ export function StepTopics({
         <h2 id="step-topics-heading" className="text-base font-semibold text-terra-700">
           Temas trabajados
         </h2>
-        <p className="text-sm text-gray-500 mt-0.5">
+        <p className="text-sm text-terra-500 mt-0.5">
           Agrega los temas abordados durante la sesión.
         </p>
       </div>
 
       {/* ── Selector: ¿Tema existente o nuevo? ────────────────────────────── */}
-      <div className="bg-gray-50 rounded-lg border border-gray-200 p-4 space-y-4">
+      <div className="bg-terra-50 rounded-lg border border-terra-100 p-4 space-y-4">
         {/* Radio group */}
         <div role="group" aria-labelledby={modeGroupId} className="flex gap-4 flex-wrap">
-          <p id={modeGroupId} className="text-sm font-medium text-gray-700 w-full">
+          <p id={modeGroupId} className="text-sm font-medium text-terra-800 w-full">
             ¿Tema existente o nuevo?
           </p>
           {(['existing', 'new'] as const).map((m) => (
@@ -215,7 +215,7 @@ export function StepTopics({
         {/* Selector de tema existente */}
         {mode === 'existing' && (
           <div className="flex flex-col gap-1">
-            <label htmlFor={existingSelectId} className="text-xs font-medium text-gray-600">
+            <label htmlFor={existingSelectId} className="text-xs font-medium text-terra-800">
               Seleccionar tema
             </label>
             <select
@@ -223,7 +223,7 @@ export function StepTopics({
               value={selectedTopicId}
               disabled={disabled || tooManyTopics}
               onChange={(e) => setSelectedTopicId(e.target.value)}
-              className="min-h-[44px] rounded border border-gray-300 px-2.5 py-1.5 text-sm bg-white focus:outline-none focus:ring-1 focus:ring-terra-700 disabled:opacity-50"
+              className="min-h-[44px] rounded border border-terra-200 px-2.5 py-1.5 text-sm bg-terra-50 focus:outline-none focus:ring-1 focus:ring-terra-700 disabled:opacity-50"
             >
               <option value="">— Seleccionar tema —</option>
               {clientTopics.map((t) => (
@@ -233,7 +233,7 @@ export function StepTopics({
               ))}
             </select>
             {clientTopics.length === 0 && (
-              <p className="text-xs text-gray-400 mt-1">
+              <p className="text-xs text-terra-400 mt-1">
                 El paciente no tiene temas registrados aún.
               </p>
             )}
@@ -243,7 +243,7 @@ export function StepTopics({
         {/* Input para nombre del tema nuevo */}
         {mode === 'new' && (
           <div className="flex flex-col gap-1">
-            <label htmlFor={newNameId} className="text-xs font-medium text-gray-600">
+            <label htmlFor={newNameId} className="text-xs font-medium text-terra-800">
               Nombre del tema
             </label>
             <input
@@ -259,7 +259,7 @@ export function StepTopics({
                 }
               }}
               placeholder="Ej: Miedo al abandono"
-              className="min-h-[44px] rounded border border-gray-300 px-2.5 py-1.5 text-sm focus:outline-none focus:ring-1 focus:ring-terra-700 disabled:opacity-50"
+              className="min-h-[44px] rounded border border-terra-200 px-2.5 py-1.5 text-sm focus:outline-none focus:ring-1 focus:ring-terra-700 disabled:opacity-50"
             />
           </div>
         )}
@@ -313,7 +313,7 @@ export function StepTopics({
       {/* ── Counter: ¿Cuántos temas? ────────────────────────────────────────── */}
       {themes.length > 0 && (
         <div className="flex items-center gap-3">
-          <label htmlFor={counterId} className="text-sm font-medium text-gray-700 shrink-0">
+          <label htmlFor={counterId} className="text-sm font-medium text-terra-800 shrink-0">
             Cantidad de temas:
           </label>
           <div className="flex items-center gap-1">
@@ -322,14 +322,14 @@ export function StepTopics({
               onClick={() => handleCountChange(Math.max(1, counterValue - 1))}
               disabled={disabled || counterValue <= 1}
               aria-label="Reducir temas"
-              className="w-11 h-11 flex items-center justify-center rounded border border-gray-300 bg-white text-gray-700 hover:bg-gray-50 disabled:opacity-40 disabled:cursor-not-allowed focus:outline-none focus:ring-2 focus:ring-terra-700 transition-colors"
+              className="w-11 h-11 flex items-center justify-center rounded border border-terra-200 bg-terra-50 text-terra-800 hover:bg-terra-50 disabled:opacity-40 disabled:cursor-not-allowed focus:outline-none focus:ring-2 focus:ring-terra-700 transition-colors"
             >
               −
             </button>
             <output
               id={counterId}
               aria-live="polite"
-              className="w-10 text-center text-sm font-semibold text-gray-900 tabular-nums"
+              className="w-10 text-center text-sm font-semibold text-terra-900 tabular-nums"
             >
               {themes.length}
             </output>
@@ -338,7 +338,7 @@ export function StepTopics({
               onClick={() => handleCountChange(Math.min(5, counterValue + 1))}
               disabled={disabled || counterValue >= 5}
               aria-label="Agregar tema"
-              className="w-11 h-11 flex items-center justify-center rounded border border-gray-300 bg-white text-gray-700 hover:bg-gray-50 disabled:opacity-40 disabled:cursor-not-allowed focus:outline-none focus:ring-2 focus:ring-terra-700 transition-colors"
+              className="w-11 h-11 flex items-center justify-center rounded border border-terra-200 bg-terra-50 text-terra-800 hover:bg-terra-50 disabled:opacity-40 disabled:cursor-not-allowed focus:outline-none focus:ring-2 focus:ring-terra-700 transition-colors"
             >
               +
             </button>
@@ -348,7 +348,7 @@ export function StepTopics({
 
       {/* ── Lista de ThemeCards ───────────────────────────────────────────────── */}
       {themes.length === 0 ? (
-        <div className="flex flex-col items-center justify-center py-12 text-center text-sm text-gray-400">
+        <div className="flex flex-col items-center justify-center py-12 text-center text-sm text-terra-400">
           No hay temas. Usa el panel de arriba para agregar uno.
         </div>
       ) : (
@@ -370,14 +370,14 @@ export function StepTopics({
 
       {/* Footer contador */}
       {themes.length > 0 && (
-        <p className="text-xs text-gray-400 text-right">
+        <p className="text-xs text-terra-400 text-right">
           {themes.length} {themes.length === 1 ? 'tema' : 'temas'}
         </p>
       )}
 
       {/* Peticiones LNT (solo Medicina Cuántica) */}
       {showPeticiones && (
-        <section className="mt-6 rounded-lg border border-gray-200 bg-white p-4">
+        <section className="mt-6 rounded-lg border border-terra-100 bg-terra-50 p-4">
           <label className="mb-2 block text-xs font-semibold uppercase tracking-wide text-terra-700">
             Peticiones LNT
           </label>
@@ -387,7 +387,7 @@ export function StepTopics({
             disabled={disabled}
             rows={4}
             placeholder="Peticiones para la sesión de Medicina Cuántica..."
-            className="w-full rounded-lg border border-gray-200 bg-[#FAF7F5] px-3 py-2 text-sm placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-[#C4704A]/30 focus:border-[#C4704A] disabled:opacity-50"
+            className="w-full rounded-lg border border-terra-100 bg-[#FAF7F5] px-3 py-2 text-sm placeholder-terra-200 focus:outline-none focus:ring-2 focus:ring-[#C4704A]/30 focus:border-[#C4704A] disabled:opacity-50"
           />
         </section>
       )}

@@ -35,7 +35,7 @@ function newAutoManifestation(name: string, value: number): ManifestationEntry {
     name,
     value,
     unit: 'numero',
-    work_done: '',
+    work_done: [],
     materials: [],
     origins: [],
     is_auto_injected: true,
@@ -141,7 +141,7 @@ export function StepCleaning({
         >
           Reporte de Limpieza
         </h2>
-        <p className="mt-0.5 text-sm text-gray-500">
+        <p className="mt-0.5 text-sm text-terra-500">
           Registra la limpieza del paciente y de personas o lugares adicionales.
         </p>
       </div>

@@ -19,16 +19,13 @@ import type {
 // ─── Catálogo de precios por tipo de terapia ──────────────────────────────────
 
 const PRICE_CATALOG: Record<string, number> = {
-  'Sanación Energética':               1300,
-  'Sanación Energética a Distancia':   1300,
-  'Terapia LNT':                       1300,
-  'Limpieza Energética':               1300,
-  'Lectura de Aura':                   1300,
-  'Medicina Cuántica':                 1600,
-  'Extracción de Energías Densas':     2200,
-  'Armonización Energética y Mandala': 2300,
-  'Recuperación del Alma':             1700,
-  'Despacho':                          2500,
+  'Sanación Energética':     1300,
+  'Medicina Cuántica':       1600,
+  'Terapia LNT':             1300,
+  'Extracción':              2200,
+  'Armonización Energética': 2300,
+  'Lectura Energética':      1300,
+  'Limpieza Energética':     1300,
 };
 
 const COST_PER_PROTECTION = 1200;
@@ -37,9 +34,9 @@ const COST_PER_PROTECTION = 1200;
 
 function SummaryRow({ label, value }: { label: string; value: React.ReactNode }) {
   return (
-    <div className="flex items-center justify-between py-2 border-b border-gray-100 last:border-0">
-      <span className="text-sm text-gray-500">{label}</span>
-      <span className="text-sm font-medium text-gray-800">{value}</span>
+    <div className="flex items-center justify-between py-2 border-b border-terra-100 last:border-0">
+      <span className="text-sm text-terra-500">{label}</span>
+      <span className="text-sm font-medium text-terra-900">{value}</span>
     </div>
   );
 }
@@ -70,7 +67,7 @@ function SessionSummaryPanel({ summary }: SessionSummaryPanelProps) {
       <h3 className="text-sm font-semibold text-[#2C2220] mb-3">
         Resumen de la sesión
       </h3>
-      <div className="divide-y divide-gray-100">
+      <div className="divide-y divide-terra-100">
         <SummaryRow label="Cliente"        value={summary.clientName || '—'} />
         <SummaryRow label="Tipo de terapia" value={summary.therapyTypeName || '—'} />
         <SummaryRow label="Fecha"           value={formattedDate} />
@@ -111,7 +108,7 @@ function Accordion({
 }) {
   const [open, setOpen] = useState(defaultOpen);
   return (
-    <div className="border border-gray-200 rounded-lg overflow-hidden">
+    <div className="border border-terra-100 rounded-lg overflow-hidden">
       <button
         type="button"
         onClick={() => setOpen(!open)}
@@ -135,7 +132,7 @@ function Accordion({
           <path strokeLinecap="round" strokeLinejoin="round" d="M19 9l-7 7-7-7" />
         </svg>
       </button>
-      {open && <div className="px-4 py-3 bg-white">{children}</div>}
+      {open && <div className="px-4 py-3 bg-terra-50">{children}</div>}
     </div>
   );
 }
@@ -179,8 +176,8 @@ interface FullSessionSummaryProps {
 /** Badge/chip reutilizable para listas de valores. */
 function Chip({ children, color = 'gray' }: { children: React.ReactNode; color?: 'gray' | 'blue' | 'purple' | 'amber' | 'green' | 'rose' | 'orange' }) {
   const colorClasses: Record<string, string> = {
-    gray:   'bg-gray-100 text-gray-700',
-    blue:   'bg-blue-100 text-blue-700',
+    gray:   'bg-terra-100 text-terra-800',
+    blue:   'bg-terra-200/50 text-terra-900',
     purple: 'bg-purple-100 text-purple-700',
     amber:  'bg-amber-100 text-amber-800',
     green:  'bg-green-100 text-green-700',
@@ -257,7 +254,7 @@ function FullSessionSummary({
                 <p className="text-sm font-semibold text-[#2C2220]">
                   {idx + 1}. {theme.name || 'Sin nombre'}
                   {theme.is_secondary && theme.secondary_name && (
-                    <span className="text-xs font-normal text-gray-500 ml-2">
+                    <span className="text-xs font-normal text-terra-500 ml-2">
                       (Secundario: {theme.secondary_name})
                     </span>
                   )}
@@ -266,15 +263,15 @@ function FullSessionSummary({
                 {/* Interpretación */}
                 {theme.interpretacion_tema && (
                   <div className="pl-3 border-l-2 border-[#D4A592]">
-                    <p className="text-xs text-gray-500 uppercase tracking-wide">Interpretación</p>
-                    <p className="text-sm text-gray-700">{theme.interpretacion_tema}</p>
+                    <p className="text-xs text-terra-500 uppercase tracking-wide">Interpretación</p>
+                    <p className="text-sm text-terra-800">{theme.interpretacion_tema}</p>
                   </div>
                 )}
 
                 {/* Emociones */}
                 {theme.emotions && theme.emotions.length > 0 && (
                   <div className="pl-3">
-                    <p className="text-xs text-gray-500 uppercase tracking-wide">Emociones</p>
+                    <p className="text-xs text-terra-500 uppercase tracking-wide">Emociones</p>
                     <div className="flex flex-wrap gap-1 mt-0.5">
                       {theme.emotions.map((e) => (
                         <span key={e} className="inline-block px-2 py-0.5 bg-amber-100 text-amber-800 text-xs rounded-full">
@@ -288,25 +285,25 @@ function FullSessionSummary({
                 {/* Órganos asociados (blockages) */}
                 {theme.blockages.some((b) => b.organ_name || b.chakra_position_id) && (
                   <div className="pl-3">
-                    <p className="text-xs text-gray-500 uppercase tracking-wide">Órganos / Bloqueos</p>
+                    <p className="text-xs text-terra-500 uppercase tracking-wide">Órganos / Bloqueos</p>
                     <div className="space-y-1 mt-0.5">
                       {theme.blockages.map((b, bi) => {
                         if (!b.organ_name && !b.chakra_position_id) return null;
                         const chakraName = b.chakra_position_id ? findName(chakraNames, b.chakra_position_id) : null;
                         return (
-                          <div key={bi} className="flex items-center gap-2 text-sm text-gray-700">
-                            <span className="text-xs text-gray-400">#{bi + 1}</span>
+                          <div key={bi} className="flex items-center gap-2 text-sm text-terra-800">
+                            <span className="text-xs text-terra-400">#{bi + 1}</span>
                             {b.organ_name && <span>{b.organ_name}</span>}
                             {chakraName && (
                               <span className="text-xs bg-purple-100 text-purple-700 px-1.5 py-0.5 rounded">
                                 {chakraName}
                               </span>
                             )}
-                            <span className="text-xs text-gray-400">
+                            <span className="text-xs text-terra-400">
                               {b.energy}%{b.final_energy !== undefined ? ` → ${b.final_energy}%` : ''}
                             </span>
                             {b.significado && (
-                              <span className="text-xs text-gray-500 italic">({b.significado})</span>
+                              <span className="text-xs text-terra-500 italic">({b.significado})</span>
                             )}
                           </div>
                         );
@@ -318,15 +315,15 @@ function FullSessionSummary({
                 {/* Resultante */}
                 {(theme.resultant.organ_name || theme.resultant.chakra_position_id) && (
                   <div className="pl-3">
-                    <p className="text-xs text-gray-500 uppercase tracking-wide">Resultante</p>
-                    <div className="flex items-center gap-2 text-sm text-gray-700 mt-0.5">
+                    <p className="text-xs text-terra-500 uppercase tracking-wide">Resultante</p>
+                    <div className="flex items-center gap-2 text-sm text-terra-800 mt-0.5">
                       {theme.resultant.organ_name && <span>{theme.resultant.organ_name}</span>}
                       {theme.resultant.chakra_position_id && (
                         <span className="text-xs bg-purple-100 text-purple-700 px-1.5 py-0.5 rounded">
                           {findName(chakraNames, theme.resultant.chakra_position_id)}
                         </span>
                       )}
-                      <span className="text-xs text-gray-400">
+                      <span className="text-xs text-terra-400">
                         {theme.resultant.energy}%{theme.resultant.final_energy !== undefined ? ` → ${theme.resultant.final_energy}%` : ''}
                       </span>
                     </div>
@@ -338,14 +335,14 @@ function FullSessionSummary({
                   <div className="pl-3 flex gap-4">
                     {theme.childhood_age != null && (
                       <div>
-                        <p className="text-xs text-gray-500 uppercase tracking-wide">Edad infancia</p>
-                        <p className="text-sm text-gray-700">{theme.childhood_age} años</p>
+                        <p className="text-xs text-terra-500 uppercase tracking-wide">Edad infancia</p>
+                        <p className="text-sm text-terra-800">{theme.childhood_age} años</p>
                       </div>
                     )}
                     {theme.adulthood_age != null && (
                       <div>
-                        <p className="text-xs text-gray-500 uppercase tracking-wide">Edad adultez</p>
-                        <p className="text-sm text-gray-700">{theme.adulthood_age} años</p>
+                        <p className="text-xs text-terra-500 uppercase tracking-wide">Edad adultez</p>
+                        <p className="text-sm text-terra-800">{theme.adulthood_age} años</p>
                       </div>
                     )}
                   </div>
@@ -354,14 +351,14 @@ function FullSessionSummary({
                 {/* Secundario energía */}
                 {theme.is_secondary && (
                   <div className="pl-3">
-                    <p className="text-xs text-gray-500 uppercase tracking-wide">Energía secundaria</p>
-                    <p className="text-sm text-gray-700">
+                    <p className="text-xs text-terra-500 uppercase tracking-wide">Energía secundaria</p>
+                    <p className="text-sm text-terra-800">
                       {theme.secondary_energy_initial}% → {theme.secondary_energy_final}%
                     </p>
                   </div>
                 )}
 
-                {idx < themes.length - 1 && <hr className="border-gray-100" />}
+                {idx < themes.length - 1 && <hr className="border-terra-100" />}
               </div>
             ))}
           </div>
@@ -372,7 +369,7 @@ function FullSessionSummary({
       {hasEnergy && (
         <Accordion title="Dimensiones energéticas" badge={Math.max(energyInitial.length, energyFinal.length)}>
           <div className="space-y-1">
-            <div className="grid grid-cols-3 gap-2 text-xs text-gray-400 uppercase tracking-wide pb-1 border-b border-gray-100">
+            <div className="grid grid-cols-3 gap-2 text-xs text-terra-400 uppercase tracking-wide pb-1 border-b border-terra-100">
               <span>Dimensión</span>
               <span className="text-center">Inicial</span>
               <span className="text-center">Final</span>
@@ -382,15 +379,15 @@ function FullSessionSummary({
               const delta = ef ? ef.value - ei.value : null;
               return (
                 <div key={ei.dimension_id} className="grid grid-cols-3 gap-2 py-1 text-sm">
-                  <span className="text-gray-700">{findName(dimensionNames, ei.dimension_id)}</span>
-                  <span className="text-center text-gray-600">{ei.value}%</span>
+                  <span className="text-terra-800">{findName(dimensionNames, ei.dimension_id)}</span>
+                  <span className="text-center text-terra-800">{ei.value}%</span>
                   <span className="text-center">
                     {ef ? (
-                      <span className={delta !== null && delta > 0 ? 'text-green-600' : delta !== null && delta < 0 ? 'text-red-500' : 'text-gray-600'}>
+                      <span className={delta !== null && delta > 0 ? 'text-green-600' : delta !== null && delta < 0 ? 'text-red-500' : 'text-terra-800'}>
                         {ef.value}% {delta !== null && delta !== 0 && `(${delta > 0 ? '+' : ''}${delta})`}
                       </span>
                     ) : (
-                      <span className="text-gray-300">—</span>
+                      <span className="text-terra-200">—</span>
                     )}
                   </span>
                 </div>
@@ -404,7 +401,7 @@ function FullSessionSummary({
       {hasChakras && (
         <Accordion title="Chakras" badge={Math.max(chakraInitial.length, chakraFinal.length)}>
           <div className="space-y-1">
-            <div className="grid grid-cols-3 gap-2 text-xs text-gray-400 uppercase tracking-wide pb-1 border-b border-gray-100">
+            <div className="grid grid-cols-3 gap-2 text-xs text-terra-400 uppercase tracking-wide pb-1 border-b border-terra-100">
               <span>Chakra</span>
               <span className="text-center">Inicial</span>
               <span className="text-center">Final</span>
@@ -414,15 +411,15 @@ function FullSessionSummary({
               const delta = cf ? cf.value - ci.value : null;
               return (
                 <div key={ci.chakra_position_id} className="grid grid-cols-3 gap-2 py-1 text-sm">
-                  <span className="text-gray-700">{ci.name}</span>
-                  <span className="text-center text-gray-600">{ci.value}</span>
+                  <span className="text-terra-800">{ci.name}</span>
+                  <span className="text-center text-terra-800">{ci.value}</span>
                   <span className="text-center">
                     {cf ? (
-                      <span className={delta !== null && delta > 0 ? 'text-green-600' : delta !== null && delta < 0 ? 'text-red-500' : 'text-gray-600'}>
+                      <span className={delta !== null && delta > 0 ? 'text-green-600' : delta !== null && delta < 0 ? 'text-red-500' : 'text-terra-800'}>
                         {cf.value} {delta !== null && delta !== 0 && `(${delta > 0 ? '+' : ''}${delta})`}
                       </span>
                     ) : (
-                      <span className="text-gray-300">—</span>
+                      <span className="text-terra-200">—</span>
                     )}
                   </span>
                 </div>
@@ -437,7 +434,7 @@ function FullSessionSummary({
         <Accordion title="Limpiezas" badge={cleaningGroups.length}>
           <div className="space-y-4">
             {cleaningGroups.map((g) => (
-              <div key={g.id} className="space-y-2 border border-gray-100 rounded-lg p-3">
+              <div key={g.id} className="space-y-2 border border-terra-100 rounded-lg p-3">
                 {/* Encabezado del grupo */}
                 <div className="flex items-center justify-between">
                   <p className="text-sm font-semibold text-[#2C2220]">
@@ -447,23 +444,23 @@ function FullSessionSummary({
                     </span>
                   </p>
                   <div className="flex items-center gap-2 text-xs">
-                    <span className="text-gray-500">
+                    <span className="text-terra-500">
                       {g.cleanings_required} {g.cleanings_required === 1 ? 'limpieza' : 'limpiezas'}
                     </span>
                     {!g.is_charged && (
-                      <span className="bg-gray-200 text-gray-500 px-1.5 py-0.5 rounded">Sin cargo</span>
+                      <span className="bg-terra-200 text-terra-500 px-1.5 py-0.5 rounded">Sin cargo</span>
                     )}
                   </div>
                 </div>
 
                 {g.mesa_utilizada.length > 0 && (
-                  <p className="text-xs text-gray-500">Mesa utilizada: <span className="font-medium text-gray-700">{g.mesa_utilizada.join(', ')}</span></p>
+                  <p className="text-xs text-terra-500">Mesa utilizada: <span className="font-medium text-terra-800">{g.mesa_utilizada.join(', ')}</span></p>
                 )}
 
                 {/* Capas (a nivel de grupo) */}
                 {g.layers.length > 0 && (
                   <div>
-                    <p className="text-xs text-gray-400 uppercase tracking-wide">Capas</p>
+                    <p className="text-xs text-terra-400 uppercase tracking-wide">Capas</p>
                     <div className="flex flex-wrap gap-1 mt-0.5">
                       {g.layers.map((layer, li) => (
                         <Chip key={li} color={layer.type === 'sin_capas' ? 'gray' : 'amber'}>
@@ -485,7 +482,7 @@ function FullSessionSummary({
 
                         {/* Manifestación */}
                         <div>
-                          <p className="text-xs text-gray-400 uppercase tracking-wide">Manifestación</p>
+                          <p className="text-xs text-terra-400 uppercase tracking-wide">Manifestación</p>
                           <div className="flex flex-wrap gap-1 mt-0.5">
                             <Chip color="rose">
                               {formatManifestation(ev)}
@@ -494,11 +491,13 @@ function FullSessionSummary({
                         </div>
 
                         {/* Trabajo realizado */}
-                        {ev.work_done && (
+                        {ev.work_done.length > 0 && (
                           <div>
-                            <p className="text-xs text-gray-400 uppercase tracking-wide">Trabajo realizado</p>
+                            <p className="text-xs text-terra-400 uppercase tracking-wide">Trabajo realizado</p>
                             <div className="flex flex-wrap gap-1 mt-0.5">
-                              <Chip color="blue">{ev.work_done}</Chip>
+                              {ev.work_done.map((w, wi) => (
+                                <Chip key={wi} color="blue">{w}</Chip>
+                              ))}
                             </div>
                           </div>
                         )}
@@ -506,7 +505,7 @@ function FullSessionSummary({
                         {/* Materiales */}
                         {ev.materials.length > 0 && (
                           <div>
-                            <p className="text-xs text-gray-400 uppercase tracking-wide">Materiales</p>
+                            <p className="text-xs text-terra-400 uppercase tracking-wide">Materiales</p>
                             <div className="flex flex-wrap gap-1 mt-0.5">
                               {ev.materials.map((mat, mi) => (
                                 <Chip key={mi} color="green">{mat}</Chip>
@@ -518,7 +517,7 @@ function FullSessionSummary({
                         {/* Origen */}
                         {ev.origins.length > 0 && (
                           <div>
-                            <p className="text-xs text-gray-400 uppercase tracking-wide">Origen</p>
+                            <p className="text-xs text-terra-400 uppercase tracking-wide">Origen</p>
                             <div className="flex flex-wrap gap-1 mt-0.5">
                               {ev.origins.map((o, oi) => (
                                 <Chip key={oi} color="orange">{o}</Chip>
@@ -527,7 +526,7 @@ function FullSessionSummary({
                           </div>
                         )}
 
-                        {evIdx < g.events.length - 1 && <hr className="border-gray-100" />}
+                        {evIdx < g.events.length - 1 && <hr className="border-terra-100" />}
                       </div>
                     ))}
                   </div>
@@ -536,8 +535,8 @@ function FullSessionSummary({
                 {/* Beneficios */}
                 {g.beneficios && (
                   <div className="pt-1">
-                    <p className="text-xs text-gray-400 uppercase tracking-wide">Beneficios</p>
-                    <p className="text-sm text-gray-700 mt-0.5">{g.beneficios}</p>
+                    <p className="text-xs text-terra-400 uppercase tracking-wide">Beneficios</p>
+                    <p className="text-sm text-terra-800 mt-0.5">{g.beneficios}</p>
                   </div>
                 )}
               </div>
@@ -552,14 +551,14 @@ function FullSessionSummary({
           <div className="space-y-1">
             {lntEntries.map((entry) => (
               <div key={entry._localId} className="flex items-center justify-between py-1 text-sm">
-                <span className="text-gray-700">{entry.theme_organ || '—'}</span>
+                <span className="text-terra-800">{entry.theme_organ || '—'}</span>
                 <div className="flex items-center gap-3">
-                  <span className="text-gray-500">
+                  <span className="text-terra-500">
                     {entry.initial_energy}% → {entry.final_energy}%
                   </span>
                   <div className="flex gap-1">
                     {entry.healing_energy_body && (
-                      <span className="text-xs bg-blue-100 text-blue-700 px-1.5 py-0.5 rounded">Energético</span>
+                      <span className="text-xs bg-terra-200/50 text-terra-900 px-1.5 py-0.5 rounded">Energético</span>
                     )}
                     {entry.healing_spiritual_body && (
                       <span className="text-xs bg-indigo-100 text-indigo-700 px-1.5 py-0.5 rounded">Espiritual</span>
@@ -584,31 +583,31 @@ function FullSessionSummary({
                 <p className="text-sm font-semibold text-[#2C2220]">
                   {a.member || 'Sin nombre'}
                   {a.lineage && (
-                    <span className="text-xs font-normal text-gray-500 ml-2">
+                    <span className="text-xs font-normal text-terra-500 ml-2">
                       (Linaje {a.lineage})
                     </span>
                   )}
                 </p>
                 {a.bond_energy.length > 0 && (
-                  <p className="text-xs text-gray-500">
+                  <p className="text-xs text-terra-500">
                     Energía del vínculo: {a.bond_energy.join(', ')}
                   </p>
                 )}
                 {a.ancestor_roles.length > 0 && (
-                  <p className="text-xs text-gray-500">
+                  <p className="text-xs text-terra-500">
                     Roles ancestro: {a.ancestor_roles.join(', ')}
                   </p>
                 )}
                 {a.consultant_roles.length > 0 && (
-                  <p className="text-xs text-gray-500">
+                  <p className="text-xs text-terra-500">
                     Roles consultante: {a.consultant_roles.join(', ')}
                   </p>
                 )}
                 {a.energy_expressions.length > 0 && (
                   <div className="pl-3">
-                    <p className="text-xs text-gray-400">Expresiones energéticas:</p>
+                    <p className="text-xs text-terra-400">Expresiones energéticas:</p>
                     {a.energy_expressions.map((ex, i) => (
-                      <p key={i} className="text-xs text-gray-600">
+                      <p key={i} className="text-xs text-terra-800">
                         #{ex.number} — {ex.expression}
                       </p>
                     ))}
@@ -616,9 +615,9 @@ function FullSessionSummary({
                 )}
                 {a.family_traumas.length > 0 && (
                   <div className="pl-3">
-                    <p className="text-xs text-gray-400">Traumas familiares:</p>
+                    <p className="text-xs text-terra-400">Traumas familiares:</p>
                     {a.family_traumas.map((ft, i) => (
-                      <p key={i} className="text-xs text-gray-600">
+                      <p key={i} className="text-xs text-terra-800">
                         #{ft.number} — {ft.trauma}
                       </p>
                     ))}
@@ -634,25 +633,25 @@ function FullSessionSummary({
               ancestorConciliation.life_aspects_affected ||
               ancestorConciliation.session_relationship
             ) && (
-              <div className="border-t border-gray-100 pt-2 space-y-1">
-                <p className="text-xs text-gray-400 uppercase tracking-wide">Conciliación</p>
+              <div className="border-t border-terra-100 pt-2 space-y-1">
+                <p className="text-xs text-terra-400 uppercase tracking-wide">Conciliación</p>
                 {ancestorConciliation.healing_phrases && (
-                  <p className="text-xs text-gray-600">
+                  <p className="text-xs text-terra-800">
                     <span className="font-medium">Frases sanadoras:</span> {ancestorConciliation.healing_phrases}
                   </p>
                 )}
                 {ancestorConciliation.conciliation_acts && (
-                  <p className="text-xs text-gray-600">
+                  <p className="text-xs text-terra-800">
                     <span className="font-medium">Actos de conciliación:</span> {ancestorConciliation.conciliation_acts}
                   </p>
                 )}
                 {ancestorConciliation.life_aspects_affected && (
-                  <p className="text-xs text-gray-600">
+                  <p className="text-xs text-terra-800">
                     <span className="font-medium">Áreas de vida:</span> {ancestorConciliation.life_aspects_affected}
                   </p>
                 )}
                 {ancestorConciliation.session_relationship && (
-                  <p className="text-xs text-gray-600">
+                  <p className="text-xs text-terra-800">
                     <span className="font-medium">Relación con la sesión:</span> {ancestorConciliation.session_relationship}
                   </p>
                 )}
@@ -665,7 +664,7 @@ function FullSessionSummary({
       {/* 7. Notas generales */}
       {hasNotes && (
         <Accordion title="Notas generales">
-          <p className="text-sm text-gray-700 whitespace-pre-wrap">{generalNotes}</p>
+          <p className="text-sm text-terra-800 whitespace-pre-wrap">{generalNotes}</p>
         </Accordion>
       )}
 
@@ -673,17 +672,17 @@ function FullSessionSummary({
       {hasProtections && (
         <Accordion title="Protecciones" badge={protections.filter((p) => p.selected).length}>
           <div className="space-y-2">
-            <div className="flex items-center gap-2 text-xs text-gray-500">
+            <div className="flex items-center gap-2 text-xs text-terra-500">
               <span>Se cobra: {protectionCharged ? 'Sí' : 'No'}</span>
             </div>
-            <div className="border border-gray-200 rounded-lg divide-y divide-gray-100">
+            <div className="border border-terra-100 rounded-lg divide-y divide-terra-100">
               {protections.map((p) => (
                 <div key={p._localId} className={`flex items-center justify-between px-4 py-2 ${!p.selected ? 'opacity-50' : ''}`}>
                   <div className="flex items-center gap-2">
-                    <span className={`w-2 h-2 rounded-full ${p.selected ? 'bg-green-500' : 'bg-gray-300'}`} />
-                    <span className="text-sm text-gray-700">{p.person_name || 'Sin nombre'}</span>
+                    <span className={`w-2 h-2 rounded-full ${p.selected ? 'bg-green-500' : 'bg-terra-200'}`} />
+                    <span className="text-sm text-terra-800">{p.person_name || 'Sin nombre'}</span>
                   </div>
-                  <span className="text-sm text-gray-500">{p.quantity} {p.quantity === 1 ? 'protección' : 'protecciones'}</span>
+                  <span className="text-sm text-terra-500">{p.quantity} {p.quantity === 1 ? 'protección' : 'protecciones'}</span>
                 </div>
               ))}
             </div>
@@ -713,7 +712,7 @@ function Toggle({
       disabled={disabled}
       onClick={() => onChange(!checked)}
       className={`relative inline-flex h-6 w-11 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-[#2C2220] focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed ${
-        checked ? 'bg-[#2C2220]' : 'bg-gray-200'
+        checked ? 'bg-[#2C2220]' : 'bg-terra-200'
       }`}
     >
       <span
@@ -907,7 +906,7 @@ export function StepClose({
         >
           Cierre de sesión
         </h2>
-        <p className="text-sm text-gray-500 mt-0.5">
+        <p className="text-sm text-terra-500 mt-0.5">
           Completa los datos de cierre antes de finalizar la sesión.
         </p>
       </div>
@@ -941,7 +940,7 @@ export function StepClose({
             Protección
           </h3>
           <div className="flex items-center gap-3">
-            <span className="text-sm text-gray-500">¿Agregó protección?</span>
+            <span className="text-sm text-terra-500">¿Agregó protección?</span>
             <Toggle
               checked={hasProtection}
               onChange={setHasProtection}
@@ -956,7 +955,7 @@ export function StepClose({
               ¿A quiénes se agregaron?
             </p>
 
-            <div className="border border-gray-200 rounded-lg divide-y divide-gray-100">
+            <div className="border border-terra-100 rounded-lg divide-y divide-terra-100">
               {protections.map((p) => (
                 <div key={p._localId} className="flex items-center gap-3 px-4 py-2.5">
                   {/* Checkbox de selección */}
@@ -967,7 +966,7 @@ export function StepClose({
                     onChange={(e) =>
                       updateProtection(p._localId, { selected: e.target.checked })
                     }
-                    className="h-4 w-4 rounded border-gray-300 text-[#2C2220] focus:ring-[#2C2220]"
+                    className="h-4 w-4 rounded border-terra-200 text-[#2C2220] focus:ring-[#2C2220]"
                   />
 
                   {/* Nombre */}
@@ -984,7 +983,7 @@ export function StepClose({
 
                   {/* Cantidad */}
                   <div className="flex items-center gap-1.5">
-                    <span className="text-xs text-gray-400">Cantidad:</span>
+                    <span className="text-xs text-terra-400">Cantidad:</span>
                     <input
                       type="number"
                       min={1}
@@ -1004,7 +1003,7 @@ export function StepClose({
                     type="button"
                     disabled={isDisabled}
                     onClick={() => removeProtection(p._localId)}
-                    className="text-gray-400 hover:text-red-500 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                    className="text-terra-400 hover:text-red-500 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                     aria-label="Eliminar protección"
                   >
                     <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
@@ -1029,8 +1028,8 @@ export function StepClose({
             </button>
 
             {/* ¿Se cobra protección? */}
-            <div className="flex items-center gap-3 pt-2 border-t border-gray-100">
-              <span className="text-sm text-gray-500">¿Se cobra protección?</span>
+            <div className="flex items-center gap-3 pt-2 border-t border-terra-100">
+              <span className="text-sm text-terra-500">¿Se cobra protección?</span>
               <Toggle
                 checked={protectionCharged}
                 onChange={setProtectionCharged}
@@ -1061,7 +1060,7 @@ export function StepClose({
             </p>
             {hasGroups ? (
               <>
-                <div className="border border-gray-200 rounded-lg divide-y divide-gray-100">
+                <div className="border border-terra-100 rounded-lg divide-y divide-terra-100">
                   {cleaningGroups.map((g) => {
                     const groupCost = g.cleanings_required * g.cost_per_cleaning;
                     const charged = g.is_charged;
@@ -1069,7 +1068,7 @@ export function StepClose({
                       <div
                         key={g.id}
                         className={`flex items-center gap-3 px-4 py-2.5 transition-colors ${
-                          !charged ? 'bg-gray-50' : ''
+                          !charged ? 'bg-terra-50' : ''
                         }`}
                       >
                         <input
@@ -1077,23 +1076,23 @@ export function StepClose({
                           checked={charged}
                           disabled={isDisabled || !onCleaningGroupsChange}
                           onChange={(e) => toggleCleaningCharged(g.id, e.target.checked)}
-                          className="h-4 w-4 rounded border-gray-300 text-[#2C2220] focus:ring-[#2C2220]"
+                          className="h-4 w-4 rounded border-terra-200 text-[#2C2220] focus:ring-[#2C2220]"
                         />
                         <div className="flex-1 min-w-0">
-                          <span className={`text-sm ${charged ? 'text-[#2C2220]' : 'text-gray-400'}`}>
+                          <span className={`text-sm ${charged ? 'text-[#2C2220]' : 'text-terra-400'}`}>
                             {g.target_name}
                           </span>
-                          <span className={`text-xs ml-1.5 ${charged ? 'text-gray-500' : 'text-gray-400'}`}>
+                          <span className={`text-xs ml-1.5 ${charged ? 'text-terra-500' : 'text-terra-400'}`}>
                             — {g.cleanings_required} {g.cleanings_required === 1 ? 'limpieza' : 'limpiezas'}
                           </span>
                           {!charged && (
-                            <span className="ml-2 inline-block text-xs bg-gray-200 text-gray-500 px-1.5 py-0.5 rounded">
+                            <span className="ml-2 inline-block text-xs bg-terra-200 text-terra-500 px-1.5 py-0.5 rounded">
                               Sin cargo
                             </span>
                           )}
                         </div>
                         <span className={`text-sm font-medium whitespace-nowrap ${
-                          charged ? 'text-[#2C2220]' : 'text-gray-400 line-through'
+                          charged ? 'text-[#2C2220]' : 'text-terra-400 line-through'
                         }`}>
                           {formatMXN(groupCost)}
                         </span>
@@ -1107,11 +1106,11 @@ export function StepClose({
                   const selectedGroups = cleaningGroups.filter((g) => g.is_charged);
                   const totalCleanings = selectedGroups.reduce((s, g) => s + g.cleanings_required, 0);
                   return (
-                    <div className="flex items-center justify-between pt-1 text-xs text-gray-500">
+                    <div className="flex items-center justify-between pt-1 text-xs text-terra-500">
                       <span>
                         Total seleccionadas: {totalCleanings} {totalCleanings === 1 ? 'limpieza' : 'limpiezas'}
                         {selectedGroups.length < cleaningGroups.length && (
-                          <span className="text-gray-400 ml-1">
+                          <span className="text-terra-400 ml-1">
                             ({cleaningGroups.length - selectedGroups.length} sin cargo)
                           </span>
                         )}
@@ -1166,7 +1165,7 @@ export function StepClose({
           {/* Porcentaje que puede pagar — slider */}
           <div className="flex flex-col gap-2">
             <div className="flex items-center justify-between">
-              <span className="text-sm text-gray-500">× Porcentaje pago</span>
+              <span className="text-sm text-terra-500">× Porcentaje pago</span>
               <span className="text-sm font-semibold text-[#2C2220]">{porcentajePago}%</span>
             </div>
             <input
@@ -1186,7 +1185,7 @@ export function StepClose({
 
           {/* +IVA toggle */}
           <div className="flex items-center justify-between">
-            <span className="text-sm text-gray-500">× IVA</span>
+            <span className="text-sm text-terra-500">× IVA</span>
             <Toggle
               checked={incluyeIva}
               onChange={setIncluyeIva}
@@ -1227,7 +1226,7 @@ export function StepClose({
           type="button"
           onClick={onCloseSession}
           disabled={isDisabled}
-          className="w-full flex items-center justify-center gap-2 rounded-md bg-[#1E5631] px-4 py-3 text-sm font-semibold text-white hover:bg-[#174926] focus:outline-none focus:ring-2 focus:ring-[#1E5631] focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+          className="w-full flex items-center justify-center gap-2 rounded-md bg-[#C4704A] px-4 py-3 text-sm font-semibold text-white hover:bg-[#A0522D] focus:outline-none focus:ring-2 focus:ring-[#C4704A] focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
         >
           {isClosing ? (
             <>
@@ -1273,7 +1272,7 @@ export function StepClose({
             </>
           )}
         </button>
-        <p className="text-xs text-gray-400 text-center mt-2">
+        <p className="text-xs text-terra-400 text-center mt-2">
           Esta acción es irreversible. Verifica los datos antes de confirmar.
         </p>
       </div>

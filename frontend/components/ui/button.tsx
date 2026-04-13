@@ -8,8 +8,8 @@ const buttonVariants = cva(
   {
     variants: {
       variant: {
-        default: "bg-terra text-white hover:bg-terra-600",
-        destructive: "bg-destructive text-destructive-foreground hover:bg-destructive/90",
+        default: "bg-terra text-terra-50 hover:bg-terra-600",
+        destructive: "bg-[#922B21] text-terra-50 hover:bg-[#922B21]/90",
         outline: "border border-input bg-background hover:bg-accent hover:text-accent-foreground",
         secondary: "bg-transparent border border-terra text-terra hover:bg-terra-100",
         ghost: "bg-transparent text-charcoal hover:bg-terra-100",

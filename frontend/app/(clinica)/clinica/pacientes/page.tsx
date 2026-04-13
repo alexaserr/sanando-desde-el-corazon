@@ -267,7 +267,7 @@ export default function PacientesPage() {
                         <div className="rounded-full bg-terra-50 p-3">
                           <UserSearch className="h-6 w-6 text-terra-400" />
                         </div>
-                        <p className="text-sm font-medium text-gray-700">No se encontraron pacientes</p>
+                        <p className="text-sm font-medium text-terra-800">No se encontraron pacientes</p>
                         <p className="text-sm text-muted-foreground">Intenta con otro término de búsqueda</p>
                       </>
                     ) : (
@@ -275,7 +275,7 @@ export default function PacientesPage() {
                         <div className="rounded-full bg-terra-50 p-3">
                           <UserPlus className="h-6 w-6 text-terra-400" />
                         </div>
-                        <p className="text-sm font-medium text-gray-700">No hay pacientes registrados</p>
+                        <p className="text-sm font-medium text-terra-800">No hay pacientes registrados</p>
                         <a
                           href="/clinica/pacientes/nuevo"
                           className="text-sm text-terra-700 hover:text-terra-900 font-medium underline underline-offset-2 transition-colors"
@@ -325,7 +325,7 @@ export default function PacientesPage() {
       {/* Modal: duplicados */}
       {dupOpen && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4">
-          <div className="bg-white rounded-xl shadow-xl w-full max-w-3xl max-h-[85vh] flex flex-col">
+          <div className="bg-terra-50 rounded-xl shadow-xl w-full max-w-3xl max-h-[85vh] flex flex-col">
             <div className="flex items-center justify-between border-b border-terra-100 px-5 py-4">
               <div>
                 <h2 className="font-display text-lg font-semibold text-terra-900">

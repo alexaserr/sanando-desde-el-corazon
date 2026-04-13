@@ -26,7 +26,7 @@ export function StepChakrasInitial({
         >
           Chakras iniciales
         </h2>
-        <p className="text-sm text-gray-500 mt-0.5">
+        <p className="text-sm text-terra-500 mt-0.5">
           Registra el estado de cada chakra al inicio de la sesión. Escala 0 – 14.
         </p>
       </div>

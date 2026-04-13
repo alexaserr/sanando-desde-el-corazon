@@ -45,7 +45,7 @@ export function SidebarNav() {
   return (
     <aside
       className={cn(
-        "bg-white border-r border-terra-100 flex flex-col shrink-0 overflow-hidden",
+        "bg-terra-50 border-r border-terra-100 flex flex-col shrink-0 overflow-hidden",
         "transition-all duration-300 ease-in-out",
         sidebarCollapsed ? "w-16" : "w-64",
       )}

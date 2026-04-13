@@ -96,13 +96,13 @@ function Field({
 }) {
   return (
     <div>
-      <p className="text-xs uppercase tracking-wide text-gray-400 mb-1 font-medium">
+      <p className="text-xs uppercase tracking-wide text-terra-400 mb-1 font-medium">
         {label}
       </p>
       {value != null ? (
-        <p className="text-sm text-gray-900">{value}</p>
+        <p className="text-sm text-terra-900">{value}</p>
       ) : (
-        <p className="text-sm text-gray-300 italic">Sin registrar</p>
+        <p className="text-sm text-terra-200 italic">Sin registrar</p>
       )}
     </div>
   );
@@ -127,7 +127,7 @@ function SectionHeader({
 /** Contenedor de sección */
 function Section({ children }: { children: React.ReactNode }) {
   return (
-    <div className="bg-white rounded-xl border border-terra-100 p-6">
+    <div className="bg-terra-50 rounded-xl border border-terra-100 p-6">
       {children}
     </div>
   );
@@ -142,7 +142,7 @@ function TagList({
   chipClass: string;
 }) {
   if (!items || items.length === 0) {
-    return <p className="text-sm text-gray-300 italic">Sin registrar</p>;
+    return <p className="text-sm text-terra-200 italic">Sin registrar</p>;
   }
   return (
     <div className="flex flex-wrap gap-2">
@@ -244,7 +244,7 @@ function SessionDrawer({
         role="dialog"
         aria-modal="true"
         aria-label="Detalle de sesión"
-        className="fixed right-0 top-0 h-full w-full max-w-md bg-white z-50 shadow-[−4px_0_24px_rgba(61,26,15,0.10)] flex flex-col"
+        className="fixed right-0 top-0 h-full w-full max-w-md bg-terra-50 z-50 shadow-[−4px_0_24px_rgba(61,26,15,0.10)] flex flex-col"
       >
         {/* Header */}
         <div className="flex items-start justify-between gap-4 px-6 py-5 border-b border-terra-100">
@@ -395,10 +395,10 @@ function TopicsTabContent({
           {active.map((topic) => (
             <div
               key={topic.id}
-              className="bg-white rounded-lg border border-gray-100 p-5 space-y-3"
+              className="bg-terra-50 rounded-lg border border-terra-100 p-5 space-y-3"
             >
               <div className="flex items-start justify-between gap-4">
-                <p className="font-medium text-gray-900">{topic.name}</p>
+                <p className="font-medium text-terra-900">{topic.name}</p>
                 <button
                   onClick={() => handleComplete(topic.id)}
                   disabled={completing === topic.id}
@@ -408,15 +408,15 @@ function TopicsTabContent({
                 </button>
               </div>
               <div className="space-y-1">
-                <div className="h-2 rounded-full bg-gray-100 overflow-hidden">
+                <div className="h-2 rounded-full bg-terra-100 overflow-hidden">
                   <div
                     className={`h-full rounded-full transition-all ${progressColor(topic.progress_pct)}`}
                     style={{ width: `${Math.min(100, Math.max(0, topic.progress_pct))}%` }}
                   />
                 </div>
-                <p className="text-xs text-gray-500">{topic.progress_pct}% completado</p>
+                <p className="text-xs text-terra-500">{topic.progress_pct}% completado</p>
               </div>
-              <p className="text-xs text-gray-400">Creado el {formatDate(topic.created_at)}</p>
+              <p className="text-xs text-terra-400">Creado el {formatDate(topic.created_at)}</p>
             </div>
           ))}
         </div>
@@ -425,16 +425,16 @@ function TopicsTabContent({
       {/* Temas completados */}
       {completed.length > 0 && (
         <div className="space-y-3">
-          <h3 className="text-sm font-semibold text-gray-500 uppercase tracking-wide">
+          <h3 className="text-sm font-semibold text-terra-500 uppercase tracking-wide">
             Temas completados
           </h3>
           {completed.map((topic) => (
             <div
               key={topic.id}
-              className="bg-white rounded-lg border border-gray-100 p-5 space-y-2"
+              className="bg-terra-50 rounded-lg border border-terra-100 p-5 space-y-2"
             >
               <div className="flex items-center justify-between gap-4">
-                <p className="font-medium text-gray-900">{topic.name}</p>
+                <p className="font-medium text-terra-900">{topic.name}</p>
                 <span className="text-xs font-medium bg-green-50 text-green-700 border border-green-200 rounded-full px-3 py-1">
                   Completado
                   {topic.completed_at ? ` · ${formatDate(topic.completed_at)}` : ""}
@@ -709,7 +709,7 @@ export default function PacienteDetailPage() {
             <h1 className="font-display text-2xl font-bold text-terra-900">
               {client.full_name}
             </h1>
-            <p className="text-sm text-gray-500 mt-0.5">
+            <p className="text-sm text-terra-500 mt-0.5">
               Cliente desde {formatDate(client.created_at)}
             </p>
           </div>
@@ -727,7 +727,7 @@ export default function PacienteDetailPage() {
               <a
                 href={`mailto:${client.email}`}
                 title={client.email}
-                className="min-h-[44px] min-w-[44px] flex items-center justify-center rounded-lg border border-gray-200 text-terra-600 hover:bg-terra-50 hover:border-terra-300 transition-colors"
+                className="min-h-[44px] min-w-[44px] flex items-center justify-center rounded-lg border border-terra-100 text-terra-600 hover:bg-terra-50 hover:border-terra-300 transition-colors"
               >
                 <Mail className="h-4 w-4" />
               </a>
@@ -736,7 +736,7 @@ export default function PacienteDetailPage() {
               <a
                 href={`tel:${client.phone}`}
                 title={formatPhone(client.phone)}
-                className="min-h-[44px] min-w-[44px] flex items-center justify-center rounded-lg border border-gray-200 text-terra-600 hover:bg-terra-50 hover:border-terra-300 transition-colors"
+                className="min-h-[44px] min-w-[44px] flex items-center justify-center rounded-lg border border-terra-100 text-terra-600 hover:bg-terra-50 hover:border-terra-300 transition-colors"
               >
                 <Phone className="h-4 w-4" />
               </a>
@@ -829,7 +829,7 @@ export default function PacienteDetailPage() {
                       <button
                         onClick={cancelEditPersonal}
                         disabled={isSavingPersonal}
-                        className="text-xs font-medium text-gray-500 hover:text-gray-700 rounded px-3 py-1.5 transition-colors disabled:opacity-50"
+                        className="text-xs font-medium text-terra-500 hover:text-terra-800 rounded px-3 py-1.5 transition-colors disabled:opacity-50"
                       >
                         Cancelar
                       </button>
@@ -891,7 +891,7 @@ export default function PacienteDetailPage() {
                 ) : (
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-4">
                     <div>
-                      <p className="text-xs uppercase tracking-wide text-gray-400 mb-1 font-medium">
+                      <p className="text-xs uppercase tracking-wide text-terra-400 mb-1 font-medium">
                         Nombre completo
                       </p>
                       <Input
@@ -902,7 +902,7 @@ export default function PacienteDetailPage() {
                       />
                     </div>
                     <div>
-                      <p className="text-xs uppercase tracking-wide text-gray-400 mb-1 font-medium">
+                      <p className="text-xs uppercase tracking-wide text-terra-400 mb-1 font-medium">
                         Correo electrónico
                       </p>
                       <Input
@@ -914,7 +914,7 @@ export default function PacienteDetailPage() {
                       />
                     </div>
                     <div>
-                      <p className="text-xs uppercase tracking-wide text-gray-400 mb-1 font-medium">
+                      <p className="text-xs uppercase tracking-wide text-terra-400 mb-1 font-medium">
                         Teléfono
                       </p>
                       <Input
@@ -926,7 +926,7 @@ export default function PacienteDetailPage() {
                       />
                     </div>
                     <div>
-                      <p className="text-xs uppercase tracking-wide text-gray-400 mb-1 font-medium">
+                      <p className="text-xs uppercase tracking-wide text-terra-400 mb-1 font-medium">
                         Fecha de nacimiento
                       </p>
                       <Input
@@ -938,7 +938,7 @@ export default function PacienteDetailPage() {
                       />
                     </div>
                     <div>
-                      <p className="text-xs uppercase tracking-wide text-gray-400 mb-1 font-medium">
+                      <p className="text-xs uppercase tracking-wide text-terra-400 mb-1 font-medium">
                         Estado civil
                       </p>
                       <select
@@ -960,7 +960,7 @@ export default function PacienteDetailPage() {
                       </select>
                     </div>
                     <div>
-                      <p className="text-xs uppercase tracking-wide text-gray-400 mb-1 font-medium">
+                      <p className="text-xs uppercase tracking-wide text-terra-400 mb-1 font-medium">
                         Profesión
                       </p>
                       <Input
@@ -971,7 +971,7 @@ export default function PacienteDetailPage() {
                       />
                     </div>
                     <div>
-                      <p className="text-xs uppercase tracking-wide text-gray-400 mb-1 font-medium">
+                      <p className="text-xs uppercase tracking-wide text-terra-400 mb-1 font-medium">
                         Lugar de nacimiento
                       </p>
                       <Input
@@ -982,7 +982,7 @@ export default function PacienteDetailPage() {
                       />
                     </div>
                     <div>
-                      <p className="text-xs uppercase tracking-wide text-gray-400 mb-1 font-medium">
+                      <p className="text-xs uppercase tracking-wide text-terra-400 mb-1 font-medium">
                         Lugar de residencia
                       </p>
                       <Input
@@ -1001,7 +1001,7 @@ export default function PacienteDetailPage() {
                 <SectionHeader icon={Heart} title="Perfil Emocional" />
                 <div className="space-y-5">
                   <div>
-                    <p className="text-xs uppercase tracking-wide text-gray-400 mb-2 font-medium">
+                    <p className="text-xs uppercase tracking-wide text-terra-400 mb-2 font-medium">
                       Emociones predominantes
                     </p>
                     <TagList
@@ -1010,20 +1010,20 @@ export default function PacienteDetailPage() {
                     />
                   </div>
                   <div>
-                    <p className="text-xs uppercase tracking-wide text-gray-400 mb-2 font-medium">
+                    <p className="text-xs uppercase tracking-wide text-terra-400 mb-2 font-medium">
                       Motivación de visita
                     </p>
                     <TagList
                       items={client.motivation_visit}
-                      chipClass="bg-blue-50 text-blue-700 border-blue-200"
+                      chipClass="bg-terra-200/50 text-terra-900 border-terra-500"
                     />
                   </div>
                   {client.motivation_general && (
                     <div>
-                      <p className="text-xs uppercase tracking-wide text-gray-400 mb-1 font-medium">
+                      <p className="text-xs uppercase tracking-wide text-terra-400 mb-1 font-medium">
                         Motivación general
                       </p>
-                      <p className="text-sm text-gray-900 leading-relaxed">
+                      <p className="text-sm text-terra-900 leading-relaxed">
                         {client.motivation_general}
                       </p>
                     </div>
@@ -1234,7 +1234,7 @@ export default function PacienteDetailPage() {
                         if (items.length === 0) return null;
                         return (
                           <div key={type}>
-                            <p className="text-xs uppercase tracking-wide text-gray-400 mb-2 font-medium">
+                            <p className="text-xs uppercase tracking-wide text-terra-400 mb-2 font-medium">
                               {type === "medical"
                                 ? "Diagnósticos médicos"
                                 : "Padecimientos recurrentes"}
@@ -1265,13 +1265,13 @@ export default function PacienteDetailPage() {
                     {client.medications.map((m) => (
                       <div
                         key={m.id}
-                        className="text-sm px-3 py-2 rounded-lg border border-gray-200 bg-gray-50"
+                        className="text-sm px-3 py-2 rounded-lg border border-terra-100 bg-terra-50"
                       >
-                        <span className="font-medium text-gray-900 capitalize">
+                        <span className="font-medium text-terra-900 capitalize">
                           {m.name}
                         </span>
                         {m.notes && (
-                          <span className="text-gray-500 ml-1 text-xs">
+                          <span className="text-terra-500 ml-1 text-xs">
                             ({m.notes})
                           </span>
                         )}

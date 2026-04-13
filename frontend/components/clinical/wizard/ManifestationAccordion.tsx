@@ -40,23 +40,23 @@ export function ManifestationAccordion({
   }
 
   return (
-    <div className="rounded-lg border border-[#EDE5E0] bg-white overflow-hidden">
+    <div className="rounded-lg border border-[#EDE5E0] bg-terra-50">
       {/* ── Header (always visible) ── */}
       <button
         type="button"
         onClick={() => onChange({ expanded: !entry.expanded })}
-        className="flex w-full items-center gap-2 px-3 py-2.5 text-left hover:bg-[#F2E8E4] transition-colors"
+        className="flex w-full items-center gap-2 rounded-t-lg px-3 py-2.5 text-left hover:bg-[#F2E8E4] transition-colors"
         style={{ minHeight: 44 }}
       >
         <ChevronDown
           size={14}
-          className={`shrink-0 text-gray-400 transition-transform ${entry.expanded ? '' : '-rotate-90'}`}
+          className={`shrink-0 text-terra-400 transition-transform ${entry.expanded ? '' : '-rotate-90'}`}
         />
 
         <span className="flex-1 text-sm text-[#2C2220] font-medium truncate">
-          <span className="text-gray-400 mr-1">{index + 1}.</span>
+          <span className="text-terra-400 mr-1">{index + 1}.</span>
           {entry.name || 'Sin nombre'}
-          <span className="ml-2 text-gray-400">
+          <span className="ml-2 text-terra-400">
             — {entry.value} — {entry.unit === 'porcentaje' ? 'Porcentaje' : 'Número'}
           </span>
         </span>
@@ -75,7 +75,7 @@ export function ManifestationAccordion({
           }}
           disabled={disabled}
           aria-label={`Eliminar manifestación ${index + 1}`}
-          className="flex h-8 w-8 shrink-0 items-center justify-center rounded text-gray-400 hover:bg-red-50 hover:text-red-600 focus:outline-none focus:ring-2 focus:ring-red-500 disabled:cursor-not-allowed disabled:opacity-40 transition-colors"
+          className="flex h-8 w-8 shrink-0 items-center justify-center rounded text-terra-400 hover:bg-red-50 hover:text-red-600 focus:outline-none focus:ring-2 focus:ring-red-500 disabled:cursor-not-allowed disabled:opacity-40 transition-colors"
         >
           <Trash2 size={14} strokeWidth={1.5} />
         </button>
@@ -121,11 +121,12 @@ export function ManifestationAccordion({
             <SearchableCombobox
               options={TRABAJO_OPTIONS}
               value={entry.work_done}
-              onChange={(val) => onChange({ work_done: val as string })}
+              onChange={(val) => onChange({ work_done: val as string[] })}
+              multiple
               placeholder="— Trabajo —"
               disabled={disabled}
             />
-            {entry.work_done === 'Otro' && (
+            {entry.work_done.includes('Otro') && (
               <input
                 type="text"
                 value={entry.work_done_custom ?? ''}

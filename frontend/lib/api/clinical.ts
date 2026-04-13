@@ -284,7 +284,7 @@ export interface CleaningGroupPayload {
     name: string;
     value: number | null;
     unit: string;
-    work_done: string;
+    work_done: string[];
     work_done_custom?: string;
     materials: string[];
     origins: string[];
@@ -301,9 +301,9 @@ export async function saveCleaningGroups(
   sessionId: string,
   groups: CleaningGroupPayload[],
 ): Promise<unknown> {
-  return apiClient.put<unknown, CleaningGroupPayload[]>(
+  return apiClient.put<unknown, { groups: CleaningGroupPayload[] }>(
     `/api/v1/clinical/sessions/${sessionId}/cleaning-groups`,
-    groups,
+    { groups },
   );
 }
 
@@ -356,10 +356,16 @@ export async function saveProtections(
     protections: ProtectionPayload[];
   },
 ): Promise<unknown> {
-  // Guardar protecciones
+  // Guardar protecciones — mapear person_name → recipient_name para el backend
   await apiClient.put<unknown>(
     `/api/v1/clinical/sessions/${sessionId}/protections`,
-    payload.protections,
+    {
+      protections: payload.protections.map((p) => ({
+        recipient_type: 'patient' as const,
+        recipient_name: p.person_name,
+        quantity: p.quantity,
+      })),
+    },
   );
   // Actualizar flags en general
   return apiClient.patch(

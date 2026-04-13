@@ -154,7 +154,7 @@ const INPUT_CLS =
   "w-full border-0 border-b border-[#D4A592] bg-[#FAF7F5] px-2 py-2 text-sm text-[#2C2220] rounded-none placeholder:text-[#A9967E] focus:border-b-2 focus:border-[#C4704A] focus:outline-none transition-colors";
 
 const TEXTAREA_CLS =
-  "w-full resize-none rounded-md border border-[#D4A592] bg-[#FAF7F5] px-3 py-2 text-sm text-[#2C2220] placeholder:text-[#A9967E] focus:border-[#C4704A] focus:outline-none focus:ring-1 focus:ring-[#C4704A]/30 transition-colors";
+  "w-full resize-none border-0 border-b border-[#D4A592] rounded-none bg-[#FAF7F5] px-3 py-2 text-sm text-[#2C2220] placeholder:text-[#A9967E] focus:border-[#C4704A] focus:outline-none focus:ring-1 focus:ring-[#C4704A]/30 transition-colors";
 
 // ─── Helpers ────────────────────────────────────────────────────────────────
 
@@ -582,8 +582,7 @@ export default function RegistroPage() {
             <Check className="h-8 w-8 text-[#4CAF50]" />
           </div>
           <h2
-            className="mb-2 text-2xl text-[#4A3628]"
-            style={{ fontFamily: "Playfair Display, serif" }}
+            className="font-display mb-2 text-2xl text-[#4A3628]"
           >
             ¡Registro exitoso!
           </h2>
@@ -614,8 +613,7 @@ export default function RegistroPage() {
         {/* Header */}
         <div className="mb-6 text-center">
           <h1
-            className="text-3xl text-[#4A3628]"
-            style={{ fontFamily: "Playfair Display, serif" }}
+            className="font-display text-3xl text-[#4A3628]"
           >
             Sanando desde el Corazón
           </h1>

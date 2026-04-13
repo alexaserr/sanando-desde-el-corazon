@@ -73,7 +73,7 @@ export default function EmotionSelector({
       {/* ── Dropdown panel ── */}
       {open && (
         <div
-          className="absolute z-50 mt-1 w-full overflow-hidden rounded-lg border border-[#EDE5E0] bg-white"
+          className="absolute z-50 mt-1 w-full overflow-hidden rounded-lg border border-[#EDE5E0] bg-terra-50"
           style={{ boxShadow: '0 4px 16px rgba(54,32,23,0.12)' }}
         >
           <div className="flex" style={{ maxHeight: 300 }}>

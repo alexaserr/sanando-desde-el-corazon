@@ -24,7 +24,7 @@ export function StepAncestors({
         <h2 id="step-ancestors-heading" className="text-base font-semibold text-[#2C2220]">
           Reporte de Ancestros
         </h2>
-        <p className="text-sm text-gray-500 mt-0.5">
+        <p className="text-sm text-terra-500 mt-0.5">
           Registra los ancestros identificados durante la sesión y la conciliación correspondiente.
         </p>
       </div>

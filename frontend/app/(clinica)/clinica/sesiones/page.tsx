@@ -40,7 +40,7 @@ interface DuplicateGroup {
 
 function TableSkeleton() {
   return (
-    <div className="bg-white rounded-lg shadow-[0_2px_8px_rgba(44,34,32,0.06)] overflow-hidden">
+    <div className="bg-terra-50 rounded-lg shadow-[0_2px_8px_rgba(44,34,32,0.06)] overflow-hidden">
       <table className="w-full">
         <thead>
           <tr className="bg-[#FAF7F5] border-b border-[#D4A592]">
@@ -290,7 +290,7 @@ export default function SessionsPage() {
               <button
                 onClick={handleFindDuplicates}
                 disabled={loadingDuplicates}
-                className="flex items-center gap-2 bg-white border border-terra-700 text-terra-700 hover:bg-terra-50 disabled:opacity-50 disabled:cursor-not-allowed h-10 px-4 rounded text-sm font-medium transition-colors"
+                className="flex items-center gap-2 bg-terra-50 border border-terra-700 text-terra-700 hover:bg-terra-50 disabled:opacity-50 disabled:cursor-not-allowed h-10 px-4 rounded text-sm font-medium transition-colors"
                 title="Buscar sesiones duplicadas por paciente, tipo y fecha"
               >
                 <Copy className="h-4 w-4" />
@@ -299,7 +299,7 @@ export default function SessionsPage() {
               <button
                 onClick={handleCleanEmptySessions}
                 disabled={cleaningEmpty}
-                className="flex items-center gap-2 bg-white border border-terra-700 text-terra-700 hover:bg-terra-50 disabled:opacity-50 disabled:cursor-not-allowed h-10 px-4 rounded text-sm font-medium transition-colors"
+                className="flex items-center gap-2 bg-terra-50 border border-terra-700 text-terra-700 hover:bg-terra-50 disabled:opacity-50 disabled:cursor-not-allowed h-10 px-4 rounded text-sm font-medium transition-colors"
                 title="Eliminar sesiones creadas sin datos capturados"
               >
                 <Sparkles className="h-4 w-4" />
@@ -327,10 +327,10 @@ export default function SessionsPage() {
             <AlertCircle className="h-8 w-8 text-red-400" />
           </div>
           <div>
-            <h2 className="text-lg font-medium text-gray-900 mb-1">
+            <h2 className="text-lg font-medium text-terra-900 mb-1">
               Error al cargar sesiones
             </h2>
-            <p className="text-sm text-gray-500 max-w-sm">{error}</p>
+            <p className="text-sm text-terra-500 max-w-sm">{error}</p>
           </div>
           <button
             onClick={() => fetchSessions(page)}
@@ -348,10 +348,10 @@ export default function SessionsPage() {
             <CalendarPlus className="h-8 w-8 text-terra-400" />
           </div>
           <div>
-            <h2 className="text-lg font-medium text-gray-900 mb-1">
+            <h2 className="text-lg font-medium text-terra-900 mb-1">
               No hay sesiones registradas
             </h2>
-            <p className="text-sm text-gray-500 max-w-sm">
+            <p className="text-sm text-terra-500 max-w-sm">
               Consulta las sesiones desde la ficha de cada clienta o crea una nueva sesión.
             </p>
           </div>
@@ -367,7 +367,7 @@ export default function SessionsPage() {
               type="date"
               value={filterDateFrom}
               onChange={(e) => setFilterDateFrom(e.target.value)}
-              className="h-9 px-3 rounded border border-terra-200 text-sm bg-white focus:outline-none focus:ring-1 focus:ring-[#C4704A]"
+              className="h-9 px-3 rounded border border-terra-200 text-sm bg-terra-50 focus:outline-none focus:ring-1 focus:ring-[#C4704A]"
             />
           </div>
           <div>
@@ -376,7 +376,7 @@ export default function SessionsPage() {
               type="date"
               value={filterDateTo}
               onChange={(e) => setFilterDateTo(e.target.value)}
-              className="h-9 px-3 rounded border border-terra-200 text-sm bg-white focus:outline-none focus:ring-1 focus:ring-[#C4704A]"
+              className="h-9 px-3 rounded border border-terra-200 text-sm bg-terra-50 focus:outline-none focus:ring-1 focus:ring-[#C4704A]"
             />
           </div>
           <div>
@@ -384,7 +384,7 @@ export default function SessionsPage() {
             <select
               value={filterTherapyType}
               onChange={(e) => setFilterTherapyType(e.target.value)}
-              className="h-9 px-3 rounded border border-terra-200 text-sm bg-white focus:outline-none focus:ring-1 focus:ring-[#C4704A]"
+              className="h-9 px-3 rounded border border-terra-200 text-sm bg-terra-50 focus:outline-none focus:ring-1 focus:ring-[#C4704A]"
             >
               <option value="">Todas</option>
               {therapyTypes.map((tt) => (
@@ -397,7 +397,7 @@ export default function SessionsPage() {
             <select
               value={filterStatus}
               onChange={(e) => setFilterStatus(e.target.value)}
-              className="h-9 px-3 rounded border border-terra-200 text-sm bg-white focus:outline-none focus:ring-1 focus:ring-[#C4704A]"
+              className="h-9 px-3 rounded border border-terra-200 text-sm bg-terra-50 focus:outline-none focus:ring-1 focus:ring-[#C4704A]"
             >
               <option value="">Todas</option>
               <option value="completed">Completada</option>
@@ -410,7 +410,7 @@ export default function SessionsPage() {
       {/* Table */}
       {!loading && !error && data && data.total > 0 && (
         <>
-          <div className="bg-white rounded-lg shadow-[0_2px_8px_rgba(44,34,32,0.06)] overflow-hidden">
+          <div className="bg-terra-50 rounded-lg shadow-[0_2px_8px_rgba(44,34,32,0.06)] overflow-hidden">
             <table className="w-full">
               <thead>
                 <tr className="bg-[#FAF7F5] border-b border-[#D4A592]">
@@ -473,7 +473,7 @@ export default function SessionsPage() {
               <ChevronLeft className="h-4 w-4" />
               Previous
             </button>
-            <span className="text-xs text-gray-400">
+            <span className="text-xs text-terra-400">
               Página {page} de {totalPages}
             </span>
             <button
@@ -510,7 +510,7 @@ export default function SessionsPage() {
               {duplicateGroups.map((group, gIdx) => (
                 <div
                   key={gIdx}
-                  className="border border-[#D4A592] rounded-lg p-4 bg-white"
+                  className="border border-[#D4A592] rounded-lg p-4 bg-terra-50"
                 >
                   <div className="mb-3">
                     <p className="text-sm font-medium text-[#2C2220]">

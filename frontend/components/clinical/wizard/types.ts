@@ -163,7 +163,7 @@ export interface ManifestationEntry {
   name: string;
   value: number;
   unit: 'numero' | 'porcentaje';
-  work_done: string;
+  work_done: string[];
   work_done_custom?: string;
   materials: string[];
   origins: string[];

@@ -321,7 +321,7 @@ export function ChakraGrid({
         return (
           <div
             key={reading.chakra_position_id}
-            className="bg-white rounded-xl p-4 shadow-sm border border-terra-100"
+            className="bg-terra-50 rounded-xl p-4 shadow-sm border border-terra-100"
             style={{ borderLeftWidth: 3, borderLeftColor: color }}
           >
             <ChakraSlider

@@ -678,7 +678,7 @@ export default function NuevaSessionPage() {
 
   if (!catalogs) {
     return (
-      <div className="p-8 text-sm text-gray-500">Cargando wizard de sesión…</div>
+      <div className="p-8 text-sm text-terra-500">Cargando wizard de sesión…</div>
     );
   }
 
@@ -703,7 +703,7 @@ export default function NuevaSessionPage() {
             fill="none"
             viewBox="0 0 24 24"
             stroke="currentColor"
-            strokeWidth={2}
+            strokeWidth={1.5}
           >
             <path
               strokeLinecap="round"

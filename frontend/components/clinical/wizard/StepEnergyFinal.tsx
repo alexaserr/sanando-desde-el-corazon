@@ -94,7 +94,7 @@ export function StepEnergyFinal({
           >
             Energía final
           </h2>
-          <p className="text-sm text-gray-500 mt-0.5">
+          <p className="text-sm text-terra-500 mt-0.5">
             Registra el nivel de cada dimensión al cierre de la sesión. Escala 0 – 100.
           </p>
         </div>
@@ -102,14 +102,14 @@ export function StepEnergyFinal({
         {/* Resumen de promedio */}
         {avgDelta !== null && (
           <div className="flex items-center gap-2 shrink-0">
-            <span className="text-xs text-gray-500">Promedio general:</span>
+            <span className="text-xs text-terra-500">Promedio general:</span>
             <span
               className={`text-sm font-semibold ${
                 avgDelta > 0
                   ? 'text-green-700'
                   : avgDelta < 0
                   ? 'text-red-700'
-                  : 'text-gray-500'
+                  : 'text-terra-500'
               }`}
             >
               {initialAvg} → {finalAvg}
@@ -124,7 +124,7 @@ export function StepEnergyFinal({
       </div>
 
       {catalogDimensions.length === 0 ? (
-        <p className="text-sm text-gray-400 text-center py-8">
+        <p className="text-sm text-terra-400 text-center py-8">
           No hay dimensiones energéticas en el catálogo.
         </p>
       ) : (
@@ -136,11 +136,11 @@ export function StepEnergyFinal({
             return (
               <div
                 key={dim.id}
-                className="bg-white rounded-lg border border-gray-100 shadow-sm p-4"
+                className="bg-terra-50 rounded-lg border border-terra-100 shadow-sm p-4"
               >
                 {/* Valor inicial de referencia */}
                 {initialValue !== undefined && (
-                  <p className="text-xs text-gray-400 mb-1 select-none">
+                  <p className="text-xs text-terra-400 mb-1 select-none">
                     Inicial: <span className="font-semibold text-[#2C2220]">{initialValue}</span>
                   </p>
                 )}
@@ -162,7 +162,7 @@ export function StepEnergyFinal({
       {/* Indicador de balance Masculina + Femenina */}
       {sumMF !== null && (
         <p
-          className={`text-xs ${mfBalanced ? 'text-gray-400' : 'text-amber-600'}`}
+          className={`text-xs ${mfBalanced ? 'text-terra-400' : 'text-amber-600'}`}
           role={mfBalanced ? undefined : 'alert'}
         >
           {mfBalanced

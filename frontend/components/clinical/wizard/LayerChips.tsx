@@ -57,7 +57,7 @@ export function LayerChips({ layers, onChange, disabled = false }: LayerChipsPro
               className={`inline-flex items-center gap-1.5 rounded-full px-3 py-1.5 text-sm font-medium border transition-colors select-none ${
                 isActive
                   ? 'bg-[#FAEEDA] border-[#BA7517] text-[#854F0B]'
-                  : 'bg-[#FAF7F5] border-gray-300 text-gray-500'
+                  : 'bg-[#FAF7F5] border-terra-200 text-terra-500'
               } ${
                 disabled || isOtherDisabled
                   ? 'opacity-40 cursor-not-allowed'

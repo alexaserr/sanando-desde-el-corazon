@@ -68,7 +68,7 @@ const OTHER_COUNTRIES = [
 // ─── Component ──────────────────────────────────────────────────────────────
 
 const INPUT_CLS =
-  "w-full border-0 border-b border-[#D4A592] bg-[#FAF7F5] px-2 py-2 text-sm text-[#2C2220] placeholder:text-[#A9967E] focus:border-b-2 focus:border-[#C4704A] focus:outline-none transition-colors";
+  "w-full h-11 border-0 border-b border-terra-500 bg-terra-50 rounded-none px-3 text-sm text-terra-900 focus:outline-none focus:ring-0 focus:border-b-2 focus:border-terra-700 transition-colors";
 
 interface LocationSelectorProps {
   countryValue: string;

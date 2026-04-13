@@ -36,7 +36,7 @@ function StepDot({ position, label, isCurrent, isCompleted, onClick }: StepDotPr
   } else if (isCompleted) {
     circleClass = `${base} bg-terra-700 border-terra-700 text-white cursor-pointer hover:opacity-80`;
   } else {
-    circleClass = `${base} bg-white border-terra-200 text-terra-300 cursor-default`;
+    circleClass = `${base} bg-terra-50 border-terra-200 text-terra-300 cursor-default`;
   }
 
   return (
@@ -234,7 +234,7 @@ export function WizardShell({
             <SheetTrigger asChild>
               <button
                 type="button"
-                className="ml-auto shrink-0 inline-flex items-center gap-1.5 rounded-lg border border-[#C4704A] bg-white px-3 py-1.5 text-sm font-medium text-[#C4704A] hover:bg-[#FAF7F5] focus:outline-none focus:ring-2 focus:ring-[#C4704A] focus:ring-offset-1 transition-colors"
+                className="ml-auto shrink-0 inline-flex items-center gap-1.5 rounded-lg border border-[#C4704A] bg-terra-50 px-3 py-1.5 text-sm font-medium text-[#C4704A] hover:bg-[#FAF7F5] focus:outline-none focus:ring-2 focus:ring-[#C4704A] focus:ring-offset-1 transition-colors"
               >
                 <Users className="w-4 h-4" strokeWidth={1.5} />
                 Ancestros
@@ -276,7 +276,7 @@ export function WizardShell({
           type="button"
           onClick={onSaveDraft}
           disabled={isSaving}
-          className="inline-flex items-center gap-1.5 rounded-lg border border-terra-200 bg-white px-3 py-2 text-sm font-medium text-terra-600 hover:bg-terra-50 focus:outline-none focus:ring-2 focus:ring-terra-700 focus:ring-offset-1 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+          className="inline-flex items-center gap-1.5 rounded-lg border border-terra-200 bg-terra-50 px-3 py-2 text-sm font-medium text-terra-600 hover:bg-terra-50 focus:outline-none focus:ring-2 focus:ring-terra-700 focus:ring-offset-1 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
         >
           {isSaving ? (
             <>
@@ -331,7 +331,7 @@ export function WizardShell({
               type="button"
               onClick={onPrev}
               disabled={isSaving}
-              className="inline-flex items-center gap-1 rounded-lg border border-terra-200 bg-white px-3 py-2 text-sm font-medium text-terra-600 hover:bg-terra-50 focus:outline-none focus:ring-2 focus:ring-terra-700 focus:ring-offset-1 disabled:opacity-50 transition-colors"
+              className="inline-flex items-center gap-1 rounded-lg border border-terra-200 bg-terra-50 px-3 py-2 text-sm font-medium text-terra-600 hover:bg-terra-50 focus:outline-none focus:ring-2 focus:ring-terra-700 focus:ring-offset-1 disabled:opacity-50 transition-colors"
             >
               <svg
                 aria-hidden="true"
@@ -353,7 +353,7 @@ export function WizardShell({
               type="button"
               onClick={onCloseSession}
               disabled={isSaving}
-              className="inline-flex items-center gap-1.5 rounded-md bg-[#1E5631] px-4 py-2 text-sm font-semibold text-white hover:bg-[#174926] focus:outline-none focus:ring-2 focus:ring-[#1E5631] focus:ring-offset-1 disabled:opacity-50 transition-colors"
+              className="inline-flex items-center gap-1.5 rounded-md bg-[#C4704A] px-4 py-2 text-sm font-semibold text-white hover:bg-[#A0522D] focus:outline-none focus:ring-2 focus:ring-[#C4704A] focus:ring-offset-1 disabled:opacity-50 transition-colors"
             >
               <svg
                 aria-hidden="true"

@@ -45,9 +45,9 @@ function LntCard({ entry, index, onChange, onDelete, disabled = false }: LntCard
   }
 
   return (
-    <article className="bg-white rounded-lg shadow-[0_2px_8px_rgba(44,34,32,0.06)] overflow-hidden">
+    <article className="bg-terra-50 rounded-lg shadow-[0_2px_8px_rgba(44,34,32,0.06)] overflow-hidden">
       {/* Cabecera */}
-      <div className="flex items-center justify-between px-4 py-3 bg-terra-50 border-b border-gray-100">
+      <div className="flex items-center justify-between px-4 py-3 bg-terra-50 border-b border-terra-100">
         <span className="text-sm font-semibold text-terra-700">
           Tema {index + 1}
         </span>
@@ -57,7 +57,7 @@ function LntCard({ entry, index, onChange, onDelete, disabled = false }: LntCard
           disabled={disabled}
           aria-label={`Eliminar tema ${index + 1}`}
           title="Eliminar tema"
-          className="p-1.5 rounded text-gray-400 hover:text-red-600 hover:bg-red-50 focus:outline-none focus:ring-2 focus:ring-red-500 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
+          className="p-1.5 rounded text-terra-400 hover:text-red-600 hover:bg-red-50 focus:outline-none focus:ring-2 focus:ring-red-500 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
           style={{ minWidth: 44, minHeight: 44 }}
         >
           <svg
@@ -190,7 +190,7 @@ export function StepLNT({
         >
           Temas LNT
         </h2>
-        <p className="text-sm text-gray-500 mt-0.5">
+        <p className="text-sm text-terra-500 mt-0.5">
           Registra los temas trabajados durante la sesión LNT.
         </p>
       </div>
@@ -218,7 +218,7 @@ export function StepLNT({
 
       {/* Lista de temas */}
       {entries.length === 0 ? (
-        <div className="flex flex-col items-center justify-center py-12 text-center text-sm text-gray-400">
+        <div className="flex flex-col items-center justify-center py-12 text-center text-sm text-terra-400">
           No hay temas. Usa el botón de arriba para agregar uno.
         </div>
       ) : (

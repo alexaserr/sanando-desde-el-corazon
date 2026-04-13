@@ -31,7 +31,7 @@ function newManifestation(name: string, isAutoInjected = false): ManifestationEn
     name,
     value: 0,
     unit: 'numero',
-    work_done: '',
+    work_done: [],
     materials: [],
     origins: [],
     is_auto_injected: isAutoInjected,
@@ -243,7 +243,7 @@ export function CleaningGroupCard({
 
         <div className="space-y-2">
           {group.events.length === 0 && (
-            <p className="rounded-lg border border-dashed border-gray-200 bg-white/60 px-4 py-6 text-center text-sm text-gray-400">
+            <p className="rounded-lg border border-dashed border-terra-100 bg-terra-50/60 px-4 py-6 text-center text-sm text-terra-400">
               Sin manifestaciones. Agrega una para empezar.
             </p>
           )}
@@ -324,7 +324,7 @@ export function CleaningGroupCard({
           disabled={disabled}
           onChange={(e) => onUpdate({ beneficios: e.target.value })}
           placeholder="Describe los beneficios obtenidos..."
-          className="w-full rounded-none border-0 border-b border-[#D4A592] bg-white px-3 py-2 text-sm text-[#2C2220] placeholder-[#A9967E] focus:outline-none focus:ring-0 focus:border-b-2 focus:border-[#C4704A] disabled:opacity-50 disabled:cursor-not-allowed resize-none"
+          className="w-full rounded-none border-0 border-b border-[#D4A592] bg-terra-50 px-3 py-2 text-sm text-[#2C2220] placeholder-[#A9967E] focus:outline-none focus:ring-0 focus:border-b-2 focus:border-[#C4704A] disabled:opacity-50 disabled:cursor-not-allowed resize-none"
           style={LABEL_STYLE}
         />
       </section>

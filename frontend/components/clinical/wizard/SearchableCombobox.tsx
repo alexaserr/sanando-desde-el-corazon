@@ -80,19 +80,19 @@ export function SearchableCombobox({
         }}
         className="flex min-h-[44px] w-full items-center justify-between gap-1 rounded-none border-0 border-b border-[#D4A592] bg-[#FAF7F5] px-2.5 py-1.5 text-sm text-left focus:outline-none focus:ring-0 focus:border-b-2 focus:border-[#C4704A] disabled:opacity-50 disabled:cursor-not-allowed"
       >
-        <span className={`truncate ${selectedArr.length === 0 ? 'text-gray-400' : 'text-gray-800'}`}>
+        <span className={`truncate ${selectedArr.length === 0 ? 'text-terra-400' : 'text-terra-900'}`}>
           {displayLabel}
         </span>
         <ChevronDown
           size={14}
-          className={`shrink-0 text-gray-400 transition-transform ${open ? 'rotate-180' : ''}`}
+          className={`shrink-0 text-terra-400 transition-transform ${open ? 'rotate-180' : ''}`}
         />
       </button>
 
       {/* Dropdown */}
       {open && (
         <div
-          className="absolute z-50 mt-1 w-full min-w-[220px] rounded bg-white border border-[#EDE5E0]"
+          className="absolute z-50 mt-1 w-full min-w-[220px] rounded bg-terra-50 border border-[#EDE5E0]"
           style={{ boxShadow: '0 2px 8px rgba(44,34,32,0.06)', maxHeight: 200 }}
         >
           {/* Search input */}
@@ -110,7 +110,7 @@ export function SearchableCombobox({
           {/* Options list */}
           <div className="max-h-[160px] overflow-y-auto py-1">
             {filtered.length === 0 ? (
-              <p className="px-3 py-2 text-xs text-gray-400">Sin resultados</p>
+              <p className="px-3 py-2 text-xs text-terra-400">Sin resultados</p>
             ) : (
               filtered.map((o) => {
                 const isSelected = selectedArr.includes(o);
@@ -171,7 +171,7 @@ export function SearchableCombobox({
           ))}
           {selectedArr.length > 4 && (
             <span
-              className="inline-flex items-center rounded-full bg-gray-100 px-2 py-0.5 text-xs text-gray-600"
+              className="inline-flex items-center rounded-full bg-terra-100 px-2 py-0.5 text-xs text-terra-800"
               title={selectedArr.slice(4).join(', ')}
             >
               +{selectedArr.length - 4} más

@@ -65,7 +65,7 @@ function DeltaBadge({ delta }: DeltaBadgeProps) {
     <span
       role="status"
       aria-label="sin diferencia"
-      className="inline-flex items-center px-1.5 py-0.5 rounded text-xs font-semibold bg-gray-100 text-gray-500 select-none"
+      className="inline-flex items-center px-1.5 py-0.5 rounded text-xs font-semibold bg-terra-100 text-terra-500 select-none"
     >
       0
     </span>

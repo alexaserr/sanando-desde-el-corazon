@@ -105,12 +105,12 @@ function Combobox({
           aria-expanded={open}
           className="w-full flex items-center justify-between rounded-none border-0 border-b border-[#D4A592] bg-[#FAF7F5] px-3 py-2 text-sm text-left focus:outline-none focus:ring-0 focus:border-b-2 focus:border-[#C4704A] disabled:opacity-50 disabled:cursor-not-allowed"
         >
-          <span className={selected ? 'text-gray-900' : 'text-gray-400'}>
+          <span className={selected ? 'text-terra-900' : 'text-terra-400'}>
             {selected ? selected.label : placeholder}
           </span>
           <svg
             aria-hidden="true"
-            className={`w-4 h-4 text-gray-400 transition-transform ${open ? 'rotate-180' : ''}`}
+            className={`w-4 h-4 text-terra-400 transition-transform ${open ? 'rotate-180' : ''}`}
             fill="none"
             viewBox="0 0 24 24"
             stroke="currentColor"
@@ -124,23 +124,23 @@ function Combobox({
           <div
             role="listbox"
             aria-label={label}
-            className="absolute z-20 mt-1 w-full rounded-md border border-gray-200 bg-white shadow-lg"
+            className="absolute z-20 mt-1 w-full rounded-md border border-terra-100 bg-terra-50 shadow-lg"
           >
-            <div className="p-2 border-b border-gray-100">
+            <div className="p-2 border-b border-terra-100">
               <input
                 autoFocus
                 type="text"
                 value={query}
                 onChange={(e) => setQuery(e.target.value)}
                 placeholder="Buscar…"
-                className="w-full rounded border border-gray-200 px-2 py-1.5 text-sm focus:outline-none focus:ring-1 focus:ring-[#2C2220]"
+                className="w-full rounded border border-terra-100 px-2 py-1.5 text-sm focus:outline-none focus:ring-1 focus:ring-[#2C2220]"
               />
             </div>
             <ul className="max-h-52 overflow-y-auto py-1">
               {isSearching ? (
-                <li className="px-3 py-2 text-sm text-gray-400">{loadingMessage}</li>
+                <li className="px-3 py-2 text-sm text-terra-400">{loadingMessage}</li>
               ) : visibleOptions.length === 0 ? (
-                <li className="px-3 py-2 text-sm text-gray-400">{emptyMessage}</li>
+                <li className="px-3 py-2 text-sm text-terra-400">{emptyMessage}</li>
               ) : (
                 visibleOptions.map((opt) => (
                   <li
@@ -153,8 +153,8 @@ function Combobox({
                       setOpen(false);
                       setQuery('');
                     }}
-                    className={`px-3 py-2 text-sm cursor-pointer select-none hover:bg-gray-50 ${
-                      opt.value === value ? 'font-semibold text-[#2C2220] bg-amber-50' : 'text-gray-800'
+                    className={`px-3 py-2 text-sm cursor-pointer select-none hover:bg-terra-50 ${
+                      opt.value === value ? 'font-semibold text-[#2C2220] bg-amber-50' : 'text-terra-900'
                     }`}
                   >
                     {opt.label}
@@ -182,9 +182,9 @@ function YesNoPills({ value, onChange, disabled = false }: YesNoPillsProps) {
     if (value === option) {
       return option
         ? 'px-4 py-1.5 rounded-md text-sm font-medium transition-colors bg-[#C4704A] text-white'
-        : 'px-4 py-1.5 rounded-md text-sm font-medium transition-colors bg-gray-100 text-gray-600';
+        : 'px-4 py-1.5 rounded-md text-sm font-medium transition-colors bg-terra-100 text-terra-800';
     }
-    return 'px-4 py-1.5 rounded-md text-sm font-medium transition-colors border border-gray-200 text-gray-400 hover:border-gray-300';
+    return 'px-4 py-1.5 rounded-md text-sm font-medium transition-colors border border-terra-100 text-terra-400 hover:border-terra-200';
   }
 
   return (
@@ -300,7 +300,7 @@ export function StepGeneral({
       </div>
 
       {/* Energía general */}
-      <div className="bg-gray-50 rounded-lg p-4">
+      <div className="bg-terra-50 rounded-lg p-4">
         <p className="text-xs uppercase tracking-wide font-normal text-[#4A3628] mb-3">
           Nivel de energía general
         </p>
@@ -333,7 +333,7 @@ export function StepGeneral({
       {/* ─── Entidades y Bajo Astral ───────────────────────────────────────── */}
       <div className="border-t border-[#D4A592] pt-6 mt-6">
         <p className="font-semibold text-[#2C2220]">Entidades y Bajo Astral</p>
-        <p className="text-sm text-gray-500 mt-0.5 mb-5">
+        <p className="text-sm text-terra-500 mt-0.5 mb-5">
           Registra entidades, trabajos de bajo astral e implantes detectados
         </p>
 

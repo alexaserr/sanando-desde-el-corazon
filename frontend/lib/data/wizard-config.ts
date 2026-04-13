@@ -1,3 +1,7 @@
+// lib/data/wizard-config.ts
+// Configuración config-driven del wizard de sesiones
+// ACTUALIZADO: Abril 2026 — 7 terapias activas
+
 // ─── Tipos ────────────────────────────────────────────────────────────────────
 
 export type WizardStepComponent =
@@ -64,55 +68,78 @@ const S_CLOSE: WizardStepConfig = {
   component: 'StepClose', required: true,
 };
 
-const BASE = [S_GENERAL, S_CHAKRAS_INITIAL, S_ENERGY_INITIAL];
-const TAIL = [S_ENERGY_FINAL, S_CHAKRAS_FINAL, S_CLOSE];
+const HEAD = [S_GENERAL, S_CHAKRAS_INITIAL, S_ENERGY_INITIAL];
+const TAIL = [S_CHAKRAS_FINAL, S_ENERGY_FINAL, S_CLOSE];
 
 // ─── Configuraciones por tipo de terapia ──────────────────────────────────────
 
+/**
+ * WIZARD_CONFIGS — fuente de verdad del wizard
+ *
+ * Las keys son los NOMBRES de las terapias tal como aparecen en therapy_types.name
+ *
+ * Regla para terapias "básicas" (Extracción, Armonización, Lectura):
+ * - Flujo normal: General → Chakras Init → Energy Init → Chakras Final → Energy Final → Close
+ * - Si hay entidades/capas/implantes: se auto-inyecta StepCleaning y se REMUEVEN
+ *   Chakras Final y Energy Final (el wizard ya maneja esto en WizardShell/nueva/page.tsx)
+ */
 export const WIZARD_CONFIGS: Record<string, TherapyWizardConfig> = {
+  // ── Sanación Energética ──
+  // Paso 4: StepTopics (temas + bloqueos + emociones + edades)
   'Sanación Energética': {
     therapyName: 'Sanación Energética',
-    steps: [...BASE, S_TOPICS, ...TAIL],
+    steps: [...HEAD, S_TOPICS, ...TAIL],
     defaultCost: 1300,
   },
-  'Sanación Energética a Distancia': {
-    therapyName: 'Sanación Energética a Distancia',
-    steps: [...BASE, S_TOPICS, ...TAIL],
-    defaultCost: 1300,
-  },
+
+  // ── Medicina Cuántica ──
+  // Paso 4: StepTopics + StepLNT
   'Medicina Cuántica': {
     therapyName: 'Medicina Cuántica',
-    steps: [...BASE, S_TOPICS, ...TAIL],
+    steps: [...HEAD, S_TOPICS, S_LNT, ...TAIL],
     defaultCost: 1600,
   },
+
+  // ── Terapia LNT ──
+  // Paso 4: StepLNT (escala 0-14)
   'Terapia LNT': {
     therapyName: 'Terapia LNT',
-    steps: [...BASE, S_LNT, ...TAIL],
+    steps: [...HEAD, S_LNT, ...TAIL],
     defaultCost: 1300,
   },
-  'Extracción de Energías Densas': {
-    therapyName: 'Extracción de Energías Densas',
-    steps: [...BASE, ...TAIL],
+
+  // ── Extracción ──
+  // Básico: sin paso 4 variable
+  // Si hay entidades/capas/implantes → auto-inject StepCleaning, remove finales
+  'Extracción': {
+    therapyName: 'Extracción',
+    steps: [...HEAD, ...TAIL],
     defaultCost: 2200,
   },
-  'Armonización Energética y Mandala': {
-    therapyName: 'Armonización Energética y Mandala',
-    steps: [...BASE, ...TAIL],
+
+  // ── Armonización Energética ──
+  // Básico: sin paso 4 variable
+  'Armonización Energética': {
+    therapyName: 'Armonización Energética',
+    steps: [...HEAD, ...TAIL],
     defaultCost: 2300,
   },
-  'Recuperación del Alma': {
-    therapyName: 'Recuperación del Alma',
-    steps: [...BASE, S_TOPICS, ...TAIL],
-    defaultCost: 1700,
+
+  // ── Lectura Energética ──
+  // Básico: sin paso 4 variable
+  'Lectura Energética': {
+    therapyName: 'Lectura Energética',
+    steps: [...HEAD, ...TAIL],
+    defaultCost: 1300,
   },
-  'Despacho': {
-    therapyName: 'Despacho',
-    steps: [...BASE, ...TAIL],
-    defaultCost: 2500,
-  },
+
+  // ── Limpieza Energética ──
+  // Paso 4: StepCleaning (grupos, cleaning events)
+  // Flujo especial: General → Chakras Init → Energy Init → Cleaning → Close
+  // (SIN chakras/energía finales)
   'Limpieza Energética': {
     therapyName: 'Limpieza Energética',
-    steps: [...BASE, S_CLEANING, S_CLOSE],
+    steps: [...HEAD, S_CLEANING, S_CLOSE],
     defaultCost: 1300,
   },
 };
@@ -142,3 +169,17 @@ export function injectCleaningStep(baseSteps: WizardStepConfig[]): WizardStepCon
   }
   return steps;
 }
+
+/**
+ * Lista de nombres de terapia activos (para el Select en StepGeneral)
+ * Orden: display_order de la BD, pero este array sirve como fallback visual
+ */
+export const ACTIVE_THERAPY_NAMES = [
+  'Sanación Energética',
+  'Medicina Cuántica',
+  'Terapia LNT',
+  'Extracción',
+  'Armonización Energética',
+  'Lectura Energética',
+  'Limpieza Energética',
+] as const;

@@ -186,14 +186,14 @@ export function StepEnergyInitial({
         >
           Energía inicial
         </h2>
-        <p className="text-sm text-gray-500 mt-0.5">
+        <p className="text-sm text-terra-500 mt-0.5">
           Registra el nivel de cada dimensión energética al inicio de la sesión.
           Escala 0 – 100.
         </p>
       </div>
 
       {catalogDimensions.length === 0 ? (
-        <p className="text-sm text-gray-400 text-center py-8">
+        <p className="text-sm text-terra-400 text-center py-8">
           No hay dimensiones energéticas en el catálogo.
         </p>
       ) : (
@@ -202,7 +202,7 @@ export function StepEnergyInitial({
             {catalogDimensions.map((dim) => (
               <div
                 key={dim.id}
-                className="bg-white rounded-lg border border-gray-100 shadow-sm p-4"
+                className="bg-terra-50 rounded-lg border border-terra-100 shadow-sm p-4"
               >
                 {/* Row: editable name + number input */}
                 <div className="flex items-center justify-between mb-1">
@@ -244,7 +244,7 @@ export function StepEnergyInitial({
           {/* Indicador de balance Masculina + Femenina */}
           {sumMF !== null && (
             <p
-              className={`text-xs ${mfBalanced ? 'text-gray-400' : 'text-amber-600'}`}
+              className={`text-xs ${mfBalanced ? 'text-terra-400' : 'text-amber-600'}`}
               role={mfBalanced ? undefined : 'alert'}
             >
               {mfBalanced
@@ -280,7 +280,7 @@ export function StepEnergyInitial({
                   onKeyDown={(e) => { if (e.key === 'Enter') handleCreateDimension(); }}
                   placeholder="Ej. Energía Vital"
                   disabled={isCreating}
-                  className="w-full bg-[#FAF7F5] border-b border-[#D4A592] rounded-none px-2 py-1.5 text-sm text-[#2C2220] placeholder:text-gray-400 focus:outline-none focus:border-[#C4704A] disabled:opacity-50 transition-colors"
+                  className="w-full bg-[#FAF7F5] border-b border-[#D4A592] rounded-none px-2 py-1.5 text-sm text-[#2C2220] placeholder:text-terra-200 focus:outline-none focus:border-[#C4704A] disabled:opacity-50 transition-colors"
                 />
                 {newDimError && (
                   <p className="text-xs text-red-600 mt-1">{newDimError}</p>
